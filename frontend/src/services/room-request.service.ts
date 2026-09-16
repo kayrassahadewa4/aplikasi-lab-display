@@ -145,10 +145,27 @@ function toBackendTime(timeStr: string): string {
 
 /**
  * Convert backend time (ISO DateTime from TIME(6)) to frontend time (HH:mm)
+ * Uses UTC methods because Prisma Time(6) serializes as 1970-01-01T{HH:mm:ss}.000Z
  */
 function fromBackendTime(isoTime: string): string {
   if (!isoTime) return ''
-  return formatTime(isoTime) // "2026-08-20T08:00:00.000Z" → "08:00"
+  if (typeof isoTime === 'string') {
+    if (isoTime.includes('T')) {
+      const date = new Date(isoTime)
+      if (!isNaN(date.getTime())) {
+        const hours = date.getUTCHours().toString().padStart(2, '0')
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0')
+        return `${hours}:${minutes}`
+      }
+    }
+    const match = isoTime.trim().match(/^(\d{1,2})[:.](\d{1,2})/)
+    if (match) {
+      const hours = match[1]!.padStart(2, '0')
+      const minutes = match[2]!.padStart(2, '0')
+      return `${hours}:${minutes}`
+    }
+  }
+  return '00:00'
 }
 
 /**

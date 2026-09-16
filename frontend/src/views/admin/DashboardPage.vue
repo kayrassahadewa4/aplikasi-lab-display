@@ -234,6 +234,30 @@ const formattedCurrentDate = computed(() => {
   return formatDate(new Date(), true)
 })
 
+// Current Academic Session Phase (Pagi, Siang, Sore, Malam)
+const currentSessionPhase = computed(() => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      hour12: false,
+    })
+    const h = parseInt(formatter.format(new Date()), 10)
+    if (h >= 6 && h < 11) {
+      return { label: 'Sesi Pagi', period: '07:00 – 11:00 WIB' }
+    }
+    if (h >= 11 && h < 15) {
+      return { label: 'Sesi Siang', period: '11:00 – 15:00 WIB' }
+    }
+    if (h >= 15 && h < 18) {
+      return { label: 'Sesi Sore', period: '15:00 – 18:00 WIB' }
+    }
+    return { label: 'Sesi Malam', period: '18:00 – 21:00 WIB' }
+  } catch {
+    return { label: 'Sesi Operasional', period: '07:00 – 21:00 WIB' }
+  }
+})
+
 onMounted(() => {
   navStore.setBreadcrumbs([
     { label: 'Dashboard' },
@@ -300,10 +324,10 @@ const formatDisplayTime = (timeStr?: string) => {
 
           <div class="space-y-1.5">
             <div class="flex flex-wrap items-center gap-2">
-              <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
+              <h1 class="text-xl sm:text-2xl font-bold text-white leading-tight">
                 Selamat Datang, {{ userGreetingName }}!
               </h1>
-              <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-emerald-950 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-emerald-950 text-[10px] font-bold uppercase tracking-wide shadow-2xs">
                 Administrator Utama
               </span>
             </div>
@@ -312,15 +336,20 @@ const formatDisplayTime = (timeStr?: string) => {
               Pusat Kontrol Sistem Laboratorium • FIK UPN Veteran Jakarta
             </p>
 
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[11px] text-emerald-200/90 font-semibold">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1 text-[11px] text-emerald-200/90 font-semibold">
               <span class="inline-flex items-center gap-1.5">
                 <Calendar :size="12" class="text-amber-400" />
                 <span>{{ formattedCurrentDate }}</span>
               </span>
               <span>•</span>
-              <span class="inline-flex items-center gap-1.5 font-mono">
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/25 border border-white/15 font-mono text-white text-xs font-bold shadow-inner">
                 <Clock :size="12" class="text-emerald-300" />
                 <span>{{ liveTimeStr || 'WIB' }}</span>
+              </span>
+              <span>•</span>
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-500/25 text-emerald-100 border border-emerald-400/40 text-[10px] font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span>{{ currentSessionPhase.label }} ({{ currentSessionPhase.period }})</span>
               </span>
             </div>
           </div>
@@ -330,7 +359,7 @@ const formatDisplayTime = (timeStr?: string) => {
         <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 self-start lg:self-center">
           <button
             @click="handleCreateSchedule"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-black shadow-md shadow-black/10 transition-all duration-150 cursor-pointer active:scale-95"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-bold shadow-md shadow-black/10 transition-all duration-150 cursor-pointer active:scale-95"
           >
             <Plus :size="15" stroke-width="2.5" />
             <span>Buat Jadwal Baru</span>
@@ -359,30 +388,30 @@ const formatDisplayTime = (timeStr?: string) => {
       <!-- Quick Metrics Ribbon inside Hero -->
       <div class="mt-6 pt-5 border-t border-emerald-800/40 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs relative z-10">
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Pengguna Aktif</span>
-          <p class="text-lg font-black text-white">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Pengguna Aktif</span>
+          <p class="text-lg font-bold text-white">
             {{ totalUsers }}
             <span class="text-xs font-normal text-emerald-200/70">Terdaftar</span>
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Jadwal Hari Ini</span>
-          <p class="text-lg font-black text-amber-300">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Jadwal Hari Ini</span>
+          <p class="text-lg font-bold text-amber-300">
             {{ dashboardSummary?.today_schedules || 0 }} Sesi
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Permohonan Masuk</span>
-          <p class="text-lg font-black" :class="pendingRoomRequests.length > 0 ? 'text-amber-300' : 'text-emerald-200'">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Permohonan Masuk</span>
+          <p class="text-lg font-bold" :class="pendingRoomRequests.length > 0 ? 'text-amber-300' : 'text-emerald-200'">
             {{ pendingRoomRequests.length }} Menunggu
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Pengumuman Aktif</span>
-          <p class="text-lg font-black text-white">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Pengumuman Aktif</span>
+          <p class="text-lg font-bold text-white">
             {{ dashboardSummary?.active_announcements || 0 }} Broadcast
           </p>
         </div>
@@ -481,7 +510,7 @@ const formatDisplayTime = (timeStr?: string) => {
               </div>
               
               <span
-                class="px-2 py-0.5 text-[10px] font-extrabold rounded-full border shrink-0 uppercase tracking-wider"
+                class="px-2 py-0.5 text-[10px] font-bold rounded-full border shrink-0 uppercase tracking-wide"
                 :class="request.status === 'APPROVED' ? 'bg-emerald-50 text-dark-green border-brand-200' : request.status === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-accent/70 text-dark-green border-dark-green/10'"
               >
                 {{ request.status || 'PENDING' }}
@@ -498,7 +527,7 @@ const formatDisplayTime = (timeStr?: string) => {
             </div>
 
             <!-- Bottom Hover Reveal: "Tap to see more" Action Hint -->
-            <div class="opacity-0 group-hover:opacity-100 max-h-0 group-hover:max-h-6 overflow-hidden transition-all duration-200 ease-out flex items-center justify-end gap-1 text-[11px] font-extrabold text-dark-green pl-8 border-t border-brand-200/50 pt-1 mt-0.5">
+            <div class="opacity-0 group-hover:opacity-100 max-h-0 group-hover:max-h-6 overflow-hidden transition-all duration-200 ease-out flex items-center justify-end gap-1 text-[11px] font-bold text-dark-green pl-8 border-t border-brand-200/50 pt-1 mt-0.5">
               <span>Tap to see more</span>
               <ChevronRight :size="13" class="group-hover:translate-x-0.5 transition-transform" />
             </div>
@@ -531,7 +560,7 @@ const formatDisplayTime = (timeStr?: string) => {
             class="p-3.5 bg-surface/60 rounded-xl border border-gray-200/60 hover:bg-brand-50/50 hover:border-brand-300 hover:shadow-xs transition-all duration-200 flex flex-col gap-1.5 group cursor-pointer select-none"
           >
             <div class="flex items-start justify-between gap-2 mb-0.5">
-              <h4 class="font-bold text-xs text-text-primary group-hover:text-dark-green transition-colors tracking-tight leading-snug truncate">
+              <h4 class="font-bold text-xs text-text-primary group-hover:text-dark-green transition-colors leading-snug truncate">
                 {{ announcement.title }}
               </h4>
               <span v-if="announcement.is_active" class="px-2 py-0.5 bg-emerald-50 text-dark-green text-[10px] font-bold border border-brand-200 rounded-full shrink-0">

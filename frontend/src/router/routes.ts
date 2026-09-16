@@ -18,19 +18,15 @@ export const routes: RouteRecordRaw[] = [
         path: '/login',
         name: 'Login',
         component: () => import('@/views/auth/LoginView.vue'),
+        alias: '/auth/login',
+      },
+      {
+        path: '/register',
+        name: 'Register',
+        component: () => import('@/views/auth/RegisterView.vue'),
+        alias: '/auth/register',
       },
     ],
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: () => import('@/views/auth/RegisterView.vue'),
-    beforeEnter: guestOnly,
-    meta: { requiresAuth: false },
-  },
-  {
-    path: '/auth/register',
-    redirect: '/register',
   },
 
   // Admin Portal Routes (Requires Admin Role)
@@ -249,16 +245,7 @@ export const routes: RouteRecordRaw[] = [
         name: 'AdminSettings',
         component: () => import('@/views/admin/SettingsPage.vue'),
       },
-      {
-        path: 'messages',
-        name: 'AdminMessages',
-        component: () => import('@/views/admin/MessagesPage.vue'),
-      },
-      {
-        path: 'messages/:id/reply',
-        name: 'AdminMessageReply',
-        component: () => import('@/views/admin/MessageReplyPage.vue'),
-      },
+
       {
         path: 'notifications',
         name: 'AdminNotifications',

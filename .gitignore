@@ -47,3 +47,8 @@ temp/
 # Prisma
 prisma/.env
 !prisma/migrations/
+
+# AI Assistants and IDE Agent Metadata
+.agents/
+.claude/
+.windsurf/

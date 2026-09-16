@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ScheduleStatus {
+  SCHEDULED
+  ACTIVE
+  FINISHED
+  CANCELLED
+}
+
+enum UsageStatus {
+  CHECKED_IN
+  IN_USE
+  CHECKED_OUT
+  CANCELLED
+}
+
+enum LaboratoryStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  CLOSED
+}
+
+enum FacilityCondition {
+  GOOD
+  DAMAGED
+  UNDER_MAINTENANCE
+}
+
+enum CalendarStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ResetRequestStatus {
+  PENDING
+  RESOLVED
+  REJECTED
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(20)
+  name        String   @db.VarChar(50)
+  description String   @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+
+  users User[]
+}
+
+model User {
+  id          String     @id @default(uuid()) @db.Uuid
+  role_id     String     @db.Uuid
+  keycloak_id String?    @unique @db.Uuid
+  full_name   String     @db.VarChar(100)
+  email       String     @unique @db.VarChar(100)
+  password    String     @db.VarChar(255)
+  phone       String?    @db.VarChar(20)
+  avatar_url  String?    @db.VarChar(255)
+  status      UserStatus
+  created_at  DateTime   @default(now()) @db.Timestamp(6)
+  updated_at  DateTime   @updatedAt @db.Timestamp(6)
+
+  role                      Role                      @relation(fields: [role_id], references: [id])
+  applicantRequests         RoomRequest[]             @relation("applicant")
+  approvedRequests          RoomRequest[]             @relation("approver")
+  checkInUsages             RoomUsage[]               @relation("check_in")
+  checkOutUsages            RoomUsage[]               @relation("check_out")
+  updatedLaboratoryStatuses LaboratoryStatusHistory[] @relation("updated_by")
+  sentMessages              Message[]                 @relation("SentMessages")
+  receivedMessages          Message[]                 @relation("ReceivedMessages")
+  notifications             Notification[]
+  resetRequests             PasswordResetRequest[]    @relation("UserResetRequests")
+  resolvedResets            PasswordResetRequest[]    @relation("AdminResolvedResets")
+}
+
+model PasswordResetRequest {
+  id             String             @id @default(uuid()) @db.Uuid
+  user_id        String             @db.Uuid
+  email          String             @db.VarChar(100)
+  full_name      String             @db.VarChar(100)
+  role_code      String             @db.VarChar(20)
+  notes          String?            @db.Text
+  status         ResetRequestStatus @default(PENDING)
+  resolved_by_id String?            @db.Uuid
+  temp_password  String?            @db.VarChar(255)
+  resolved_at    DateTime?          @db.Timestamp(6)
+  created_at     DateTime           @default(now()) @db.Timestamp(6)
+  updated_at     DateTime           @updatedAt @db.Timestamp(6)
+
+  user        User  @relation("UserResetRequests", fields: [user_id], references: [id], onDelete: Cascade)
+  resolved_by User? @relation("AdminResolvedResets", fields: [resolved_by_id], references: [id], onDelete: SetNull)
+}
+
+model Message {
+  id             String    @id @default(uuid()) @db.Uuid
+  sender_id      String    @db.Uuid
+  recipient_id   String?   @db.Uuid
+  subject        String    @db.VarChar(200)
+  body           String    @db.Text
+  attachment_url String?   @db.VarChar(255)
+  is_read        Boolean   @default(false)
+  folder         String    @default("inbox") @db.VarChar(20) // inbox, sent, archived
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  updated_at     DateTime  @updatedAt @db.Timestamp(6)
+
+  sender    User  @relation("SentMessages", fields: [sender_id], references: [id])
+  recipient User? @relation("ReceivedMessages", fields: [recipient_id], references: [id])
+}
+
+model Notification {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String   @db.Uuid
+  title      String   @db.VarChar(150)
+  message    String   @db.Text
+  category   String   @db.VarChar(30) // requests, schedules, system
+  is_read    Boolean  @default(false)
+  link_url   String?  @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [id])
+}
+
+model Announcement {
+  id         String   @id @default(uuid()) @db.Uuid
+  title      String   @db.VarChar(150)
+  content    String   @db.Text
+  start_at   DateTime @db.Timestamp(6)
+  end_at     DateTime @db.Timestamp(6)
+  is_active  Boolean
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+}
+
+model AcademicCalendar {
+  id            String         @id @default(uuid()) @db.Uuid
+  academic_year String         @db.VarChar(20)
+  semester      String         @db.VarChar(20)
+  start_date    DateTime       @db.Date
+  end_date      DateTime       @db.Date
+  status        CalendarStatus
+  created_at    DateTime       @default(now()) @db.Timestamp(6)
+  updated_at    DateTime       @updatedAt @db.Timestamp(6)
+
+  schedules Schedule[]
+}
+
+model Laboratory {
+  id               String           @id @default(uuid()) @db.Uuid
+  code             String           @unique @db.VarChar(20)
+  name             String           @db.VarChar(100)
+  location         String           @db.VarChar(100)
+  maximum_capacity Int              @db.Integer
+  image            String?          @db.VarChar(255)
+  description      String?          @db.Text
+  status           LaboratoryStatus
+  created_at       DateTime         @default(now()) @db.Timestamp(6)
+  updated_at       DateTime         @updatedAt @db.Timestamp(6)
+
+  laboratoryFacilities      LaboratoryFacility[]
+  operationalHours          OperationalHour[]
+  schedules                 Schedule[]
+  roomRequests              RoomRequest[]
+  laboratoryStatusHistories LaboratoryStatusHistory[]
+}
+
+model Facility {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(20)
+  name        String   @db.VarChar(100)
+  category    String   @db.VarChar(50)
+  description String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+
+  laboratoryFacilities LaboratoryFacility[]
+}
+
+model LaboratoryFacility {
+  id            String            @id @default(uuid()) @db.Uuid
+  laboratory_id String            @db.Uuid
+  facility_id   String            @db.Uuid
+  quantity      Int               @db.Integer
+  condition     FacilityCondition
+  created_at    DateTime          @default(now()) @db.Timestamp(6)
+  updated_at    DateTime          @updatedAt @db.Timestamp(6)
+
+  laboratory Laboratory @relation(fields: [laboratory_id], references: [id])
+  facility   Facility   @relation(fields: [facility_id], references: [id])
+
+  @@unique([laboratory_id, facility_id])
+}
+
+model OperationalHour {
+  id            String   @id @default(uuid()) @db.Uuid
+  laboratory_id String   @db.Uuid
+  day_of_week   Int      @db.SmallInt
+  open_time     DateTime @db.Time(6)
+  close_time    DateTime @db.Time(6)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime @updatedAt @db.Timestamp(6)
+
+  laboratory Laboratory @relation(fields: [laboratory_id], references: [id])
+
+  @@unique([laboratory_id, day_of_week])
+}
+
+model Schedule {
+  id                   String         @id @default(uuid()) @db.Uuid
+  laboratory_id        String         @db.Uuid
+  academic_calendar_id String         @db.Uuid
+  course_name          String         @db.VarChar(100)
+  lecturer_name        String         @db.VarChar(100)
+  class_name           String         @db.VarChar(30)
+  day_of_week          Int            @db.SmallInt
+  start_time           DateTime       @db.Time(6)
+  end_time             DateTime       @db.Time(6)
+  status               ScheduleStatus
+  created_at           DateTime       @default(now()) @db.Timestamp(6)
+  updated_at           DateTime       @updatedAt @db.Timestamp(6)
+
+  laboratory       Laboratory       @relation(fields: [laboratory_id], references: [id])
+  academicCalendar AcademicCalendar @relation(fields: [academic_calendar_id], references: [id])
+
+  roomUsages RoomUsage[]
+}
+
+model RoomRequest {
+  id                String        @id @default(uuid()) @db.Uuid
+  applicant_id      String        @db.Uuid
+  laboratory_id     String        @db.Uuid
+  approved_by       String?       @db.Uuid
+  activity_name     String        @db.VarChar(100)
+  course_name       String?       @db.VarChar(100)
+  class_name        String?       @db.VarChar(30)
+  description       String        @db.Text
+  request_date      DateTime      @db.Date
+  start_time        DateTime      @db.Time(6)
+  end_time          DateTime      @db.Time(6)
+  participant_count Int           @db.Integer
+  status            RequestStatus
+  rejection_reason  String?       @db.Text
+  approved_at       DateTime?     @db.Timestamp(6)
+  created_at        DateTime      @default(now()) @db.Timestamp(6)
+  updated_at        DateTime      @updatedAt @db.Timestamp(6)
+
+  applicant  User       @relation("applicant", fields: [applicant_id], references: [id])
+  approver   User?      @relation("approver", fields: [approved_by], references: [id])
+  laboratory Laboratory @relation(fields: [laboratory_id], references: [id])
+
+  roomUsages RoomUsage[]
+}
+
+model RoomUsage {
+  id             String      @id @default(uuid()) @db.Uuid
+  request_id     String?     @db.Uuid
+  schedule_id    String?     @db.Uuid
+  checked_in_by  String      @db.Uuid
+  checked_out_by String?     @db.Uuid
+  check_in_time  DateTime    @db.Timestamp(6)
+  check_out_time DateTime?   @db.Timestamp(6)
+  status         UsageStatus
+  notes          String?     @db.Text
+  created_at     DateTime    @default(now()) @db.Timestamp(6)
+  updated_at     DateTime    @updatedAt @db.Timestamp(6)
+
+  request      RoomRequest? @relation(fields: [request_id], references: [id])
+  schedule     Schedule?    @relation(fields: [schedule_id], references: [id])
+  checkedInBy  User         @relation("check_in", fields: [checked_in_by], references: [id])
+  checkedOutBy User?        @relation("check_out", fields: [checked_out_by], references: [id])
+
+  laboratoryStatusHistories LaboratoryStatusHistory[]
+}
+
+model LaboratoryStatusHistory {
+  id            String           @id @default(uuid()) @db.Uuid
+  laboratory_id String           @db.Uuid
+  usage_id      String           @db.Uuid
+  updated_by    String           @db.Uuid
+  status        LaboratoryStatus
+  remarks       String?          @db.Text
+  updated_at    DateTime         @default(now()) @db.Timestamp(6)
+
+  laboratory Laboratory @relation(fields: [laboratory_id], references: [id])
+  usage      RoomUsage  @relation(fields: [usage_id], references: [id])
+  updatedBy  User       @relation("updated_by", fields: [updated_by], references: [id])
+}

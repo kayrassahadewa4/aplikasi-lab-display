@@ -14,7 +14,7 @@ import {
   ClipboardList,
   DoorOpen,
   BarChart3,
-  Settings,
+  SlidersHorizontal,
 } from 'lucide-vue-next'
 
 export interface MenuItem {
@@ -130,7 +130,7 @@ export const useAdminNavStore = defineStore('adminNav', () => {
     {
       id: 'settings',
       label: 'Pengaturan',
-      icon: Settings,
+      icon: SlidersHorizontal,
       path: '/admin/settings',
       section: 'account',
     },

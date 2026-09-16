@@ -1,30 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { LogOut, Menu, Mail, Monitor } from 'lucide-vue-next'
+import { LogOut, Menu, Monitor } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 import { useAdminNavStore } from '@/stores/admin-nav.store'
 import { BaseAvatar, BaseBreadcrumb, NotificationDropdown } from '@/components'
-import { messageService } from '@/services/message.service'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const navStore = useAdminNavStore()
-
-const unreadMessagesCount = ref(0)
-
-const loadUnreadCounts = async () => {
-  try {
-    const msgCount = await messageService.getUnreadCount().catch(() => 0)
-    unreadMessagesCount.value = msgCount
-  } catch {
-    // Fail gracefully
-  }
-}
-
-onMounted(() => {
-  loadUnreadCounts()
-})
 
 const handleLogout = async () => {
   router.push('/login')
@@ -73,20 +56,6 @@ const toggleMobileSidebar = () => {
         <span>Layar Display</span>
       </router-link>
 
-      <!-- Messages Icon -->
-      <router-link
-        to="/admin/messages"
-        class="p-2 rounded-full text-text-secondary hover:text-dark-green hover:bg-brand-50 border border-gray-200/60 hover:border-brand-300 transition-colors hidden md:flex items-center justify-center relative cursor-pointer"
-        title="Pesan Masuk"
-      >
-        <Mail :size="17" />
-        <span
-          v-if="unreadMessagesCount > 0"
-          class="absolute -top-0.5 -right-0.5 px-1.5 py-0.2 text-[9px] font-extrabold bg-dark-green text-white rounded-full ring-2 ring-white"
-        >
-          {{ unreadMessagesCount > 99 ? '99+' : unreadMessagesCount }}
-        </span>
-      </router-link>
 
       <!-- Notifications Dropdown -->
       <NotificationDropdown />

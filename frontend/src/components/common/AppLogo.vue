@@ -35,7 +35,7 @@ const sizeClasses = computed(() => {
 </script>
 
 <template>
-  <div class="flex items-center gap-3 select-none">
+  <div :class="['flex items-center select-none min-w-0', collapsed ? 'justify-center w-full' : 'gap-2.5']">
     <!-- UPNVJ Official Emblem -->
     <div :class="['shrink-0 flex items-center justify-center', sizeClasses]">
       <img
@@ -49,10 +49,10 @@ const sizeClasses = computed(() => {
     <!-- Branding Title (Hidden when collapsed) -->
     <div v-if="showText && !collapsed" class="min-w-0 flex-1">
       <div class="flex items-center gap-1.5 leading-none">
-        <span :class="['text-base font-black tracking-tight', dark ? 'text-white' : 'text-text-primary']">Lab</span>
-        <span :class="['text-base font-black tracking-tight', dark ? 'text-amber-400' : 'text-dark-green']">Display</span>
+        <span :class="['text-base font-extrabold tracking-tight', dark ? 'text-white' : 'text-text-primary']">Lab</span>
+        <span :class="['text-base font-extrabold tracking-tight', dark ? 'text-amber-400' : 'text-dark-green']">Display</span>
       </div>
-      <p :class="['text-[10px] font-extrabold tracking-wider mt-1 truncate', dark ? 'text-emerald-200/80' : 'text-text-muted']">
+      <p :class="['text-[9.5px] font-bold tracking-tight mt-0.5 whitespace-nowrap leading-tight', dark ? 'text-emerald-200/90' : 'text-text-muted']">
         FIK UPN VETERAN JAKARTA
       </p>
     </div>

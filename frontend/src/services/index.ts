@@ -16,3 +16,8 @@ export { announcementService } from './announcement.service'
 export { displayService } from './display.service'
 export { messageService } from './message.service'
 export { notificationService } from './notification.service'
+export {
+  passwordResetService,
+  type PasswordResetRequestItem,
+  type ForgotPasswordSubmissionResponse,
+} from './password-reset.service'

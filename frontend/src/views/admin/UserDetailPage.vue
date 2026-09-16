@@ -23,8 +23,13 @@ import {
   Sparkles,
   User,
   Layers,
-  Lock
+  Lock,
+  KeyRound,
+  Copy,
+  Check,
+  RefreshCw,
 } from 'lucide-vue-next'
+import { passwordResetService } from '@/services'
 
 const route = useRoute()
 const router = useRouter()
@@ -40,6 +45,52 @@ const showDeleteConfirm = ref(false)
 const showToast = ref(false)
 const toastMessage = ref('')
 const isDeleting = ref(false)
+
+// Direct Password Reset State (Option B)
+const showDirectResetModal = ref(false)
+const newPasswordInput = ref('')
+const isResetting = ref(false)
+const resetModalSuccess = ref(false)
+const generatedPasswordResult = ref('')
+const copiedSuccess = ref(false)
+
+const openDirectResetModal = () => {
+  newPasswordInput.value = `UPNVJ#Lab${Math.floor(1000 + Math.random() * 9000)}`
+  resetModalSuccess.value = false
+  generatedPasswordResult.value = ''
+  copiedSuccess.value = false
+  showDirectResetModal.value = true
+}
+
+const generateRandomPassword = () => {
+  newPasswordInput.value = `UPNVJ#Lab${Math.floor(1000 + Math.random() * 9000)}`
+}
+
+const handleDirectReset = async () => {
+  if (!newPasswordInput.value || newPasswordInput.value.length < 6) return
+  isResetting.value = true
+  try {
+    const res = await passwordResetService.directResetPassword(userId, newPasswordInput.value)
+    generatedPasswordResult.value = res.tempPassword || newPasswordInput.value
+    resetModalSuccess.value = true
+    toastMessage.value = res.message
+    showToast.value = true
+  } catch (err: any) {
+    errorMessage.value = err.message || 'Gagal mereset kata sandi'
+  } finally {
+    isResetting.value = false
+  }
+}
+
+const copyDirectPassword = async () => {
+  try {
+    await navigator.clipboard.writeText(generatedPasswordResult.value)
+    copiedSuccess.value = true
+    setTimeout(() => { copiedSuccess.value = false }, 3000)
+  } catch (e) {
+    console.error('Copy failed', e)
+  }
+}
 
 const loadUserDetail = async () => {
   isLoading.value = true
@@ -300,6 +351,13 @@ const handleDelete = async () => {
             <span>Ubah Profil Pengguna</span>
           </button>
           <button
+            @click="openDirectResetModal"
+            class="w-full py-2.5 px-4 rounded-xl border border-amber-300 bg-amber-50/70 hover:bg-amber-100/80 text-amber-900 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <KeyRound :size="14" class="text-amber-700" />
+            <span>Reset Kata Sandi Akun</span>
+          </button>
+          <button
             @click="showDeleteConfirm = true"
             class="w-full py-2.5 px-4 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
@@ -378,6 +436,116 @@ const handleDelete = async () => {
             {{ isDeleting ? 'Menghapus...' : 'Hapus Pengguna' }}
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Direct Reset Password Modal Dialog (Option B) -->
+    <div
+      v-if="showDirectResetModal"
+      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+      @click.self="showDirectResetModal = false"
+    >
+      <div class="bg-white rounded-3xl border border-gray-200 shadow-2xl w-full max-w-md overflow-hidden p-6 space-y-4 text-xs animate-in zoom-in-95 duration-150 relative">
+        <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-dark-green via-amber-400 to-dark-green" />
+
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+              <KeyRound :size="20" stroke-width="2.2" />
+            </div>
+            <div>
+              <h3 class="text-base font-black text-text-primary">Reset Kata Sandi Akun</h3>
+              <p class="text-[11px] text-text-muted mt-0.5">Tetapkan kata sandi baru untuk <strong>{{ user.fullName }}</strong></p>
+            </div>
+          </div>
+          <button
+            @click="showDirectResetModal = false"
+            class="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+          >
+            <X :size="16" />
+          </button>
+        </div>
+
+        <!-- Success Result View -->
+        <div v-if="resetModalSuccess" class="space-y-4 py-2">
+          <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+            <div class="flex items-center gap-2 text-emerald-800 font-bold text-xs">
+              <CheckCircle2 :size="16" class="text-emerald-600" />
+              <span>Kata Sandi Berhasil Direset!</span>
+            </div>
+            <p class="text-[11.5px] text-emerald-900 leading-relaxed">
+              Kata sandi akun <strong>{{ user.fullName }}</strong> telah diperbarui. Silakan salin dan berikan kredensial ini kepada pemohon:
+            </p>
+            <div class="p-3 bg-white rounded-xl border border-emerald-200 flex items-center justify-between gap-2">
+              <code class="text-sm font-mono font-black text-dark-green tracking-wider">{{ generatedPasswordResult }}</code>
+              <button
+                @click="copyDirectPassword"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-dark-green font-bold text-[11px] hover:bg-emerald-100 transition-colors cursor-pointer"
+              >
+                <Check v-if="copiedSuccess" :size="13" class="text-emerald-600" />
+                <Copy v-else :size="13" />
+                <span>{{ copiedSuccess ? 'Tersalin!' : 'Salin' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <button
+            @click="showDirectResetModal = false"
+            class="w-full py-2.5 rounded-xl bg-dark-green hover:bg-primary-hover text-white font-bold transition-all cursor-pointer"
+          >
+            Selesai
+          </button>
+        </div>
+
+        <!-- Form Input View -->
+        <form v-else @submit.prevent="handleDirectReset" class="space-y-4">
+          <div class="p-3 rounded-xl bg-surface border border-gray-100 space-y-1">
+            <p class="text-[11px] text-text-muted">Email Pengguna:</p>
+            <p class="text-xs font-bold text-text-primary">{{ user.email }} ({{ user.role }})</p>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block font-bold text-text-secondary">Kata Sandi Baru / Sementara *</label>
+              <button
+                type="button"
+                @click="generateRandomPassword"
+                class="inline-flex items-center gap-1 text-[11px] font-bold text-dark-green hover:underline cursor-pointer"
+              >
+                <RefreshCw :size="11" />
+                <span>Acak Sandi Baru</span>
+              </button>
+            </div>
+            <input
+              v-model="newPasswordInput"
+              type="text"
+              required
+              minlength="6"
+              placeholder="Masukkan kata sandi baru"
+              class="w-full px-3.5 py-2.5 bg-surface border border-gray-200 rounded-xl font-mono font-bold text-dark-green focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-all text-xs"
+              :disabled="isResetting"
+            />
+            <p class="text-[10.5px] text-text-muted mt-1">Minimal 6 karakter. Anda dapat mengacak kombinasi otomatis.</p>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              @click="showDirectResetModal = false"
+              class="px-4 py-2 rounded-xl border border-gray-200 text-text-secondary font-bold hover:bg-surface cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              :disabled="isResetting"
+              class="px-5 py-2 rounded-xl bg-dark-green hover:bg-primary-hover text-white font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <Loader2 v-if="isResetting" :size="14" class="animate-spin" />
+              <span>{{ isResetting ? 'Mereset...' : 'Terapkan Reset Sandi' }}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

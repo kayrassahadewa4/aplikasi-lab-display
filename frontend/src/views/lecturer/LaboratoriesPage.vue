@@ -199,14 +199,14 @@ const handleBookLab = (lab: LaboratoryData) => {
           <span class="text-text-muted text-[11px] font-bold uppercase tracking-wider block truncate">
             Pemeliharaan
           </span>
-          <span class="text-xl sm:text-2xl font-black text-amber-800 block">
+          <span class="text-xl sm:text-2xl font-black text-text-primary block">
             {{ summaryStats.maintenance }}
           </span>
           <span class="text-[11px] text-amber-700 font-medium block truncate">
             Kalibrasi & perbaikan alat
           </span>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 flex items-center justify-center shrink-0">
           <Wrench :size="20" stroke-width="2" />
         </div>
       </div>

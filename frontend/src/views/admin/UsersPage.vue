@@ -24,12 +24,16 @@ import {
   Calendar,
   Clock,
   UserCheck,
-  AlertTriangle
+  AlertTriangle,
+  KeyRound,
+  Copy,
+  CheckCircle2,
+  Loader2,
 } from 'lucide-vue-next'
 import type { UserData } from '@/mocks/admin-users.mock'
 import SummaryCard from '@/components/admin/SummaryCard.vue'
 import { BaseAvatar } from '@/components'
-import { userService } from '@/services'
+import { userService, passwordResetService, type PasswordResetRequestItem } from '@/services'
 
 const router = useRouter()
 const navStore = useAdminNavStore()
@@ -52,6 +56,84 @@ const totalPages = computed(() => Math.ceil(totalUsers.value / itemsPerPage.valu
 // Delete Modal State
 const showDeleteModal = ref(false)
 const selectedUserForDelete = ref<UserData | null>(null)
+
+// Password Reset Requests State (Option B)
+const showResetModal = ref(false)
+const resetRequests = ref<PasswordResetRequestItem[]>([])
+const pendingResetCount = ref(0)
+const isLoadingResetRequests = ref(false)
+const resetRequestFilter = ref<'ALL' | 'PENDING' | 'RESOLVED' | 'REJECTED'>('PENDING')
+const processingRequestId = ref<string | null>(null)
+const tempPasswordInputs = ref<Record<string, string>>({})
+const copiedPassword = ref<string | null>(null)
+
+interface ResetTab {
+  id: 'ALL' | 'PENDING' | 'RESOLVED' | 'REJECTED'
+  label: string
+  count?: number
+}
+
+const resetTabs = computed<ResetTab[]>(() => [
+  { id: 'PENDING', label: 'Menunggu Tindakan', count: pendingResetCount.value },
+  { id: 'RESOLVED', label: 'Disetujui' },
+  { id: 'REJECTED', label: 'Ditolak' },
+  { id: 'ALL', label: 'Semua Tiket' },
+])
+
+const loadResetRequests = async () => {
+  try {
+    const statusParam = resetRequestFilter.value === 'ALL' ? undefined : resetRequestFilter.value
+    const data = await passwordResetService.getResetRequests(statusParam)
+    resetRequests.value = data.requests
+    pendingResetCount.value = data.pendingCount
+
+    for (const req of data.requests) {
+      if (req.status === 'PENDING' && !tempPasswordInputs.value[req.id]) {
+        tempPasswordInputs.value[req.id] = `UPNVJ#Lab${Math.floor(1000 + Math.random() * 9000)}`
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load reset requests:', err)
+  }
+}
+
+const openResetRequestsModal = async () => {
+  showResetModal.value = true
+  isLoadingResetRequests.value = true
+  try {
+    await loadResetRequests()
+  } finally {
+    isLoadingResetRequests.value = false
+  }
+}
+
+const handleResolveRequest = async (id: string, action: 'APPROVE' | 'REJECT') => {
+  processingRequestId.value = id
+  errorMessage.value = ''
+  try {
+    const tempPass = action === 'APPROVE' ? tempPasswordInputs.value[id] : undefined
+    const res = await passwordResetService.resolveResetRequest(id, action, tempPass)
+    successMessage.value = res.message
+    await loadResetRequests()
+    await loadUsers()
+  } catch (err: any) {
+    errorMessage.value = err.message || 'Gagal memproses permohonan reset sandi'
+  } finally {
+    processingRequestId.value = null
+  }
+}
+
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    copiedPassword.value = text
+    setTimeout(() => {
+      if (copiedPassword.value === text) copiedPassword.value = null
+    }, 3000)
+  } catch (e) {
+    console.error('Copy failed', e)
+  }
+}
 
 // Summary Cards Metrics (will be computed from actual data)
 const totalUsersCount = computed(() => totalUsers.value)
@@ -95,7 +177,7 @@ onMounted(async () => {
     { label: 'Dashboard', path: '/admin' },
     { label: 'Pengguna' },
   ])
-  await loadUsers()
+  await Promise.all([loadUsers(), loadResetRequests()])
 })
 
 // Filtered Users List (now handled by backend, so this is just for client-side role filtering)
@@ -214,8 +296,24 @@ const confirmDeleteUser = async () => {
         </p>
       </div>
 
-      <!-- Primary Action CTA Button Navigating to Dedicated Create Page -->
-      <div class="self-start sm:self-auto shrink-0">
+      <!-- Primary Action CTA Buttons -->
+      <div class="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+        <!-- Password Reset Requests Button with Pending Badge -->
+        <button
+          @click="openResetRequestsModal"
+          class="relative inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-amber-300/80 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-black shadow-2xs transition-all duration-150 cursor-pointer active:scale-95"
+          title="Lihat antrean permohonan reset kata sandi"
+        >
+          <KeyRound :size="15" class="text-amber-700" />
+          <span>Tiket Reset Sandi</span>
+          <span
+            v-if="pendingResetCount > 0"
+            class="px-2 py-0.5 rounded-full bg-amber-500 text-white font-extrabold text-[10px] shadow-xs animate-pulse"
+          >
+            {{ pendingResetCount }} Baru
+          </span>
+        </button>
+
         <button
           @click="navigateToCreate"
           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-dark-green to-[#1b703d] hover:from-[#094726] hover:to-dark-green text-white text-xs font-black shadow-sm hover:shadow-md transition-all duration-150 cursor-pointer active:scale-95"
@@ -477,6 +575,210 @@ const confirmDeleteUser = async () => {
             class="px-4 py-2 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer"
           >
             Ya, Hapus Pengguna
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Reset Requests Modal Dialog (Option B) -->
+    <div
+      v-if="showResetModal"
+      class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+      @click.self="showResetModal = false"
+    >
+      <div class="bg-white rounded-3xl border border-gray-200 shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-150">
+        <!-- Top Institutional Bar -->
+        <div class="h-1 bg-gradient-to-r from-dark-green via-amber-400 to-dark-green shrink-0" />
+
+        <!-- Header -->
+        <div class="p-5 sm:p-6 border-b border-gray-100 flex items-start justify-between gap-4 shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center shrink-0">
+              <KeyRound :size="20" stroke-width="2.2" />
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-base sm:text-lg font-black text-text-primary tracking-tight">Antrean Permohonan Reset Kata Sandi</h3>
+                <span
+                  v-if="pendingResetCount > 0"
+                  class="px-2 py-0.5 rounded-full bg-amber-500 text-white font-extrabold text-[10px]"
+                >
+                  {{ pendingResetCount }} Pending
+                </span>
+              </div>
+              <p class="text-xs text-text-muted mt-0.5">Dosen dan Staf Laboran yang mengajukan pemulihan akses akun.</p>
+            </div>
+          </div>
+          <button
+            @click="showResetModal = false"
+            class="p-1.5 rounded-xl text-text-muted hover:text-text-primary hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
+            title="Tutup"
+          >
+            <X :size="18" />
+          </button>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="px-5 sm:px-6 pt-3 pb-2 border-b border-gray-100 flex items-center gap-1.5 bg-surface/50 shrink-0 text-xs">
+          <button
+            v-for="tab in resetTabs"
+            :key="tab.id"
+            @click="() => { resetRequestFilter = tab.id; loadResetRequests(); }"
+            :class="[
+              'px-3 py-1.5 rounded-full font-bold transition-all cursor-pointer flex items-center gap-1.5',
+              resetRequestFilter === tab.id
+                ? 'bg-dark-green text-white shadow-2xs'
+                : 'text-text-secondary hover:bg-white hover:text-text-primary'
+            ]"
+          >
+            <span>{{ tab.label }}</span>
+            <span
+              v-if="tab.count !== undefined && tab.count > 0"
+              :class="[
+                'px-1.5 py-0.2 rounded-full text-[10px] font-extrabold',
+                resetRequestFilter === tab.id ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
+              ]"
+            >
+              {{ tab.count }}
+            </span>
+          </button>
+        </div>
+
+        <!-- Content List -->
+        <div class="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+          <div v-if="isLoadingResetRequests" class="flex items-center justify-center py-12">
+            <Loader2 :size="24" class="animate-spin text-dark-green" />
+            <span class="ml-2 text-xs font-bold text-text-muted">Memuat antrean tiket...</span>
+          </div>
+
+          <div v-else-if="resetRequests.length === 0" class="text-center py-12 space-y-2">
+            <div class="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto">
+              <CheckCircle2 :size="24" />
+            </div>
+            <p class="text-xs font-bold text-text-primary">Tidak Ada Permohonan</p>
+            <p class="text-[11px] text-text-muted">Saat ini tidak ada permohonan reset sandi dengan status yang dipilih.</p>
+          </div>
+
+          <div
+            v-else
+            v-for="req in resetRequests"
+            :key="req.id"
+            class="p-4 rounded-2xl border border-gray-200 bg-white hover:border-brand-200 transition-all shadow-2xs space-y-3"
+          >
+            <!-- Request Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-3">
+                <BaseAvatar
+                  :name="req.full_name"
+                  size="md"
+                  class="shrink-0 ring-1 ring-gray-100"
+                />
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-xs font-black text-text-primary">{{ req.full_name }}</h4>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-dark-green border border-brand-200/60">
+                      {{ req.role_code === 'DOSEN' ? 'Dosen' : (req.role_code === 'LABORAN' ? 'Laboran' : req.role_code) }}
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-text-muted mt-0.5">{{ req.email }}</p>
+                </div>
+              </div>
+
+              <!-- Status Badge -->
+              <div class="self-start sm:self-auto shrink-0">
+                <span
+                  v-if="req.status === 'PENDING'"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-700 border border-amber-200"
+                >
+                  <Clock :size="12" />
+                  <span>Menunggu Tindakan</span>
+                </span>
+                <span
+                  v-else-if="req.status === 'RESOLVED'"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                >
+                  <CheckCircle2 :size="12" />
+                  <span>Disetujui</span>
+                </span>
+                <span
+                  v-else
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold bg-gray-100 text-text-muted border border-gray-200"
+                >
+                  <X :size="12" />
+                  <span>Ditolak</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- Notes if any -->
+            <div v-if="req.notes" class="p-2.5 rounded-xl bg-surface/80 border border-gray-100 text-[11.5px] text-text-secondary leading-relaxed">
+              <span class="font-bold text-dark-green mr-1">Catatan:</span>
+              <span>"{{ req.notes }}"</span>
+            </div>
+
+            <!-- If RESOLVED: show temporary password generated -->
+            <div
+              v-if="req.status === 'RESOLVED' && req.temp_password"
+              class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+            >
+              <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Kata Sandi Sementara Ditetapkan</p>
+                <code class="text-xs font-mono font-black text-dark-green tracking-wide">{{ req.temp_password }}</code>
+              </div>
+              <button
+                @click="copyToClipboard(req.temp_password)"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-emerald-200 text-dark-green text-[11px] font-bold hover:bg-emerald-50 transition-colors cursor-pointer self-start sm:self-auto"
+              >
+                <Check v-if="copiedPassword === req.temp_password" :size="12" class="text-emerald-600" />
+                <Copy v-else :size="12" />
+                <span>{{ copiedPassword === req.temp_password ? 'Tersalin!' : 'Salin Sandi' }}</span>
+              </button>
+            </div>
+
+            <!-- Action Controls for PENDING -->
+            <div
+              v-if="req.status === 'PENDING'"
+              class="pt-2 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
+            >
+              <div class="flex items-center gap-2 flex-1 max-w-xs">
+                <label class="text-[11px] font-bold text-text-muted shrink-0">Sandi Baru:</label>
+                <input
+                  v-model="tempPasswordInputs[req.id]"
+                  type="text"
+                  placeholder="Kata sandi sementara"
+                  class="w-full px-2.5 py-1.5 bg-surface border border-gray-200 rounded-lg text-xs font-mono font-bold text-dark-green focus:outline-none focus:ring-1 focus:ring-dark-green focus:bg-white"
+                />
+              </div>
+
+              <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                <button
+                  @click="handleResolveRequest(req.id, 'REJECT')"
+                  :disabled="processingRequestId === req.id"
+                  class="px-3 py-1.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-bold transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Tolak
+                </button>
+                <button
+                  @click="handleResolveRequest(req.id, 'APPROVE')"
+                  :disabled="processingRequestId === req.id"
+                  class="px-3.5 py-1.5 rounded-xl bg-dark-green hover:bg-primary-hover text-white font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Loader2 v-if="processingRequestId === req.id" :size="13" class="animate-spin" />
+                  <Check v-else :size="13" />
+                  <span>Setujui & Terapkan</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 border-t border-gray-100 bg-surface/50 flex justify-end shrink-0">
+          <button
+            @click="showResetModal = false"
+            class="px-4 py-2 rounded-xl bg-white border border-gray-200 text-text-secondary text-xs font-bold hover:bg-gray-50 transition-colors cursor-pointer"
+          >
+            Tutup
           </button>
         </div>
       </div>

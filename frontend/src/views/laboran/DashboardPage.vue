@@ -136,6 +136,30 @@ const formattedCurrentDate = computed(() => {
   return formatDate(new Date(), true)
 })
 
+// Current Academic Session Phase (Pagi, Siang, Sore, Malam)
+const currentSessionPhase = computed(() => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Jakarta',
+      hour: '2-digit',
+      hour12: false,
+    })
+    const h = parseInt(formatter.format(new Date()), 10)
+    if (h >= 6 && h < 11) {
+      return { label: 'Sesi Pagi', period: '07:00 – 11:00 WIB' }
+    }
+    if (h >= 11 && h < 15) {
+      return { label: 'Sesi Siang', period: '11:00 – 15:00 WIB' }
+    }
+    if (h >= 15 && h < 18) {
+      return { label: 'Sesi Sore', period: '15:00 – 18:00 WIB' }
+    }
+    return { label: 'Sesi Malam', period: '18:00 – 21:00 WIB' }
+  } catch {
+    return { label: 'Sesi Operasional', period: '07:00 – 21:00 WIB' }
+  }
+})
+
 // Reactive Datasets
 const summary = ref<DashboardSummaryDto | null>(null)
 const todaySchedules = ref<ScheduleData[]>([])
@@ -314,10 +338,10 @@ const navigateTo = (path: string) => {
 
           <div class="space-y-1.5">
             <div class="flex flex-wrap items-center gap-2">
-              <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
+              <h1 class="text-xl sm:text-2xl font-bold text-white leading-tight">
                 Selamat Datang, {{ laboranDisplayName }}!
               </h1>
-              <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-emerald-950 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-emerald-950 text-[10px] font-bold uppercase tracking-wide shadow-2xs">
                 Laboran On Duty
               </span>
             </div>
@@ -326,15 +350,20 @@ const navigateTo = (path: string) => {
               Staff Laboratorium Komputer • FIK UPN Veteran Jakarta
             </p>
 
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-[11px] text-emerald-200/90 font-semibold">
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1 text-[11px] text-emerald-200/90 font-semibold">
               <span class="inline-flex items-center gap-1.5">
                 <Calendar :size="12" class="text-amber-400" />
                 <span>{{ formattedCurrentDate }}</span>
               </span>
               <span>•</span>
-              <span class="inline-flex items-center gap-1.5 font-mono">
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/25 border border-white/15 font-mono text-white text-xs font-bold shadow-inner">
                 <Clock :size="12" class="text-emerald-300" />
                 <span>{{ liveTimeStr || 'WIB' }}</span>
+              </span>
+              <span>•</span>
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-emerald-500/25 text-emerald-100 border border-emerald-400/40 text-[10px] font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span>{{ currentSessionPhase.label }} ({{ currentSessionPhase.period }})</span>
               </span>
             </div>
           </div>
@@ -344,7 +373,7 @@ const navigateTo = (path: string) => {
         <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 self-start lg:self-center">
           <button
             @click="navigateTo('/laboran/room-usage')"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-black shadow-md shadow-black/10 transition-all duration-150 cursor-pointer active:scale-95"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-bold shadow-md shadow-black/10 transition-all duration-150 cursor-pointer active:scale-95"
           >
             <Plus :size="15" stroke-width="2.5" />
             <span>Log Check-In Ruang</span>
@@ -371,33 +400,43 @@ const navigateTo = (path: string) => {
       </div>
 
       <!-- Quick Metrics Ribbon inside Hero -->
-      <div class="mt-6 pt-5 border-t border-emerald-800/40 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs relative z-10">
+      <div class="mt-6 pt-5 border-t border-emerald-800/40 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs relative z-10">
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Lab Siap Digunakan</span>
-          <p class="text-lg font-black text-white">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Lab Siap Digunakan</span>
+          <p class="text-lg font-bold text-white">
             {{ laboratories.filter(l => l.status === 'Active' && !isLabInUse(l.id)).length }}
             <span class="text-xs font-normal text-emerald-200/70">/ {{ laboratories.length }} Lab</span>
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Sesi Berlangsung</span>
-          <p class="text-lg font-black text-amber-300">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Sesi Berlangsung</span>
+          <p class="text-lg font-bold text-amber-300">
             {{ activeUsages.length }} Sesi Aktif
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Jadwal Kelas Hari Ini</span>
-          <p class="text-lg font-black text-white">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Jadwal Kelas Hari Ini</span>
+          <p class="text-lg font-bold text-white">
             {{ todaySchedules.length }} Mata Kuliah
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Antrean Permohonan</span>
-          <p class="text-lg font-black" :class="pendingRequests.length > 0 ? 'text-amber-300' : 'text-emerald-200'">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Antrean Permohonan</span>
+          <p class="text-lg font-bold" :class="pendingRequests.length > 0 ? 'text-amber-300' : 'text-emerald-200'">
             {{ pendingRequests.length }} Surat Masuk
+          </p>
+        </div>
+
+        <div class="space-y-0.5 col-span-2 sm:col-span-1">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Checklist Shift</span>
+          <p class="text-lg font-bold text-emerald-200 flex items-center gap-1.5">
+            <span>{{ completedTasksCount }}/{{ dailyTasks.length }}</span>
+            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/10 text-emerald-100 border border-white/15 font-mono">
+              {{ checklistProgressPercent }}%
+            </span>
           </p>
         </div>
       </div>
@@ -431,10 +470,104 @@ const navigateTo = (path: string) => {
       </button>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="py-16 text-center">
-      <Loader2 :size="32" class="mx-auto text-dark-green animate-spin mb-3" />
-      <p class="text-xs text-text-muted font-medium">Memuat data operasional laboratorium...</p>
+    <!-- 2. HIGH-FIDELITY DASHBOARD SKELETON SHIMMER (ZERO CLS) -->
+    <div v-if="isLoading" class="space-y-6 animate-pulse select-none">
+      <!-- Top 4 KPI Skeleton Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div v-for="i in 4" :key="`sk-dash-kpi-${i}`" class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-2xs space-y-3 min-h-[142px]">
+          <div class="flex justify-between items-center">
+            <div class="w-10 h-10 rounded-xl bg-gray-200/70" />
+            <div class="h-4 bg-gray-100 rounded-full w-20" />
+          </div>
+          <div class="space-y-1.5 pt-2">
+            <div class="h-3 bg-gray-100 rounded w-28" />
+            <div class="h-7 bg-gray-200/80 rounded w-36" />
+          </div>
+          <div class="h-1.5 bg-gray-100 rounded-full w-full mt-2" />
+        </div>
+      </div>
+
+      <!-- Main Content Split Skeleton -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left Column (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+          <!-- Timetable Stream Skeleton -->
+          <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-2xs space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div class="space-y-1.5">
+                <div class="h-4 bg-gray-200/80 rounded w-44" />
+                <div class="h-3 bg-gray-100 rounded w-64" />
+              </div>
+              <div class="h-6 bg-gray-100 rounded-full w-24" />
+            </div>
+            <div class="space-y-3">
+              <div v-for="i in 3" :key="`sk-dash-sched-${i}`" class="p-3.5 rounded-xl border border-gray-100 bg-surface/40 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-gray-200/70 shrink-0" />
+                  <div class="space-y-1.5">
+                    <div class="h-3.5 bg-gray-200/80 rounded w-36" />
+                    <div class="h-3 bg-gray-100 rounded w-48" />
+                  </div>
+                </div>
+                <div class="h-7 bg-gray-200/70 rounded-xl w-20 shrink-0" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Laboratories Catalog Grid Skeleton -->
+          <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-2xs space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div class="space-y-1.5">
+                <div class="h-4 bg-gray-200/80 rounded w-48" />
+                <div class="h-3 bg-gray-100 rounded w-56" />
+              </div>
+              <div class="h-6 bg-emerald-100/60 rounded-full w-20" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div v-for="i in 4" :key="`sk-dash-lab-${i}`" class="p-4 rounded-xl border border-gray-100 bg-surface/30 space-y-2.5">
+                <div class="flex justify-between items-center">
+                  <div class="h-4 bg-gray-200/80 rounded w-16" />
+                  <div class="h-4 bg-emerald-100/70 rounded-full w-20" />
+                </div>
+                <div class="h-4 bg-gray-200/80 rounded w-32" />
+                <div class="h-3 bg-gray-100 rounded w-24" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column (5 cols) -->
+        <div class="lg:col-span-5 space-y-5">
+          <!-- Shift Checklist Skeleton -->
+          <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-2xs space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-gray-200/70" />
+                <div class="space-y-1">
+                  <div class="h-3.5 bg-gray-200/80 rounded w-32" />
+                  <div class="h-2.5 bg-gray-100 rounded w-24" />
+                </div>
+              </div>
+              <div class="h-4 bg-gray-200/80 rounded w-10" />
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full w-full" />
+            <div class="space-y-2">
+              <div v-for="i in 4" :key="`sk-dash-task-${i}`" class="p-2.5 rounded-xl border border-gray-100 bg-surface/40 flex items-center gap-3">
+                <div class="w-5 h-5 rounded-lg bg-gray-200/70 shrink-0" />
+                <div class="h-3 bg-gray-200/80 rounded flex-1" />
+                <div class="h-3 bg-gray-100 rounded w-12 shrink-0" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Spotlight Session Skeleton -->
+          <div class="p-5 rounded-2xl bg-emerald-900/20 border border-emerald-800/30 space-y-3">
+            <div class="h-4 bg-emerald-700/30 rounded w-36" />
+            <div class="h-5 bg-emerald-700/40 rounded w-48" />
+            <div class="h-3 bg-emerald-700/20 rounded w-32" />
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Dashboard Content -->
@@ -457,22 +590,22 @@ const navigateTo = (path: string) => {
             <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-dark-green border border-emerald-200/80 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
               <Radio :size="20" class="animate-pulse" />
             </div>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-dark-green text-[10px] font-black tracking-wider border border-emerald-200">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-dark-green text-[10px] font-bold tracking-wide border border-emerald-200">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
               LIVE MONITOR
             </span>
           </div>
 
           <div class="my-3.5 space-y-1 relative z-10">
-            <p class="text-[10.5px] font-black text-text-muted uppercase tracking-wider group-hover:text-dark-green transition-colors">
+            <p class="text-xs font-bold text-text-muted uppercase tracking-wide group-hover:text-dark-green transition-colors">
               Okupansi Laboratorium
             </p>
             <div class="flex items-baseline gap-2">
-              <span class="text-2xl sm:text-3xl font-black text-text-primary">
+              <span class="text-2xl sm:text-3xl font-extrabold text-text-primary">
                 {{ laboratories.filter(l => isLabInUse(l.id)).length }}
-                <span class="text-sm font-bold text-text-muted">/ {{ laboratories.length }} Ruang</span>
+                <span class="text-sm font-semibold text-text-muted">/ {{ laboratories.length }} Ruang</span>
               </span>
-              <span class="text-xs font-black text-dark-green font-mono">({{ occupancyPercentage }}%)</span>
+              <span class="text-xs font-bold text-dark-green font-mono">({{ occupancyPercentage }}%)</span>
             </div>
           </div>
 
@@ -503,18 +636,18 @@ const navigateTo = (path: string) => {
             <div class="w-11 h-11 rounded-2xl bg-teal-50 text-teal-700 border border-teal-200/80 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
               <Clock :size="20" />
             </div>
-            <span class="px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 text-[10px] font-extrabold border border-teal-200 font-mono">
+            <span class="px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 text-[10px] font-bold border border-teal-200 font-mono">
               HARI INI
             </span>
           </div>
 
           <div class="my-3.5 space-y-1 relative z-10">
-            <p class="text-[10.5px] font-black text-text-muted uppercase tracking-wider group-hover:text-dark-green transition-colors">
+            <p class="text-xs font-bold text-text-muted uppercase tracking-wide group-hover:text-dark-green transition-colors">
               Beban Praktikum Harian
             </p>
             <div class="flex items-baseline gap-2">
-              <span class="text-2xl sm:text-3xl font-black text-text-primary">{{ todaySchedules.length }}</span>
-              <span class="text-xs font-bold text-text-muted">Sesi ({{ totalPracticumHours }} Jam)</span>
+              <span class="text-2xl sm:text-3xl font-extrabold text-text-primary">{{ todaySchedules.length }}</span>
+              <span class="text-xs font-semibold text-text-muted">Sesi ({{ totalPracticumHours }} Jam)</span>
             </div>
           </div>
 
@@ -541,7 +674,7 @@ const navigateTo = (path: string) => {
             </div>
             <span
               v-if="pendingRequests.length > 0"
-              class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300 animate-bounce shadow-2xs"
+              class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold border border-amber-300 animate-bounce shadow-2xs"
             >
               {{ pendingRequests.length }} BUTUH TINJAUAN
             </span>
@@ -551,12 +684,12 @@ const navigateTo = (path: string) => {
           </div>
 
           <div class="my-3.5 space-y-1 relative z-10">
-            <p class="text-[10.5px] font-black text-text-muted uppercase tracking-wider group-hover:text-dark-green transition-colors">
+            <p class="text-xs font-bold text-text-muted uppercase tracking-wide group-hover:text-dark-green transition-colors">
               Permohonan Pinjam Lab
             </p>
             <div class="flex items-baseline gap-2">
-              <span class="text-2xl sm:text-3xl font-black text-text-primary">{{ pendingRequests.length }}</span>
-              <span class="text-xs font-extrabold text-amber-700">Menunggu Respon</span>
+              <span class="text-2xl sm:text-3xl font-extrabold text-text-primary">{{ pendingRequests.length }}</span>
+              <span class="text-xs font-bold text-amber-700">Menunggu Respon</span>
             </div>
           </div>
 
@@ -578,18 +711,18 @@ const navigateTo = (path: string) => {
             <div class="w-11 h-11 rounded-2xl bg-brand-50 text-dark-green border border-brand-200 flex items-center justify-center shadow-2xs group-hover:scale-110 transition-transform">
               <MonitorCheck :size="20" />
             </div>
-            <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-dark-green text-[10px] font-extrabold border border-emerald-200">
+            <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-dark-green text-[10px] font-bold border border-emerald-200">
               98% PC SIAP
             </span>
           </div>
 
           <div class="my-3.5 space-y-1 relative z-10">
-            <p class="text-[10.5px] font-black text-text-muted uppercase tracking-wider group-hover:text-dark-green transition-colors">
+            <p class="text-xs font-bold text-text-muted uppercase tracking-wide group-hover:text-dark-green transition-colors">
               Kapasitas Perangkat Lab
             </p>
             <div class="flex items-baseline gap-2">
-              <span class="text-2xl sm:text-3xl font-black text-text-primary">{{ totalWorkstations }}</span>
-              <span class="text-xs font-bold text-text-muted">Unit Komputer</span>
+              <span class="text-2xl sm:text-3xl font-extrabold text-text-primary">{{ totalWorkstations }}</span>
+              <span class="text-xs font-semibold text-text-muted">Unit Komputer</span>
             </div>
           </div>
 
@@ -686,8 +819,8 @@ const navigateTo = (path: string) => {
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3.5">
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="text-base font-black text-text-primary tracking-tight">Jadwal Praktikum Hari Ini</h3>
-                  <span class="px-2.5 py-0.5 rounded-full bg-brand-100 text-dark-green text-[10px] font-black">
+                  <h3 class="text-base font-bold text-text-primary">Jadwal Praktikum Hari Ini</h3>
+                  <span class="px-2.5 py-0.5 rounded-full bg-brand-100 text-dark-green text-[10px] font-bold">
                     {{ filteredSchedules.length }} Sesi
                   </span>
                 </div>
@@ -753,8 +886,8 @@ const navigateTo = (path: string) => {
                 <div class="flex items-start gap-3.5">
                   <!-- Time Pillar Box -->
                   <div class="px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-center shrink-0 shadow-2xs group-hover:border-dark-green/40 transition-colors">
-                    <span class="text-xs font-black text-dark-green block">{{ item.startTime }} – {{ item.endTime }}</span>
-                    <span class="text-[10px] font-bold text-text-muted uppercase tracking-wider block mt-0.5">
+                    <span class="text-xs font-bold font-mono text-dark-green block">{{ item.startTime }} – {{ item.endTime }}</span>
+                    <span class="text-[10px] font-semibold text-text-muted uppercase tracking-wide block mt-0.5">
                       {{ getSessionDuration(item.startTime, item.endTime) }}
                     </span>
                   </div>
@@ -762,7 +895,7 @@ const navigateTo = (path: string) => {
                   <!-- Course & Instructor Metadata -->
                   <div class="space-y-1">
                     <div class="flex flex-wrap items-center gap-2">
-                      <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-dark-green text-[10.5px] font-mono font-extrabold border border-emerald-200/60">
+                      <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-dark-green text-[10px] font-mono font-bold border border-emerald-200/60">
                         {{ item.laboratoryCode }}
                       </span>
                       <span class="text-xs font-bold text-text-primary">
@@ -770,14 +903,14 @@ const navigateTo = (path: string) => {
                       </span>
                     </div>
 
-                    <h4 class="text-sm font-black text-text-primary tracking-tight group-hover:text-dark-green transition-colors">
+                    <h4 class="text-sm font-bold text-text-primary group-hover:text-dark-green transition-colors">
                       {{ item.courseName }}
                     </h4>
 
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-text-muted font-medium">
-                      <span>Dosen: <strong class="text-text-primary">{{ item.lecturerName }}</strong></span>
+                      <span>Dosen: <strong class="text-text-primary font-semibold">{{ item.lecturerName }}</strong></span>
                       <span>•</span>
-                      <span>Kelas: <strong class="text-text-primary">{{ item.className }}</strong></span>
+                      <span>Kelas: <strong class="text-text-primary font-semibold">{{ item.className }}</strong></span>
                     </div>
                   </div>
                 </div>
@@ -786,7 +919,7 @@ const navigateTo = (path: string) => {
                 <div class="flex items-center gap-2.5 self-end sm:self-auto shrink-0">
                   <span
                     :class="[
-                      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-extrabold border select-none',
+                      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border select-none',
                       getScheduleStatus(item) === 'ACTIVE'
                         ? 'bg-emerald-50 border-emerald-300 text-dark-green shadow-2xs'
                         : getScheduleStatus(item) === 'SCHEDULED'
@@ -830,10 +963,10 @@ const navigateTo = (path: string) => {
           <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200/80 shadow-2xs space-y-4">
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
               <div>
-                <h3 class="text-base font-black text-text-primary tracking-tight">Katalog Ruangan Laboratorium</h3>
+                <h3 class="text-base font-bold text-text-primary">Katalog Ruangan Laboratorium</h3>
                 <p class="text-xs text-text-muted">Ketersediaan instan & status fisik setiap lab komputer.</p>
               </div>
-              <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-dark-green border border-emerald-200 text-xs font-black">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-dark-green border border-emerald-200 text-xs font-bold">
                 {{ laboratories.length }} Ruangan
               </span>
             </div>
@@ -846,12 +979,12 @@ const navigateTo = (path: string) => {
                 class="p-4 rounded-xl border border-gray-100 bg-surface/30 hover:bg-brand-50/50 hover:border-dark-green/40 hover:shadow-xs transition-all duration-200 cursor-pointer space-y-2 group"
               >
                 <div class="flex items-center justify-between">
-                  <span class="font-mono text-xs font-black text-text-primary px-2 py-0.5 bg-white rounded-md border border-gray-200/80 group-hover:border-dark-green transition-colors">
+                  <span class="font-mono text-xs font-bold text-text-primary px-2 py-0.5 bg-white rounded-md border border-gray-200/80 group-hover:border-dark-green transition-colors">
                     {{ lab.code }}
                   </span>
                   <span
                     :class="[
-                      'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold border',
+                      'inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border',
                       isLabInUse(lab.id)
                         ? 'bg-rose-50 text-rose-700 border-rose-200'
                         : lab.status === 'Active'
@@ -870,11 +1003,11 @@ const navigateTo = (path: string) => {
                 </div>
 
                 <div>
-                  <h4 class="text-xs font-black text-text-primary group-hover:text-dark-green transition-colors truncate">
+                  <h4 class="text-xs font-bold text-text-primary group-hover:text-dark-green transition-colors truncate">
                     {{ lab.name }}
                   </h4>
                   <p class="text-[10.5px] text-text-muted mt-0.5">
-                    Kapasitas: <strong class="text-text-primary">{{ lab.maximumCapacity || 35 }} PC</strong> • {{ lab.location || 'Gedung FIK' }}
+                    Kapasitas: <strong class="text-text-primary font-semibold">{{ lab.maximumCapacity || 35 }} PC</strong> • {{ lab.location || 'Gedung FIK' }}
                   </p>
                 </div>
               </div>
@@ -894,29 +1027,38 @@ const navigateTo = (path: string) => {
                   <CheckSquare :size="16" />
                 </div>
                 <div>
-                  <h3 class="text-xs font-black uppercase tracking-wider text-text-primary">
+                  <h3 class="text-xs font-bold uppercase tracking-wide text-text-primary">
                     Checklist Shift Laboran
                   </h3>
                   <p class="text-[10px] text-text-muted">Prosedur operasional harian</p>
                 </div>
               </div>
-              <span class="text-xs font-black text-dark-green font-mono">
+              <span class="text-xs font-bold text-dark-green font-mono">
                 {{ completedTasksCount }}/{{ dailyTasks.length }}
               </span>
             </div>
 
             <!-- Progress Bar -->
             <div class="space-y-1">
-              <div class="flex items-center justify-between text-[10.5px] font-bold">
+              <div class="flex items-center justify-between text-[10.5px] font-semibold">
                 <span class="text-text-muted">Progres Hari Ini</span>
-                <span class="text-dark-green">{{ checklistProgressPercent }}%</span>
+                <span class="text-dark-green font-bold">{{ checklistProgressPercent }}%</span>
               </div>
               <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                 <div
-                  class="bg-gradient-to-r from-dark-green to-[#1b703d] h-full rounded-full transition-all duration-300"
+                  class="bg-gradient-to-r from-dark-green to-emerald-500 h-full rounded-full transition-all duration-300"
                   :style="{ width: `${checklistProgressPercent}%` }"
                 />
               </div>
+            </div>
+
+            <!-- Complete Celebration Banner -->
+            <div
+              v-if="completedTasksCount === dailyTasks.length && dailyTasks.length > 0"
+              class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-dark-green text-xs font-bold flex items-center gap-2 shadow-2xs animate-in fade-in zoom-in-95 duration-200"
+            >
+              <CheckCircle2 :size="16" class="text-emerald-600 shrink-0" />
+              <span>Seluruh Prosedur Shift Rampung Hari Ini!</span>
             </div>
 
             <!-- Checklist Items -->
@@ -925,14 +1067,14 @@ const navigateTo = (path: string) => {
                 v-for="task in dailyTasks"
                 :key="task.id"
                 @click="toggleTask(task.id)"
-                class="p-2.5 rounded-xl border border-gray-100 bg-surface/40 hover:bg-brand-50/40 transition-all cursor-pointer flex items-center gap-3 select-none"
+                class="p-2.5 rounded-xl border border-gray-100 bg-surface/40 hover:bg-brand-50/50 hover:border-emerald-200 transition-all cursor-pointer flex items-center gap-3 select-none active:scale-[0.98] group"
               >
                 <div
                   :class="[
-                    'w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition-colors',
+                    'w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200 group-hover:scale-105',
                     task.completed
-                      ? 'bg-dark-green text-white'
-                      : 'border-2 border-gray-300 hover:border-dark-green bg-white'
+                      ? 'bg-dark-green text-white shadow-2xs'
+                      : 'border-2 border-gray-300 group-hover:border-dark-green bg-white'
                   ]"
                 >
                   <Check v-if="task.completed" :size="13" stroke-width="3" />
@@ -940,14 +1082,14 @@ const navigateTo = (path: string) => {
                 <div class="min-w-0 flex-1">
                   <p
                     :class="[
-                      'text-xs font-semibold leading-snug',
-                      task.completed ? 'line-through text-text-muted' : 'text-text-primary font-bold'
+                      'text-xs leading-snug',
+                      task.completed ? 'line-through text-text-muted font-normal' : 'text-text-primary font-semibold'
                     ]"
                   >
                     {{ task.label }}
                   </p>
                 </div>
-                <span class="text-[9.5px] px-1.5 py-0.2 rounded bg-gray-100 text-text-muted font-mono font-bold shrink-0">
+                <span class="text-[9.5px] px-1.5 py-0.5 rounded bg-gray-100 text-text-muted font-mono font-semibold shrink-0">
                   {{ task.category }}
                 </span>
               </div>
@@ -963,7 +1105,7 @@ const navigateTo = (path: string) => {
             <div class="absolute -left-6 -top-6 w-24 h-24 bg-amber-400/10 rounded-full blur-xl pointer-events-none" />
 
             <div class="flex items-center justify-between relative z-10">
-              <span class="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <span class="text-[10px] font-bold uppercase tracking-wide text-amber-400 flex items-center gap-1.5">
                 <Radio :size="14" class="text-amber-400 animate-pulse" />
                 <span>Live Session Spotlight</span>
               </span>
@@ -978,7 +1120,7 @@ const navigateTo = (path: string) => {
                 <span class="inline-block px-2 py-0.5 rounded bg-white/15 text-white font-mono text-[11px] font-bold mb-1">
                   {{ activeSpotlightSession.laboratoryCode || 'LAB' }}
                 </span>
-                <h4 class="text-base font-black text-white tracking-tight leading-snug">
+                <h4 class="text-base font-bold text-white leading-snug">
                   {{ activeSpotlightSession.laboratoryName || 'Laboratorium Aktif' }}
                 </h4>
                 <p class="text-xs text-emerald-100/90 font-medium mt-0.5">
@@ -989,17 +1131,17 @@ const navigateTo = (path: string) => {
               <div class="p-3 rounded-xl bg-black/20 border border-white/10 space-y-1.5 text-xs text-emerald-100">
                 <div class="flex items-center justify-between">
                   <span class="text-[11px]">Staff Pencatat:</span>
-                  <strong class="text-white">{{ activeSpotlightSession.checkedInByName || 'Staff' }}</strong>
+                  <strong class="text-white font-semibold">{{ activeSpotlightSession.checkedInByName || 'Staff' }}</strong>
                 </div>
                 <div class="flex items-center justify-between">
                   <span class="text-[11px]">Waktu Check-In:</span>
-                  <strong class="text-white font-mono">{{ activeSpotlightSession.formattedCheckInTime || activeSpotlightSession.checkInTime || 'Aktif' }}</strong>
+                  <strong class="text-white font-mono font-semibold">{{ activeSpotlightSession.formattedCheckInTime || activeSpotlightSession.checkInTime || 'Aktif' }}</strong>
                 </div>
               </div>
 
               <button
                 @click="navigateTo(`/laboran/room-usage/${activeSpotlightSession.id}`)"
-                class="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-black shadow-sm transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5"
+                class="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-bold shadow-sm transition-all duration-150 cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <span>Kelola / Check-Out Sesi</span>
                 <ChevronRight :size="14" />
@@ -1017,7 +1159,7 @@ const navigateTo = (path: string) => {
               </div>
               <button
                 @click="navigateTo('/laboran/room-usage')"
-                class="w-full py-2.5 rounded-xl bg-white hover:bg-brand-50 text-dark-green text-xs font-black shadow-xs transition-colors cursor-pointer"
+                class="w-full py-2.5 rounded-xl bg-white hover:bg-brand-50 text-dark-green text-xs font-bold shadow-xs transition-colors cursor-pointer"
               >
                 + Catat Check-In Ruang Sekarang
               </button>
@@ -1028,12 +1170,12 @@ const navigateTo = (path: string) => {
           <div class="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-2xs space-y-3">
             <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
               <div>
-                <h3 class="text-xs font-black uppercase tracking-wider text-text-primary">
+                <h3 class="text-xs font-bold uppercase tracking-wide text-text-primary">
                   Antrean Permohonan Masuk
                 </h3>
                 <p class="text-[10px] text-text-muted">Pengajuan pinjam lab dari dosen</p>
               </div>
-              <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[10px] font-black border border-amber-200">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[10px] font-bold border border-amber-200">
                 {{ pendingRequests.length }} Menunggu
               </span>
             </div>
@@ -1045,12 +1187,12 @@ const navigateTo = (path: string) => {
                 class="py-2.5 flex items-center justify-between text-xs gap-2"
               >
                 <div class="min-w-0">
-                  <h5 class="font-extrabold text-text-primary truncate">{{ req.applicantName }}</h5>
+                  <h5 class="font-bold text-text-primary truncate">{{ req.applicantName }}</h5>
                   <p class="text-[10px] text-text-muted truncate">{{ req.laboratoryName }} · {{ req.formattedRequestDate }}</p>
                 </div>
                 <button
                   @click="navigateTo(`/laboran/room-requests/${req.id}`)"
-                  class="text-[11px] font-black text-dark-green hover:underline shrink-0"
+                  class="text-[11px] font-bold text-dark-green hover:underline shrink-0"
                 >
                   Tinjau →
                 </button>

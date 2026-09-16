@@ -285,10 +285,10 @@ const navigateTo = (path: string) => {
 
           <div class="space-y-1.5">
             <div class="flex flex-wrap items-center gap-2">
-              <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white leading-tight">
+              <h1 class="text-xl sm:text-2xl font-bold text-white leading-tight">
                 Selamat Datang, {{ lecturerDisplayName }}!
               </h1>
-              <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-emerald-950 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-emerald-950 text-[10px] font-bold uppercase tracking-wide shadow-2xs">
                 Dosen Pengampu / Pemohon Lab
               </span>
             </div>
@@ -315,7 +315,7 @@ const navigateTo = (path: string) => {
         <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 self-start lg:self-center">
           <button
             @click="navigateTo('/lecturer/room-requests/new')"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-black shadow-md shadow-black/10 transition-all duration-150 cursor-pointer active:scale-95 whitespace-nowrap"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-emerald-950 text-xs font-bold shadow-md shadow-black/10 transition-all duration-150 cursor-pointer active:scale-95 whitespace-nowrap"
           >
             <Plus :size="15" stroke-width="2.5" />
             <span>Ajukan Pinjam Lab</span>
@@ -344,30 +344,30 @@ const navigateTo = (path: string) => {
       <!-- Quick Metrics Ribbon inside Hero -->
       <div class="mt-6 pt-5 border-t border-emerald-800/40 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs relative z-10">
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Jadwal Praktikum</span>
-          <p class="text-lg font-black text-white">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Jadwal Praktikum</span>
+          <p class="text-lg font-bold text-white">
             {{ upcomingSessionsCount }}
             <span class="text-xs font-normal text-emerald-200/70">Sesi Minggu Ini</span>
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Permohonan Pending</span>
-          <p class="text-lg font-black text-amber-300">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Permohonan Pending</span>
+          <p class="text-lg font-bold text-amber-300">
             {{ pendingRequestsCount }} Menunggu Review
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Reservasi Disetujui</span>
-          <p class="text-lg font-black text-white">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Reservasi Disetujui</span>
+          <p class="text-lg font-bold text-white">
             {{ approvedRequestsCount }} Ruang Siap
           </p>
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wider block">Lab Tersedia</span>
-          <p class="text-lg font-black text-emerald-200">
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Lab Tersedia</span>
+          <p class="text-lg font-bold text-emerald-200">
             {{ availableLabsCount }} Laboratorium
           </p>
         </div>
@@ -390,10 +390,10 @@ const navigateTo = (path: string) => {
           class="bg-white p-4.5 rounded-2xl border border-gray-200/70 shadow-2xs flex items-center justify-between transition-all duration-200 ease-out group select-none hover:-translate-y-0.5 hover:bg-brand-50/20 hover:border-brand-300/80 hover:shadow-md hover:shadow-black/[0.04] cursor-pointer min-w-0"
         >
           <div class="space-y-1 min-w-0 flex-1 pr-2">
-            <span class="text-text-muted text-[11px] font-bold uppercase tracking-wider block transition-colors duration-200 group-hover:text-text-primary truncate">
+            <span class="text-text-muted text-xs font-bold uppercase tracking-wide block transition-colors duration-200 group-hover:text-text-primary truncate">
               Jadwal Praktikum Mingguan
             </span>
-            <span class="text-xl sm:text-2xl font-black text-text-primary block transition-colors duration-200 group-hover:text-dark-green">
+            <span class="text-xl sm:text-2xl font-extrabold text-text-primary block transition-colors duration-200 group-hover:text-dark-green">
               {{ upcomingSessionsCount }} Sesi
             </span>
             <span class="text-[11px] text-text-muted font-medium block truncate">
@@ -411,17 +411,17 @@ const navigateTo = (path: string) => {
           class="bg-white p-4.5 rounded-2xl border border-gray-200/70 shadow-2xs flex items-center justify-between transition-all duration-200 ease-out group select-none hover:-translate-y-0.5 hover:bg-brand-50/20 hover:border-brand-300/80 hover:shadow-md hover:shadow-black/[0.04] cursor-pointer min-w-0"
         >
           <div class="space-y-1 min-w-0 flex-1 pr-2">
-            <span class="text-text-muted text-[11px] font-bold uppercase tracking-wider block transition-colors duration-200 group-hover:text-text-primary truncate">
+            <span class="text-text-muted text-xs font-bold uppercase tracking-wide block transition-colors duration-200 group-hover:text-text-primary truncate">
               Permohonan Menunggu
             </span>
-            <span class="text-xl sm:text-2xl font-black text-amber-800 block transition-colors duration-200 group-hover:text-dark-green">
+            <span class="text-xl sm:text-2xl font-extrabold text-text-primary block transition-colors duration-200 group-hover:text-dark-green">
               {{ pendingRequestsCount }} Menunggu
             </span>
-            <span class="inline-flex items-center gap-1 text-[10.5px] text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+            <span class="inline-flex items-center gap-1 text-[10.5px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80">
               Menunggu respon staf lab
             </span>
           </div>
-          <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0 border border-amber-200/60 transition-all duration-200 group-hover:scale-105 group-hover:bg-amber-100/80">
+          <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200/80 transition-all duration-200 group-hover:scale-105 group-hover:bg-amber-100/80 group-hover:text-amber-700">
             <Clock :size="20" stroke-width="2" />
           </div>
         </div>
@@ -432,10 +432,10 @@ const navigateTo = (path: string) => {
           class="bg-white p-4.5 rounded-2xl border border-gray-200/70 shadow-2xs flex items-center justify-between transition-all duration-200 ease-out group select-none hover:-translate-y-0.5 hover:bg-brand-50/20 hover:border-brand-300/80 hover:shadow-md hover:shadow-black/[0.04] cursor-pointer min-w-0"
         >
           <div class="space-y-1 min-w-0 flex-1 pr-2">
-            <span class="text-text-muted text-[11px] font-bold uppercase tracking-wider block transition-colors duration-200 group-hover:text-text-primary truncate">
+            <span class="text-text-muted text-xs font-bold uppercase tracking-wide block transition-colors duration-200 group-hover:text-text-primary truncate">
               Reservasi Disetujui
             </span>
-            <span class="text-xl sm:text-2xl font-black text-text-primary block transition-colors duration-200 group-hover:text-dark-green">
+            <span class="text-xl sm:text-2xl font-extrabold text-text-primary block transition-colors duration-200 group-hover:text-dark-green">
               {{ approvedRequestsCount }} Disetujui
             </span>
             <span class="inline-flex items-center gap-1 text-[10.5px] text-dark-green font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
@@ -453,10 +453,10 @@ const navigateTo = (path: string) => {
           class="bg-white p-4.5 rounded-2xl border border-gray-200/70 shadow-2xs flex items-center justify-between transition-all duration-200 ease-out group select-none hover:-translate-y-0.5 hover:bg-brand-50/20 hover:border-brand-300/80 hover:shadow-md hover:shadow-black/[0.04] cursor-pointer min-w-0"
         >
           <div class="space-y-1 min-w-0 flex-1 pr-2">
-            <span class="text-text-muted text-[11px] font-bold uppercase tracking-wider block transition-colors duration-200 group-hover:text-text-primary truncate">
+            <span class="text-text-muted text-xs font-bold uppercase tracking-wide block transition-colors duration-200 group-hover:text-text-primary truncate">
               Laboratorium Tersedia
             </span>
-            <span class="text-xl sm:text-2xl font-black text-text-primary block transition-colors duration-200 group-hover:text-dark-green">
+            <span class="text-xl sm:text-2xl font-extrabold text-text-primary block transition-colors duration-200 group-hover:text-dark-green">
               {{ availableLabsCount }} Laboratorium
             </span>
             <span class="text-[11px] text-text-muted font-medium block truncate">
@@ -682,10 +682,10 @@ const navigateTo = (path: string) => {
 
             <div v-if="nextClassSpotlight" class="space-y-3">
               <div>
-                <span class="text-[11px] text-white/70 block uppercase tracking-wider font-semibold">
+                <span class="text-[11px] text-white/70 block uppercase tracking-wide font-semibold">
                   {{ nextClassSpotlight.dateLabel }} · {{ nextClassSpotlight.timeSlot }}
                 </span>
-                <h4 class="text-lg font-black text-white tracking-tight leading-tight mt-0.5">
+                <h4 class="text-lg font-bold text-white leading-tight mt-0.5">
                   {{ nextClassSpotlight.courseName }}
                 </h4>
                 <p class="text-xs text-white/90 font-medium mt-0.5">
@@ -697,7 +697,7 @@ const navigateTo = (path: string) => {
                 <div class="flex items-center gap-2">
                   <MapPin :size="15" class="text-lime-300 shrink-0" />
                   <div>
-                    <span class="font-extrabold text-white block leading-tight">{{ nextClassSpotlight.roomName }}</span>
+                    <span class="font-bold text-white block leading-tight">{{ nextClassSpotlight.roomName }}</span>
                     <span class="text-[10px] text-white/70 font-mono">{{ nextClassSpotlight.roomCode }}</span>
                   </div>
                 </div>

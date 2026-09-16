@@ -31,18 +31,27 @@ const handleMenuClick = (path?: string) => {
     ]"
   >
     <!-- Top Sidebar Header -->
-    <div class="h-16 flex items-center justify-between px-4 border-b border-emerald-800/40 shrink-0">
-      <router-link to="/admin" class="flex items-center gap-2.5 overflow-hidden">
+    <div
+      :class="[
+        'h-16 flex items-center border-b border-emerald-800/40 shrink-0 transition-all duration-300',
+        navStore.sidebarCollapsed ? 'justify-center px-0' : 'justify-between px-3.5 gap-2'
+      ]"
+    >
+      <router-link
+        to="/admin"
+        :class="[
+          'flex items-center overflow-hidden',
+          navStore.sidebarCollapsed ? 'justify-center w-full' : 'gap-2 flex-1 min-w-0'
+        ]"
+      >
         <AppLogo :size="navStore.sidebarCollapsed ? 'sm' : 'md'" :collapsed="navStore.sidebarCollapsed" dark />
       </router-link>
       
       <button
+        v-if="!navStore.sidebarCollapsed"
         @click="navStore.toggleSidebar"
-        :class="[
-          'p-1.5 rounded-lg text-emerald-200/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer',
-          navStore.sidebarCollapsed ? 'hidden' : 'block'
-        ]"
-        :aria-label="navStore.sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        class="p-1.5 rounded-lg text-emerald-200/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+        aria-label="Collapse sidebar"
       >
         <ChevronLeft :size="16" />
       </button>

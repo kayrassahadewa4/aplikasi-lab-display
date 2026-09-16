@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   Activity,
   Calendar,
@@ -7,9 +8,14 @@ import {
   MoreHorizontal,
   TrendingUp,
   CheckCircle2,
-  BarChart3
+  BarChart3,
+  FileText,
+  FlaskConical,
+  FilterX
 } from 'lucide-vue-next'
 import type { LaboratoryStatisticDto } from '@/services/dashboard.service'
+
+const router = useRouter()
 
 // Props
 interface Props {
@@ -25,9 +31,42 @@ const props = withDefaults(defineProps<Props>(), {
 // Scope Filter State
 const scopeFilter = ref<'all' | 'high_occupancy'>('all')
 const isScopeMenuOpen = ref(false)
+const isMoreMenuOpen = ref(false)
 
-// Hovered bar state for interactive chart tooltip
+// Hovered & Selected lab state for interactive chart tooltip
 const hoveredLabId = ref<string | null>(null)
+const selectedLabId = ref<string | null>(null)
+
+const toggleSelectLab = (labId: string) => {
+  if (selectedLabId.value === labId) {
+    selectedLabId.value = null
+  } else {
+    selectedLabId.value = labId
+  }
+}
+
+// Outside click listener for menus
+const handleOutsideClick = (e: MouseEvent) => {
+  const target = e.target as HTMLElement
+  if (!target.closest('.scope-filter-container')) {
+    isScopeMenuOpen.value = false
+  }
+  if (!target.closest('.more-options-container')) {
+    isMoreMenuOpen.value = false
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('click', handleOutsideClick)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('click', handleOutsideClick)
+})
+
+const navigateTo = (path: string) => {
+  router.push(path)
+}
 
 // Compute aggregate metrics
 const activeLabs = computed(() => {
@@ -51,7 +90,7 @@ const averageOccupancy = computed(() => {
   return +(total / props.laboratoryStatistics.length).toFixed(1)
 })
 
-// Displayed laboratories for the comparative bar chart
+// Displayed laboratories for the comparative chart
 const displayLaboratories = computed(() => {
   if (props.laboratoryStatistics.length === 0) return []
   let labs = [...props.laboratoryStatistics]
@@ -64,14 +103,15 @@ const displayLaboratories = computed(() => {
   return labs.slice(0, 8)
 })
 
-// Active highlighted lab (hovered lab, or default to highest occupancy lab)
+// Active highlighted lab (hovered lab, or selected lab, or default to highest occupancy lab)
 const activeHighlightedLab = computed(() => {
   if (displayLaboratories.value.length === 0) return null
-  if (hoveredLabId.value) {
-    return displayLaboratories.value.find(l => l.laboratory_id === hoveredLabId.value) || null
+  const targetId = hoveredLabId.value || selectedLabId.value
+  if (targetId) {
+    return displayLaboratories.value.find(l => l.laboratory_id === targetId) || null
   }
   // Default to highest occupancy
-  return [...displayLaboratories.value].sort((a, b) => b.occupancy_percentage - a.occupancy_percentage)[0]
+  return [...displayLaboratories.value].sort((a, b) => b.occupancy_percentage - a.occupancy_percentage)[0] || null
 })
 
 // Chart Presentation Mode ('line' default, or 'bar')
@@ -119,7 +159,53 @@ const chartPoints = computed<ChartPoint[]>(() => {
   })
 })
 
-// Compute smooth Catmull-Rom to Cubic Bezier curve path
+// Seamless continuous hitboxes across points with zero gap (no dead zones / flickering)
+interface HitBox {
+  labId: string
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+const hitBoxes = computed<HitBox[]>(() => {
+  const points = chartPoints.value
+  const n = points.length
+  if (n === 0) return []
+  if (n === 1 && points[0]) {
+    return [{
+      labId: points[0].lab.laboratory_id,
+      x: PAD_LEFT - 16,
+      y: PAD_TOP - 10,
+      width: PLOT_WIDTH + 32,
+      height: PLOT_HEIGHT + 45,
+    }]
+  }
+
+  const stepX = PLOT_WIDTH / (n - 1)
+  return points.map((pt, i) => {
+    let x = pt.x - stepX / 2
+    let width = stepX
+
+    if (i === 0) {
+      x = PAD_LEFT - 16
+      width = stepX / 2 + 16
+    } else if (i === n - 1) {
+      x = pt.x - stepX / 2
+      width = stepX / 2 + PAD_RIGHT + 16
+    }
+
+    return {
+      labId: pt.lab.laboratory_id,
+      x: +x.toFixed(2),
+      y: PAD_TOP - 10,
+      width: +width.toFixed(2),
+      height: PLOT_HEIGHT + 45,
+    }
+  })
+})
+
+// Compute smooth Catmull-Rom curve with strict baseline & ceiling clamping
 const splinePath = computed(() => {
   const points = chartPoints.value
   const first = points[0]
@@ -131,6 +217,8 @@ const splinePath = computed(() => {
 
   let d = `M ${first.x} ${first.y}`
   const lastPoint = points[points.length - 1] || first
+  const minY = PAD_TOP
+  const maxY = PAD_TOP + PLOT_HEIGHT
 
   for (let i = 0; i < points.length - 1; i++) {
     const prev = i === 0 ? first : points[i - 1]
@@ -140,10 +228,20 @@ const splinePath = computed(() => {
     const nextNext = i + 2 >= points.length ? lastPoint : points[i + 2]
     const p3 = nextNext || lastPoint
 
-    const cp1x = p1.x + (p2.x - p0.x) / 6
-    const cp1y = p1.y + (p2.y - p0.y) / 6
-    const cp2x = p2.x - (p3.x - p1.x) / 6
-    const cp2y = p2.y - (p3.y - p1.y) / 6
+    // If both points are 0% (baseline), draw a flat line to avoid dipping below 0%
+    if (p1.percentage === 0 && p2.percentage === 0) {
+      d += ` L ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`
+      continue
+    }
+
+    let cp1x = p1.x + (p2.x - p0.x) / 6
+    let cp1y = p1.y + (p2.y - p0.y) / 6
+    let cp2x = p2.x - (p3.x - p1.x) / 6
+    let cp2y = p2.y - (p3.y - p1.y) / 6
+
+    // Clamp Y values strictly within chart boundaries [minY, maxY]
+    cp1y = Math.min(Math.max(cp1y, minY), maxY)
+    cp2y = Math.min(Math.max(cp2y, minY), maxY)
 
     d += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`
   }
@@ -175,6 +273,13 @@ const activePoint = computed(() => {
   return chartPoints.value.find(p => p.lab.laboratory_id === activeHighlightedLab.value?.laboratory_id) || null
 })
 
+// Tooltip flip determination when point is high up (prevents clipping against card header)
+const isTooltipFlipped = computed(() => {
+  if (!activePoint.value) return false
+  const pctY = (activePoint.value.y / SVG_HEIGHT) * 100
+  return pctY < 32
+})
+
 // Dynamic tooltip overlay positioning
 const tooltipStyle = computed(() => {
   if (!activePoint.value) return {}
@@ -185,10 +290,12 @@ const tooltipStyle = computed(() => {
   if (pctX < 18) translateX = '-15%'
   else if (pctX > 82) translateX = '-85%'
 
+  const translateY = isTooltipFlipped.value ? '14px' : 'calc(-100% - 14px)'
+
   return {
     left: `${pctX}%`,
     top: `${pctY}%`,
-    transform: `translate(${translateX}, -100%) translateY(-14px)`,
+    transform: `translate(${translateX}, ${translateY})`,
   }
 })
 
@@ -343,32 +450,35 @@ const capacityStatus = computed(() => {
             </button>
           </div>
 
-          <!-- Scope Filter Pill Button -->
-          <div class="relative">
+          <!-- Scope Filter Pill Button with Outside Click Support -->
+          <div class="relative scope-filter-container">
             <button
-              @click="isScopeMenuOpen = !isScopeMenuOpen"
+              type="button"
+              @click.stop="isScopeMenuOpen = !isScopeMenuOpen"
               class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-gray-200 text-xs font-semibold text-text-secondary bg-white hover:bg-surface transition-all duration-150 cursor-pointer shadow-2xs"
             >
               <span>{{ scopeFilter === 'all' ? 'Semua Laboratorium' : 'Beban Tinggi (≥50%)' }}</span>
-              <ChevronDown :size="13" class="text-text-muted" />
+              <ChevronDown :size="13" class="text-text-muted transition-transform" :class="{ 'rotate-180': isScopeMenuOpen }" />
             </button>
 
             <!-- Dropdown Menu -->
             <div
               v-if="isScopeMenuOpen"
-              class="absolute right-0 top-full mt-1.5 w-44 rounded-2xl bg-white border border-gray-100 shadow-xl py-1 z-40 text-xs font-semibold"
+              class="absolute right-0 top-full mt-1.5 w-48 rounded-2xl bg-white border border-gray-100 shadow-xl py-1.5 z-40 text-xs font-semibold"
             >
               <button
+                type="button"
                 @click="scopeFilter = 'all'; isScopeMenuOpen = false"
-                class="w-full text-left px-3.5 py-2 hover:bg-brand-50/60 transition-colors flex items-center justify-between"
+                class="w-full text-left px-3.5 py-2 hover:bg-brand-50/60 transition-colors flex items-center justify-between cursor-pointer"
                 :class="scopeFilter === 'all' ? 'text-dark-green font-bold bg-brand-50/40' : 'text-text-primary'"
               >
                 <span>Semua Laboratorium</span>
                 <CheckCircle2 v-if="scopeFilter === 'all'" :size="13" class="text-dark-green" />
               </button>
               <button
+                type="button"
                 @click="scopeFilter = 'high_occupancy'; isScopeMenuOpen = false"
-                class="w-full text-left px-3.5 py-2 hover:bg-brand-50/60 transition-colors flex items-center justify-between"
+                class="w-full text-left px-3.5 py-2 hover:bg-brand-50/60 transition-colors flex items-center justify-between cursor-pointer"
                 :class="scopeFilter === 'high_occupancy' ? 'text-dark-green font-bold bg-brand-50/40' : 'text-text-primary'"
               >
                 <span>Beban Tinggi (≥50%)</span>
@@ -387,14 +497,35 @@ const capacityStatus = computed(() => {
         </div>
       </div>
 
-      <!-- Empty State -->
+      <!-- Filter Empty State (Specific message when high_occupancy returns 0) -->
+      <div
+        v-else-if="props.laboratoryStatistics.length > 0 && displayLaboratories.length === 0"
+        class="h-64 flex flex-col items-center justify-center text-center px-4"
+      >
+        <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-2.5 text-dark-green">
+          <FilterX :size="22" />
+        </div>
+        <h4 class="text-sm font-bold text-text-primary">Tidak Ada Lab dengan Beban Tinggi</h4>
+        <p class="text-xs text-text-muted mt-1 max-w-xs leading-relaxed">
+          Semua laboratorium saat ini berada di bawah batas 50% okupansi (kapasitas masih lapang).
+        </p>
+        <button
+          type="button"
+          @click="scopeFilter = 'all'"
+          class="mt-3 px-3.5 py-1.5 rounded-full bg-dark-green text-white text-xs font-bold hover:bg-dark-green/90 transition-all cursor-pointer shadow-xs"
+        >
+          Tampilkan Semua Laboratorium
+        </button>
+      </div>
+
+      <!-- General Empty State -->
       <div v-else-if="displayLaboratories.length === 0" class="h-64 flex flex-col items-center justify-center text-center">
         <div class="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center mb-3 text-dark-green">
           <Activity :size="22" />
         </div>
         <h4 class="text-sm font-bold text-text-primary">Belum Ada Data Laboratorium</h4>
         <p class="text-xs text-text-muted mt-1 max-w-xs">
-          Buat ruang laboratorium dan tambahkan jadwal untuk melihat statistik kinerja.
+          Tambahkan ruang laboratorium dan buat jadwal perkuliahan untuk memantau performa.
         </p>
       </div>
 
@@ -586,21 +717,25 @@ const capacityStatus = computed(() => {
                 {{ pt.lab.laboratory_code }}
               </text>
 
-              <!-- Transparent Hover Detection Column -->
-              <rect
-                :x="pt.x - (PLOT_WIDTH / (chartPoints.length || 1)) / 2"
-                :y="PAD_TOP - 10"
-                :width="PLOT_WIDTH / (chartPoints.length || 1)"
-                :height="PLOT_HEIGHT + 35"
-                fill="transparent"
-                class="cursor-pointer"
-                @mouseenter="hoveredLabId = pt.lab.laboratory_id"
-                @mouseleave="hoveredLabId = null"
-              />
             </g>
+
+            <!-- 6. Seamless Continuous Hitbox Slices (Zero Dead Zones & Click/Tap Selection) -->
+            <rect
+              v-for="hb in hitBoxes"
+              :key="'hb-' + hb.labId"
+              :x="hb.x"
+              :y="hb.y"
+              :width="hb.width"
+              :height="hb.height"
+              fill="transparent"
+              class="cursor-pointer"
+              @mouseenter="hoveredLabId = hb.labId"
+              @mouseleave="hoveredLabId = null"
+              @click="toggleSelectLab(hb.labId)"
+            />
           </svg>
 
-          <!-- Floating Tooltip Card (Exact match with user's mockup) -->
+          <!-- Floating Tooltip Card (Flippable when near top) -->
           <div
             v-if="activeHighlightedLab && activePoint"
             class="absolute pointer-events-none z-30 transition-all duration-200 ease-out"
@@ -631,9 +766,14 @@ const capacityStatus = computed(() => {
                 </div>
               </div>
 
-              <!-- Downward Triangular Pointer Arrow -->
+              <!-- Directional Pointer Arrow (Flipped when near top) -->
               <div
-                class="w-2.5 h-2.5 bg-white border-r border-b border-gray-100 transform rotate-45 absolute -bottom-1.5 -translate-x-1/2"
+                class="w-2.5 h-2.5 bg-white transform rotate-45 absolute"
+                :class="[
+                  isTooltipFlipped
+                    ? '-top-1.5 border-l border-t border-gray-100'
+                    : '-bottom-1.5 border-r border-b border-gray-100'
+                ]"
                 :style="tooltipArrowStyle"
               ></div>
             </div>
@@ -833,7 +973,7 @@ const capacityStatus = computed(() => {
     <!-- 2. RIGHT WIDGET: Segmented Radial Arc Gauge & Dual KPIs (4 Columns) -->
     <div class="lg:col-span-4 bg-white rounded-3xl border border-gray-200/70 shadow-2xs p-5 sm:p-6 flex flex-col justify-between">
 
-      <!-- Header Row -->
+      <!-- Header Row with Options Dropdown -->
       <div class="flex items-center justify-between pb-3 border-b border-gray-100">
         <div>
           <h3 class="text-base sm:text-lg font-black text-text-primary tracking-tight">
@@ -844,12 +984,47 @@ const capacityStatus = computed(() => {
           </p>
         </div>
 
-        <button
-          class="w-8 h-8 rounded-full hover:bg-surface text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer"
-          title="Opsi lainnya"
-        >
-          <MoreHorizontal :size="16" />
-        </button>
+        <div class="relative more-options-container">
+          <button
+            type="button"
+            @click.stop="isMoreMenuOpen = !isMoreMenuOpen"
+            class="w-8 h-8 rounded-full hover:bg-surface text-text-muted hover:text-text-primary flex items-center justify-center transition-colors cursor-pointer"
+            title="Opsi & Navigasi Cepat"
+          >
+            <MoreHorizontal :size="16" />
+          </button>
+
+          <!-- More Options Dropdown -->
+          <div
+            v-if="isMoreMenuOpen"
+            class="absolute right-0 top-full mt-1.5 w-52 rounded-2xl bg-white border border-gray-100 shadow-xl py-1.5 z-40 text-xs font-semibold"
+          >
+            <button
+              type="button"
+              @click="navigateTo('/admin/reports'); isMoreMenuOpen = false"
+              class="w-full text-left px-3.5 py-2 hover:bg-brand-50/60 transition-colors flex items-center gap-2.5 text-text-primary hover:text-dark-green cursor-pointer"
+            >
+              <FileText :size="14" class="text-emerald-600" />
+              <span>Buka Modul Laporan</span>
+            </button>
+            <button
+              type="button"
+              @click="navigateTo('/admin/schedules'); isMoreMenuOpen = false"
+              class="w-full text-left px-3.5 py-2 hover:bg-brand-50/60 transition-colors flex items-center gap-2.5 text-text-primary hover:text-dark-green cursor-pointer"
+            >
+              <Calendar :size="14" class="text-teal-600" />
+              <span>Kelola Jadwal Praktikum</span>
+            </button>
+            <button
+              type="button"
+              @click="navigateTo('/admin/laboratories'); isMoreMenuOpen = false"
+              class="w-full text-left px-3.5 py-2 hover:bg-brand-50/60 transition-colors flex items-center gap-2.5 text-text-primary hover:text-dark-green cursor-pointer"
+            >
+              <FlaskConical :size="14" class="text-emerald-600" />
+              <span>Data Laboratorium</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Segmented Radial Arc Gauge (21 Ticks, Perfectly Symmetrical) -->
@@ -910,15 +1085,19 @@ const capacityStatus = computed(() => {
         </div>
       </div>
 
-      <!-- Dual Bottom KPI Cards (Directly below Gauge) -->
+      <!-- Dual Bottom KPI Cards (Clickable Quick Navigation) -->
       <div class="grid grid-cols-2 gap-3 mt-4">
         <!-- Card 1: Active Laboratories -->
-        <div class="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50/90 via-emerald-50/20 to-slate-50/70 border border-slate-200/70 hover:border-emerald-300 hover:shadow-xs transition-all duration-300 flex flex-col justify-between space-y-2.5">
+        <div
+          @click="navigateTo('/admin/laboratories')"
+          class="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50/90 via-emerald-50/20 to-slate-50/70 border border-slate-200/70 hover:border-emerald-300 hover:shadow-xs active:scale-[0.99] transition-all duration-300 flex flex-col justify-between space-y-2.5 cursor-pointer group"
+          title="Klik untuk membuka data laboratorium"
+        >
           <div class="flex items-center justify-between">
-            <span class="text-[10px] text-slate-500 font-bold leading-tight uppercase tracking-wider">
+            <span class="text-[10px] text-slate-500 font-bold leading-tight uppercase tracking-wider group-hover:text-dark-green transition-colors">
               Lab Aktif Operasional
             </span>
-            <div class="w-6 h-6 rounded-lg bg-emerald-100/80 text-emerald-700 flex items-center justify-center">
+            <div class="w-6 h-6 rounded-lg bg-emerald-100/80 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-200/80 transition-colors">
               <Activity :size="13" />
             </div>
           </div>
@@ -943,12 +1122,16 @@ const capacityStatus = computed(() => {
         </div>
 
         <!-- Card 2: Weekly Sessions -->
-        <div class="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50/90 via-teal-50/20 to-slate-50/70 border border-slate-200/70 hover:border-teal-300 hover:shadow-xs transition-all duration-300 flex flex-col justify-between space-y-2.5">
+        <div
+          @click="navigateTo('/admin/schedules')"
+          class="p-3.5 rounded-2xl bg-gradient-to-br from-slate-50/90 via-teal-50/20 to-slate-50/70 border border-slate-200/70 hover:border-teal-300 hover:shadow-xs active:scale-[0.99] transition-all duration-300 flex flex-col justify-between space-y-2.5 cursor-pointer group"
+          title="Klik untuk membuka jadwal praktikum"
+        >
           <div class="flex items-center justify-between">
-            <span class="text-[10px] text-slate-500 font-bold leading-tight uppercase tracking-wider">
+            <span class="text-[10px] text-slate-500 font-bold leading-tight uppercase tracking-wider group-hover:text-teal-700 transition-colors">
               Sesi Praktikum
             </span>
-            <div class="w-6 h-6 rounded-lg bg-teal-100/80 text-teal-700 flex items-center justify-center">
+            <div class="w-6 h-6 rounded-lg bg-teal-100/80 text-teal-700 flex items-center justify-center group-hover:bg-teal-200/80 transition-colors">
               <Calendar :size="13" />
             </div>
           </div>
@@ -962,7 +1145,7 @@ const capacityStatus = computed(() => {
             </span>
           </div>
 
-          <!-- Micro Progress Bar (Mirrors Card 1) -->
+          <!-- Micro Progress Bar (Safe with Math.min 100) -->
           <div class="w-full bg-slate-200/70 h-1.5 rounded-full overflow-hidden">
             <div
               class="bg-gradient-to-r from-teal-600 to-emerald-400 h-full rounded-full transition-all duration-700"

@@ -66,6 +66,8 @@ export interface DisplayRoomUsageDto {
   }
   request?: {
     activity_name: string
+    start_time?: string
+    end_time?: string
     laboratory: {
       id: string
       code: string
@@ -74,6 +76,8 @@ export interface DisplayRoomUsageDto {
   } | null
   schedule?: {
     course_name: string
+    start_time?: string
+    end_time?: string
     laboratory: {
       id: string
       code: string

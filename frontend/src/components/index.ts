@@ -15,6 +15,7 @@ export { default as BaseAvatar } from './common/BaseAvatar.vue'
 export { default as ProfileAvatarUploader } from './common/ProfileAvatarUploader.vue'
 export { default as AppLogo } from './common/AppLogo.vue'
 export { default as TimePicker24 } from './common/TimePicker24.vue'
+export { default as SplashScreen } from './common/SplashScreen.vue'
 
 // Data Display
 export { default as DataTable } from './common/DataTable.vue'

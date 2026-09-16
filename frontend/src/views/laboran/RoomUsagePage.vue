@@ -25,7 +25,8 @@ import {
   Loader2,
   Calendar,
   Plus,
-  Users
+  Users,
+  Sparkles
 } from 'lucide-vue-next'
 import SummaryCard from '@/components/admin/SummaryCard.vue'
 import { roomUsageService, type RoomUsage } from '@/services/room-usage.service'
@@ -33,6 +34,7 @@ import { roomRequestService, type RoomRequest } from '@/services/room-request.se
 import { scheduleService, type ScheduleData } from '@/services/schedule.service'
 import { laboratoryService, type LaboratoryData } from '@/services/laboratory.service'
 import TimePicker24 from '@/components/common/TimePicker24.vue'
+import { formatDate } from '@/utils/format.utils'
 
 const router = useRouter()
 const navStore = useLaboranNavStore()
@@ -222,8 +224,249 @@ const navigateToDetail = (id: string) => {
   router.push(`/laboran/room-usage/${id}`)
 }
 
+// Time Helper for Check-In Alignment
+function extractHHmm(timeValue: string | Date | undefined | null): string {
+  if (!timeValue) return '00:00'
+  if (typeof timeValue === 'string') {
+    const trimmed = timeValue.trim()
+    // Match "HH:mm" or "HH.mm" (e.g. "08:00", "08.00", "8:00")
+    const match = trimmed.match(/^(\d{1,2})[:.](\d{1,2})/)
+    if (match && !trimmed.includes('T')) {
+      const h = match[1]!.padStart(2, '0')
+      const m = match[2]!.padStart(2, '0')
+      return `${h}:${m}`
+    }
+    // Handle ISO timestamp like "1970-01-01T08:00:00.000Z"
+    if (trimmed.includes('T')) {
+      const d = new Date(trimmed)
+      if (!isNaN(d.getTime())) {
+        const h = d.getUTCHours().toString().padStart(2, '0')
+        const m = d.getUTCMinutes().toString().padStart(2, '0')
+        return `${h}:${m}`
+      }
+    }
+  } else if (timeValue instanceof Date) {
+    if (!isNaN(timeValue.getTime())) {
+      const h = timeValue.getUTCHours().toString().padStart(2, '0')
+      const m = timeValue.getUTCMinutes().toString().padStart(2, '0')
+      return `${h}:${m}`
+    }
+  }
+  return '00:00'
+}
+
+export interface DiscrepancyResult {
+  isDiscrepant: boolean
+  type: 'EARLY' | 'LATE' | 'DIFFERENT_DATE' | 'ON_TIME'
+  badgeLabel: string
+  badgeClass: string
+  title: string
+  description: string
+  timeDiffText: string
+  scheduledDate: string
+  scheduledTime: string
+  currentWibDate: string
+  currentWibTime: string
+}
+
+function evaluateCheckInTimeDiscrepancy(req: RoomRequest): DiscrepancyResult {
+  const now = new Date()
+
+  // 1. Current Jakarta Date & Time (WIB)
+  const jakartaDateFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  const currentJakartaDate = jakartaDateFormatter.format(now) // "YYYY-MM-DD"
+
+  const jakartaTimeFormatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+  const currentJakartaTimeStr = jakartaTimeFormatter.format(now) // "HH:mm"
+  const [currH, currM] = currentJakartaTimeStr.split(':').map(Number)
+  const currentMinutes = (currH || 0) * 60 + (currM || 0)
+
+  // Candidate request date
+  const rawDate = req.requestDate ? req.requestDate.split('T')[0] : null
+  const reqDateOnly: string = rawDate || currentJakartaDate
+
+  // Format display strings
+  const formattedSchedDate = req.formattedRequestDate || formatDate(reqDateOnly, true)
+  const formattedCurrDate = formatDate(now, true)
+  const schedStart = extractHHmm(req.startTime)
+  const schedEnd = extractHHmm(req.endTime)
+  const scheduledTimeStr = `${schedStart} – ${schedEnd} WIB`
+  const currentWibStr = `${currentJakartaTimeStr} WIB`
+
+  // 2. Check Date Discrepancy (Scheduled for another date)
+  if (reqDateOnly !== currentJakartaDate) {
+    const isFuture = reqDateOnly > currentJakartaDate
+    return {
+      isDiscrepant: true,
+      type: 'DIFFERENT_DATE',
+      badgeLabel: isFuture ? 'Jadwal Hari Mendatang' : 'Jadwal Tanggal Lampau',
+      badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
+      title: isFuture ? 'Check-In Belum Waktunya (Hari Mendatang)' : 'Check-In Tanggal Lampau',
+      description: isFuture
+        ? `Sesi peminjaman ini dijadwalkan untuk ${formattedSchedDate}, belum waktunya untuk hari ini (${formattedCurrDate}).`
+        : `Sesi peminjaman ini tercatat untuk ${formattedSchedDate} (tanggal pelaksanaan sudah berlalu).`,
+      timeDiffText: isFuture ? 'Belum memasuki hari jadwal' : 'Tanggal jadwal telah lewat',
+      scheduledDate: formattedSchedDate,
+      scheduledTime: scheduledTimeStr,
+      currentWibDate: formattedCurrDate,
+      currentWibTime: currentWibStr,
+    }
+  }
+
+  // 3. Check Time Discrepancy on the Same Date
+  const startParts = schedStart.split(':')
+  const endParts = schedEnd.split(':')
+  const startH = parseInt(startParts[0] || '0', 10) || 0
+  const startM = parseInt(startParts[1] || '0', 10) || 0
+  const endH = parseInt(endParts[0] || '0', 10) || 0
+  const endM = parseInt(endParts[1] || '0', 10) || 0
+
+  const startMinutes = startH * 60 + startM
+  let endMinutes = endH * 60 + endM
+  if (endMinutes <= startMinutes || endMinutes === 0) {
+    endMinutes = 1440 // Midnight normalization (24:00)
+  }
+
+  // If current time is earlier than start time:
+  if (currentMinutes < startMinutes) {
+    const diff = startMinutes - currentMinutes
+    const hours = Math.floor(diff / 60)
+    const minutes = diff % 60
+    const diffStr =
+      hours > 0 ? `${hours} jam ${minutes > 0 ? minutes + ' menit' : ''}` : `${minutes} menit`
+
+    return {
+      isDiscrepant: true,
+      type: 'EARLY',
+      badgeLabel: 'Lebih Awal dari Jadwal',
+      badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
+      title: 'Konfirmasi Check-In Lebih Awal dari Jadwal',
+      description: `Waktu check-in saat ini (${currentWibStr}) adalah ${diffStr} lebih awal dari jam mulai resmi yang ditetapkan (${schedStart} WIB).`,
+      timeDiffText: `${diffStr} lebih awal`,
+      scheduledDate: formattedSchedDate,
+      scheduledTime: scheduledTimeStr,
+      currentWibDate: formattedCurrDate,
+      currentWibTime: currentWibStr,
+    }
+  }
+
+  // If current time is past end time:
+  if (currentMinutes > endMinutes) {
+    const diff = currentMinutes - endMinutes
+    const hours = Math.floor(diff / 60)
+    const minutes = diff % 60
+    const diffStr =
+      hours > 0 ? `${hours} jam ${minutes > 0 ? minutes + ' menit' : ''}` : `${minutes} menit`
+
+    return {
+      isDiscrepant: true,
+      type: 'LATE',
+      badgeLabel: 'Melewati Batas Jadwal',
+      badgeClass: 'bg-rose-100 text-rose-800 border-rose-300',
+      title: 'Konfirmasi Check-In Melewati Batas Waktu',
+      description: `Waktu check-in saat ini (${currentWibStr}) telah melewati jam selesai yang ditetapkan (${schedEnd} WIB, ${diffStr} yang lalu).`,
+      timeDiffText: `${diffStr} terlewat`,
+      scheduledDate: formattedSchedDate,
+      scheduledTime: scheduledTimeStr,
+      currentWibDate: formattedCurrDate,
+      currentWibTime: currentWibStr,
+    }
+  }
+
+  // On Schedule
+  return {
+    isDiscrepant: false,
+    type: 'ON_TIME',
+    badgeLabel: 'Sesuai Jadwal',
+    badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+    title: 'Konfirmasi Check-In Ruangan',
+    description: 'Waktu saat ini sesuai dengan rentang jam yang telah disetujui.',
+    timeDiffText: 'Tepat waktu',
+    scheduledDate: formattedSchedDate,
+    scheduledTime: scheduledTimeStr,
+    currentWibDate: formattedCurrDate,
+    currentWibTime: currentWibStr,
+  }
+}
+
+// Modal State for Time Discrepancy Confirmation
+const discrepancyModal = ref<{
+  isOpen: boolean
+  request: RoomRequest | null
+  discrepancy: DiscrepancyResult | null
+  laboranNotes: string
+}>({
+  isOpen: false,
+  request: null,
+  discrepancy: null,
+  laboranNotes: '',
+})
+
+// Check-In button click from list of approved requests
+const handleRequestCheckInClick = (req: RoomRequest) => {
+  const discrepancy = evaluateCheckInTimeDiscrepancy(req)
+
+  if (discrepancy.isDiscrepant) {
+    // Open confirmation pop-up modal
+    discrepancyModal.value = {
+      isOpen: true,
+      request: req,
+      discrepancy,
+      laboranNotes: '',
+    }
+    return
+  }
+
+  // On-time check-in directly proceeds
+  handlePerformCheckIn({
+    laboratoryId: req.laboratoryId,
+    activityName: req.activityName,
+    requestId: req.id,
+  })
+}
+
+// Confirm check-in from discrepancy modal
+const handleConfirmDiscrepantCheckIn = async () => {
+  if (!discrepancyModal.value.request) return
+  const req = discrepancyModal.value.request
+  const customNotes = discrepancyModal.value.laboranNotes.trim()
+
+  let notes = req.activityName
+  if (discrepancyModal.value.discrepancy?.isDiscrepant) {
+    const label = discrepancyModal.value.discrepancy.badgeLabel
+    notes = customNotes
+      ? `${req.activityName} [${label}] - ${customNotes}`
+      : `${req.activityName} [${label}]`
+  }
+
+  discrepancyModal.value.isOpen = false
+
+  await handlePerformCheckIn({
+    laboratoryId: req.laboratoryId,
+    activityName: req.activityName,
+    requestId: req.id,
+    notes,
+  })
+}
+
 // One-Click Check-In Handler from Approved Request / Schedule
-const handlePerformCheckIn = async (item: { laboratoryId: string; activityName: string; requestId?: string; scheduleId?: string }) => {
+const handlePerformCheckIn = async (item: {
+  laboratoryId: string
+  activityName: string
+  requestId?: string
+  scheduleId?: string
+  notes?: string
+}) => {
   if (!authStore.user?.id) {
     triggerToast('Sesi pengguna tidak ditemukan. Silakan masuk kembali.', 'error')
     return
@@ -238,13 +481,14 @@ const handlePerformCheckIn = async (item: { laboratoryId: string; activityName: 
       checkedInBy: authStore.user.id,
       checkInTime: new Date().toISOString(),
       status: 'IN_USE',
-      notes: item.activityName,
+      notes: item.notes || item.activityName,
     })
     triggerToast('Check-in laboratorium berhasil. Sesi kini aktif (LIVE).')
     await Promise.all([loadRoomUsages(), loadPendingCheckIns()])
   } catch (error: any) {
     console.error('Failed to check in room:', error)
-    const errorMsg = error.response?.data?.message || error.message || 'Gagal melakukan check-in ruangan'
+    const errorMsg =
+      error.response?.data?.message || error.message || 'Gagal melakukan check-in ruangan'
 
     // If already used, refresh the list immediately and show friendly warning
     if (errorMsg.includes('already has an associated room usage')) {
@@ -646,7 +890,7 @@ const handleCreateAdHocCheckIn = async () => {
             </div>
 
             <button
-              @click="handlePerformCheckIn({ laboratoryId: req.laboratoryId, activityName: req.activityName, requestId: req.id })"
+              @click="handleRequestCheckInClick(req)"
               :disabled="isActionLoading"
               class="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full bg-dark-green hover:bg-[#547a5c] text-white text-xs font-bold shadow-2xs transition-all active:scale-95 cursor-pointer shrink-0 disabled:opacity-50"
             >
@@ -916,9 +1160,9 @@ const handleCreateAdHocCheckIn = async () => {
     <!-- Ad-Hoc Check-In Modal Dialog -->
     <div
       v-if="showAdHocModal"
-      class="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
-      <div class="bg-white rounded-2xl border border-gray-200/80 shadow-2xl w-full max-w-lg overflow-hidden p-6 space-y-4 text-xs animate-in zoom-in-95 duration-150">
+      <div class="bg-white rounded-3xl border border-gray-200/80 shadow-2xl w-full max-w-lg overflow-hidden p-6 sm:p-7 space-y-4 text-xs animate-in zoom-in-95 duration-200">
         <div class="flex items-center justify-between border-b border-gray-100 pb-3">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-xl bg-brand-100 text-dark-green flex items-center justify-center">
@@ -930,7 +1174,7 @@ const handleCreateAdHocCheckIn = async () => {
             </div>
           </div>
 
-          <button @click="showAdHocModal = false" class="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-surface cursor-pointer">
+          <button @click="showAdHocModal = false" class="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-surface cursor-pointer transition-colors">
             <X :size="16" />
           </button>
         </div>
@@ -942,7 +1186,7 @@ const handleCreateAdHocCheckIn = async () => {
             <select
               v-model="adHocForm.laboratoryId"
               required
-              class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-semibold focus:outline-none focus:border-brand-400 focus:bg-white cursor-pointer"
+              class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-semibold focus:outline-none focus:border-brand-400 focus:bg-white cursor-pointer transition-all"
             >
               <option value="" disabled>Pilih laboratorium...</option>
               <option v-for="lab in laboratories" :key="lab.id" :value="lab.id">
@@ -959,7 +1203,7 @@ const handleCreateAdHocCheckIn = async () => {
               type="text"
               placeholder="contoh: Remedial Praktikum / Belajar Mandiri"
               required
-              class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-semibold focus:outline-none focus:border-brand-400 focus:bg-white"
+              class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-semibold focus:outline-none focus:border-brand-400 focus:bg-white transition-all"
             />
           </div>
 
@@ -971,7 +1215,7 @@ const handleCreateAdHocCheckIn = async () => {
                 v-model.number="adHocForm.participantCount"
                 type="number"
                 min="1"
-                class="w-full px-3.5 py-2 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-semibold focus:outline-none focus:border-brand-400 focus:bg-white"
+                class="w-full px-3.5 py-2 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-semibold focus:outline-none focus:border-brand-400 focus:bg-white transition-all"
               />
             </div>
 
@@ -999,7 +1243,7 @@ const handleCreateAdHocCheckIn = async () => {
               v-model="adHocForm.notes"
               type="text"
               placeholder="contoh: Diizinkan oleh Koordinator Laboratorium"
-              class="w-full px-3.5 py-2 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-medium focus:outline-none focus:border-brand-400 focus:bg-white"
+              class="w-full px-3.5 py-2 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-medium focus:outline-none focus:border-brand-400 focus:bg-white transition-all"
             />
           </div>
 
@@ -1007,14 +1251,14 @@ const handleCreateAdHocCheckIn = async () => {
             <button
               type="button"
               @click="showAdHocModal = false"
-              class="px-4 py-2 rounded-xl border border-gray-200 text-text-secondary hover:bg-surface font-bold cursor-pointer"
+              class="px-4 py-2 rounded-xl border border-gray-200 text-text-secondary hover:bg-surface font-bold cursor-pointer transition-all active:scale-95"
             >
               Batal
             </button>
             <button
               type="submit"
               :disabled="isActionLoading"
-              class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-dark-green hover:bg-[#547a5c] text-white font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              class="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-dark-green hover:bg-[#547a5c] text-white font-bold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
             >
               <Loader2 v-if="isActionLoading" :size="14" class="animate-spin" />
               <DoorOpen v-else :size="14" />
@@ -1022,6 +1266,182 @@ const handleCreateAdHocCheckIn = async () => {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Modal Konfirmasi Check-In Di Luar Jadwal (Early / Late / Different Date) -->
+    <div
+      v-if="discrepancyModal.isOpen && discrepancyModal.request && discrepancyModal.discrepancy"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+    >
+      <div
+        class="bg-white rounded-3xl border border-gray-200/80 shadow-2xl w-full max-w-lg overflow-hidden p-6 sm:p-7 space-y-4 text-xs animate-in zoom-in-95 duration-200"
+      >
+        <!-- Modal Header -->
+        <div class="flex items-start justify-between gap-3 border-b border-gray-100 pb-3.5">
+          <div class="flex items-center gap-3">
+            <div
+              :class="[
+                'w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs border',
+                discrepancyModal.discrepancy.type === 'LATE'
+                  ? 'bg-rose-50 border-rose-200 text-rose-600'
+                  : 'bg-amber-50 border-amber-200 text-amber-600'
+              ]"
+            >
+              <AlertTriangle :size="22" />
+            </div>
+            <div>
+              <h3 class="text-sm sm:text-base font-extrabold text-gray-900 leading-snug">
+                {{ discrepancyModal.discrepancy.title }}
+              </h3>
+              <p class="text-[11px] text-text-muted mt-0.5">
+                Konfirmasi persetujuan akses ruangan di luar jadwal yang ditetapkan.
+              </p>
+            </div>
+          </div>
+
+          <button
+            @click="discrepancyModal.isOpen = false"
+            :disabled="isActionLoading"
+            class="text-text-muted hover:text-text-primary p-1 rounded-lg hover:bg-surface cursor-pointer shrink-0 transition-colors"
+          >
+            <X :size="18" />
+          </button>
+        </div>
+
+        <!-- Discrepancy Alert Box -->
+        <div
+          :class="[
+            'p-4 rounded-2xl border space-y-2',
+            discrepancyModal.discrepancy.type === 'LATE'
+              ? 'bg-rose-50/70 border-rose-200/80 text-rose-950'
+              : 'bg-amber-50/70 border-amber-200/80 text-amber-950'
+          ]"
+        >
+          <div class="flex items-center justify-between gap-2 flex-wrap">
+            <span
+              :class="[
+                'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border shadow-2xs',
+                discrepancyModal.discrepancy.badgeClass
+              ]"
+            >
+              <Clock :size="11" />
+              {{ discrepancyModal.discrepancy.badgeLabel }}
+            </span>
+            <span class="text-[11px] font-bold font-mono">
+              {{ discrepancyModal.discrepancy.timeDiffText }}
+            </span>
+          </div>
+
+          <p class="text-[12px] font-medium leading-relaxed">
+            {{ discrepancyModal.discrepancy.description }}
+          </p>
+        </div>
+
+        <!-- Comparison Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <!-- Current Time -->
+          <div class="p-3 rounded-xl bg-surface/70 border border-gray-200/70 space-y-1">
+            <div class="flex items-center gap-1.5 text-text-muted text-[10px] font-semibold uppercase tracking-wide">
+              <Clock :size="12" class="text-text-secondary" />
+              <span>Waktu Saat Ini (WIB)</span>
+            </div>
+            <p class="text-base font-bold font-mono text-text-primary">
+              {{ discrepancyModal.discrepancy.currentWibTime }}
+            </p>
+            <p class="text-[10px] text-text-muted truncate">
+              {{ discrepancyModal.discrepancy.currentWibDate }}
+            </p>
+          </div>
+
+          <!-- Official Schedule -->
+          <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/70 space-y-1">
+            <div class="flex items-center gap-1.5 text-dark-green text-[10px] font-semibold uppercase tracking-wide">
+              <Calendar :size="12" />
+              <span>Jadwal Resmi</span>
+            </div>
+            <p class="text-base font-bold font-mono text-dark-green">
+              {{ discrepancyModal.discrepancy.scheduledTime }}
+            </p>
+            <p class="text-[10px] text-text-secondary truncate">
+              {{ discrepancyModal.discrepancy.scheduledDate }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Session Details Summary -->
+        <div class="p-3.5 rounded-xl bg-gray-50/80 border border-gray-200/60 space-y-1.5">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-text-muted font-medium flex items-center gap-1">
+              <Building2 :size="12" /> Ruangan:
+            </span>
+            <span class="font-bold text-text-primary">
+              {{ discrepancyModal.request.laboratoryName }} ({{ discrepancyModal.request.laboratoryCode }})
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-text-muted font-medium flex items-center gap-1">
+              <FileText :size="12" /> Kegiatan:
+            </span>
+            <span class="font-bold text-dark-green truncate max-w-[240px]">
+              {{ discrepancyModal.request.activityName }}
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-text-muted font-medium flex items-center gap-1">
+              <Users :size="12" /> Pemohon / Dosen:
+            </span>
+            <span class="font-medium text-text-secondary">
+              {{ discrepancyModal.request.applicantName }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Optional Laboran Notes Input -->
+        <div class="space-y-1">
+          <label class="block font-bold text-text-primary text-[11px]">
+            Catatan Alasan Check-In <span class="text-text-muted font-normal">(Opsional)</span>
+          </label>
+          <input
+            v-model="discrepancyModal.laboranNotes"
+            type="text"
+            placeholder="contoh: Mahasiswa & dosen sudah hadir lebih awal untuk persiapan"
+            class="w-full px-3.5 py-2 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-medium focus:outline-none focus:border-brand-400 focus:bg-white text-xs"
+          />
+        </div>
+
+        <!-- Confirmation Prompt -->
+        <p class="text-[11px] text-text-muted text-center font-medium">
+          Apakah Anda yakin ingin tetap membuka akses dan melakukan <strong>Check-In</strong> sekarang?
+        </p>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100">
+          <button
+            type="button"
+            @click="discrepancyModal.isOpen = false"
+            :disabled="isActionLoading"
+            class="px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-surface text-text-secondary text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+          >
+            Batal
+          </button>
+
+          <button
+            type="button"
+            @click="handleConfirmDiscrepantCheckIn"
+            :disabled="isActionLoading"
+            :class="[
+              'inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-white text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50',
+              discrepancyModal.discrepancy.type === 'LATE'
+                ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20'
+                : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
+            ]"
+          >
+            <Loader2 v-if="isActionLoading" :size="14" class="animate-spin" />
+            <DoorOpen v-else :size="14" />
+            <span>Tetap Lanjutkan Check-In</span>
+          </button>
+        </div>
       </div>
     </div>
 

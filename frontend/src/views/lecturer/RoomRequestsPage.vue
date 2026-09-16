@@ -299,14 +299,14 @@ const confirmDelete = async () => {
           <span class="text-text-muted text-[11px] font-bold uppercase tracking-wider block transition-colors duration-200 group-hover:text-text-primary truncate">
             Menunggu Persetujuan
           </span>
-          <span class="text-xl sm:text-2xl font-black text-amber-800 block transition-colors duration-200 group-hover:text-dark-green">
+          <span class="text-xl sm:text-2xl font-black text-text-primary block transition-colors duration-200 group-hover:text-dark-green">
             {{ stats.pending }}
           </span>
           <span class="text-[11px] text-text-muted font-medium block truncate">
             Menunggu verifikasi laboran
           </span>
         </div>
-        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center shrink-0 border border-transparent transition-all duration-200 group-hover:scale-105 group-hover:bg-amber-100/80 group-hover:border-amber-300/50">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200/80 transition-all duration-200 group-hover:scale-105 group-hover:bg-amber-100/80 group-hover:border-amber-300/50">
           <Clock :size="20" stroke-width="2" />
         </div>
       </div>

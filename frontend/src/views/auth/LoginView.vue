@@ -12,7 +12,13 @@ import {
   User,
   GraduationCap,
   ArrowRight,
+  HelpCircle,
+  X,
+  CheckCircle2,
+  Loader2,
+  Send,
 } from 'lucide-vue-next'
+import { passwordResetService, type ForgotPasswordSubmissionResponse } from '@/services'
 
 const router = useRouter()
 const route = useRoute()
@@ -30,6 +36,50 @@ const showPassword = ref(false)
 // UI state
 const isSubmitting = ref(false)
 const errorMessage = ref('')
+
+// Interactive Forgot Password State (Option B)
+const showForgotModal = ref(false)
+const forgotEmail = ref('')
+const forgotNotes = ref('')
+const isSubmittingForgot = ref(false)
+const forgotError = ref('')
+const forgotSuccessData = ref<ForgotPasswordSubmissionResponse | null>(null)
+
+const openForgotModal = () => {
+  forgotEmail.value = email.value || ''
+  forgotNotes.value = ''
+  forgotError.value = ''
+  forgotSuccessData.value = null
+  showForgotModal.value = true
+}
+
+const handleForgotSubmit = async () => {
+  forgotError.value = ''
+  if (!forgotEmail.value || !forgotEmail.value.includes('@')) {
+    forgotError.value = 'Silakan masukkan alamat email yang valid.'
+    return
+  }
+
+  isSubmittingForgot.value = true
+  try {
+    const res = await passwordResetService.submitForgotPassword({
+      email: forgotEmail.value.trim(),
+      notes: forgotNotes.value.trim() || undefined,
+    })
+    forgotSuccessData.value = res
+  } catch (err: any) {
+    forgotError.value =
+      err.response?.data?.message || err.message || 'Gagal mengajukan permohonan reset kata sandi.'
+  } finally {
+    isSubmittingForgot.value = false
+  }
+}
+
+const closeForgotModal = () => {
+  showForgotModal.value = false
+  forgotSuccessData.value = null
+  forgotError.value = ''
+}
 
 // Demo role selection helper
 const selectDemoRole = (role: 'ADMIN' | 'LABORAN' | 'LECTURER') => {
@@ -97,38 +147,34 @@ const handleSubmit = async () => {
 
 <template>
   <!-- Frosted glass login surface -->
-  <div class="bg-white/55 backdrop-blur-2xl rounded-3xl p-7 sm:p-9 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] border border-white/70 relative transition-all duration-300" style="box-shadow: 0 8px 40px -12px rgba(0,0,0,0.08), inset 0 1px 0 0 rgba(255,255,255,0.6);">
+  <div class="bg-white/60 backdrop-blur-2xl rounded-3xl p-7 sm:p-9 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.08)] border border-white/80 relative transition-all duration-300 overflow-hidden" style="box-shadow: 0 8px 40px -12px rgba(0,0,0,0.08), inset 0 1px 0 0 rgba(255,255,255,0.7);">
+    <!-- Institutional Top Accent Bar (UPNVJ Green & Gold) -->
+    <div class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#0c5a30] via-amber-400 to-[#0c5a30]" />
 
-    <!-- Card header: icon + heading group -->
-    <div class="text-center mb-6">
-      <!-- UPNVJ Official Emblem -->
-      <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
-        <img
-          src="/images/logo-upnvj.webp"
-          alt="UPNVJ Logo"
-          class="w-full h-full object-contain drop-shadow-sm"
-        />
-      </div>
-
-      <h2 class="text-[22px] sm:text-[25px] font-bold text-text-primary tracking-tight leading-tight">Selamat Datang Kembali!</h2>
-      <p class="text-[13px] text-text-muted mt-1.5 leading-relaxed">Masuk untuk mengelola dan melihat jadwal laboratorium.</p>
+    <!-- Card header: heading group (logo is already on hero panel) -->
+    <div class="text-center mb-5 pt-1">
+      <h2 class="text-[22px] sm:text-[25px] font-black text-text-primary tracking-tight leading-tight">Selamat Datang Kembali!</h2>
+      <p class="text-[13px] text-text-muted mt-1 leading-relaxed">Masuk untuk mengelola dan memantau jadwal laboratorium.</p>
     </div>
 
     <!-- Demo Credential Selector — Glass segmented control -->
-    <div class="mb-6">
-      <p class="text-[10px] font-bold text-text-secondary uppercase tracking-widest mb-2.5">Pilihan Akun Demo</p>
-      <div class="grid grid-cols-3 gap-1.5 p-1 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/60 shadow-2xs">
+    <div class="mb-5">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-[10px] font-black text-text-secondary uppercase tracking-wider">Pilihan Akun Demo</p>
+        <span class="text-[9.5px] font-bold text-dark-green bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">Eksplorasi Cepat</span>
+      </div>
+      <div class="grid grid-cols-3 gap-1.5 p-1 bg-white/50 backdrop-blur-sm rounded-2xl border border-white/80 shadow-2xs">
         <button
           type="button"
           @click="selectDemoRole('ADMIN')"
           :class="[
             'px-2 py-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all duration-200 select-none cursor-pointer',
             activeRole === 'ADMIN'
-              ? 'bg-white text-dark-green shadow-xs border border-brand-200/80 ring-1 ring-brand-300/40'
-              : 'text-text-secondary hover:text-text-primary hover:bg-white/50',
+              ? 'bg-white text-dark-green shadow-md shadow-black/15 font-black'
+              : 'text-text-secondary hover:text-text-primary hover:bg-white/60',
           ]"
         >
-          <ShieldCheck :size="13" :class="activeRole === 'ADMIN' ? 'text-primary' : 'text-text-muted'" />
+          <ShieldCheck :size="13" :class="activeRole === 'ADMIN' ? 'text-dark-green' : 'text-text-muted'" />
           <span>Admin</span>
         </button>
 
@@ -138,11 +184,11 @@ const handleSubmit = async () => {
           :class="[
             'px-2 py-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all duration-200 select-none cursor-pointer',
             activeRole === 'LABORAN'
-              ? 'bg-white text-dark-green shadow-xs border border-brand-200/80 ring-1 ring-brand-300/40'
-              : 'text-text-secondary hover:text-text-primary hover:bg-white/50',
+              ? 'bg-white text-dark-green shadow-md shadow-black/15 font-black'
+              : 'text-text-secondary hover:text-text-primary hover:bg-white/60',
           ]"
         >
-          <User :size="13" :class="activeRole === 'LABORAN' ? 'text-primary' : 'text-text-muted'" />
+          <User :size="13" :class="activeRole === 'LABORAN' ? 'text-dark-green' : 'text-text-muted'" />
           <span>Laboran</span>
         </button>
 
@@ -152,11 +198,11 @@ const handleSubmit = async () => {
           :class="[
             'px-2 py-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all duration-200 select-none cursor-pointer',
             activeRole === 'LECTURER'
-              ? 'bg-white text-dark-green shadow-xs border border-brand-200/80 ring-1 ring-brand-300/40'
-              : 'text-text-secondary hover:text-text-primary hover:bg-white/50',
+              ? 'bg-white text-dark-green shadow-md shadow-black/15 font-black'
+              : 'text-text-secondary hover:text-text-primary hover:bg-white/60',
           ]"
         >
-          <GraduationCap :size="13" :class="activeRole === 'LECTURER' ? 'text-primary' : 'text-text-muted'" />
+          <GraduationCap :size="13" :class="activeRole === 'LECTURER' ? 'text-dark-green' : 'text-text-muted'" />
           <span>Dosen</span>
         </button>
       </div>
@@ -193,7 +239,7 @@ const handleSubmit = async () => {
             placeholder="Masukkan email Anda"
             required
             :disabled="isSubmitting"
-            class="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-white/80 rounded-xl text-xs font-medium transition-all duration-200 hover:bg-white/80 hover:border-white focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary focus:bg-white text-text-primary placeholder:text-text-muted/70 backdrop-blur-sm shadow-2xs"
+            class="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-white/80 rounded-xl text-xs font-medium transition-all duration-200 hover:bg-white/80 hover:border-white focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white text-text-primary placeholder:text-text-muted/70 backdrop-blur-sm shadow-2xs"
           />
         </div>
       </div>
@@ -211,7 +257,7 @@ const handleSubmit = async () => {
             placeholder="Masukkan kata sandi Anda"
             required
             :disabled="isSubmitting"
-            class="w-full pl-10 pr-10 py-2.5 bg-white/60 border border-white/80 rounded-xl text-xs font-medium transition-all duration-200 hover:bg-white/80 hover:border-white focus:outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary focus:bg-white text-text-primary placeholder:text-text-muted/70 backdrop-blur-sm shadow-2xs"
+            class="w-full pl-10 pr-10 py-2.5 bg-white/60 border border-white/80 rounded-xl text-xs font-medium transition-all duration-200 hover:bg-white/80 hover:border-white focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white text-text-primary placeholder:text-text-muted/70 backdrop-blur-sm shadow-2xs"
           />
           <button
             type="button"
@@ -238,21 +284,21 @@ const handleSubmit = async () => {
         </label>
         <button
           type="button"
-          class="text-xs font-semibold text-dark-green hover:text-primary transition-colors cursor-pointer"
-          @click.prevent
+          class="text-xs font-semibold text-dark-green hover:text-primary-hover hover:underline transition-colors cursor-pointer"
+          @click="openForgotModal"
         >
           Lupa Kata Sandi?
         </button>
       </div>
 
-      <!-- Sign In Button — Refined pine gradient -->
+      <!-- Sign In Button — Official UPNVJ Deep Green Gradient -->
       <button
         type="submit"
         :disabled="isSubmitting"
-        class="w-full h-11 mt-1.5 bg-gradient-to-r from-[#3B694A] to-[#2D5A3F] hover:from-[#31573E] hover:to-[#244430] active:scale-[0.99] text-white font-bold text-xs rounded-xl shadow-md shadow-[#2D5A3F]/20 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none"
+        class="w-full h-11 mt-1.5 bg-gradient-to-r from-[#0c5a30] via-[#094726] to-[#07371d] hover:from-[#094726] hover:to-[#052614] active:scale-[0.99] text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-950/20 hover:shadow-lg hover:shadow-emerald-950/30 border border-emerald-700/40 transition-all duration-200 flex items-center justify-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none"
       >
         <span>{{ isSubmitting ? 'Sedang Masuk...' : 'Masuk ke Dashboard' }}</span>
-        <ArrowRight :size="15" class="transition-transform duration-200 group-hover:translate-x-0.5" />
+        <ArrowRight :size="15" class="text-amber-400 transition-transform duration-200 group-hover:translate-x-1" />
       </button>
     </form>
 
@@ -267,7 +313,7 @@ const handleSubmit = async () => {
     <!-- Google Button — Glass-integrated -->
     <button
       type="button"
-      class="w-full h-11 flex items-center justify-center gap-2.5 rounded-xl border border-white/70 bg-white/40 hover:bg-white/60 active:bg-white/70 text-text-primary text-sm font-medium transition-all duration-200 hover:border-white/90 hover:shadow-sm select-none backdrop-blur-sm"
+      class="w-full h-11 flex items-center justify-center gap-2.5 rounded-xl border border-white/80 bg-white/50 hover:bg-white/70 active:bg-white/80 text-text-primary text-xs font-bold transition-all duration-200 hover:border-white hover:shadow-2xs select-none backdrop-blur-sm relative"
     >
       <svg class="w-[18px] h-[18px]" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -276,23 +322,175 @@ const handleSubmit = async () => {
         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
       </svg>
       <span>Lanjutkan dengan Google</span>
+      <span class="text-[9.5px] font-bold text-amber-800 bg-amber-100/90 border border-amber-300/60 px-2 py-0.5 rounded-full ml-1">Segera Hadir</span>
     </button>
 
     <!-- Footer -->
-    <div class="mt-5 text-center space-y-2 pt-3 border-t border-white/40 text-xs">
+    <div class="mt-5 text-center pt-3 border-t border-white/40 text-xs">
       <p class="text-text-muted">
         Belum memiliki akun Dosen atau Laboran?
         <router-link to="/register" class="text-dark-green font-extrabold hover:underline ml-1">
           Daftar sekarang &rarr;
         </router-link>
       </p>
-      <p class="text-[11px] text-text-muted/70">
-        Bantuan akun & sistem?
-        <a href="mailto:admin@institution.edu" class="text-primary font-medium hover:text-primary-hover hover:underline transition-colors ml-0.5">
-          Hubungi Administrator
-        </a>
-      </p>
     </div>
+
+    <!-- Forgot Password Modal (Option B: Internal Academic Helpdesk) -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="showForgotModal"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+          @click.self="closeForgotModal"
+        >
+          <div class="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-4 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <!-- Top Institutional Accent Bar -->
+            <div class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#0c5a30] via-amber-400 to-[#0c5a30]" />
+            
+            <!-- Close Button Header -->
+            <div class="flex items-start justify-between">
+              <div
+                :class="[
+                  'w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border',
+                  forgotSuccessData
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                    : 'bg-amber-50 text-amber-600 border-amber-200/80'
+                ]"
+              >
+                <CheckCircle2 v-if="forgotSuccessData" :size="20" stroke-width="2.2" />
+                <HelpCircle v-else :size="20" stroke-width="2.2" />
+              </div>
+              <button
+                @click="closeForgotModal"
+                class="p-1 rounded-lg text-text-muted hover:text-text-primary hover:bg-gray-100 transition-colors cursor-pointer"
+                title="Tutup dialog"
+              >
+                <X :size="18" />
+              </button>
+            </div>
+
+            <!-- STEP 1: FORM PENGAJUAN TIKET -->
+            <div v-if="!forgotSuccessData" class="space-y-3.5">
+              <div>
+                <h3 class="text-base font-extrabold text-text-primary">Lupa Kata Sandi?</h3>
+                <p class="text-xs text-text-muted mt-1 leading-relaxed">
+                  Ajukan permohonan reset kata sandi ke Administrator TU & Laboran FIK UPNVJ.
+                </p>
+              </div>
+
+              <!-- Error Alert -->
+              <div v-if="forgotError" class="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+                <AlertCircle :size="15" class="shrink-0 mt-0.5 text-red-600" />
+                <span>{{ forgotError }}</span>
+              </div>
+
+              <form @submit.prevent="handleForgotSubmit" class="space-y-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-text-secondary mb-1">Email Akun Terdaftar *</label>
+                  <div class="relative">
+                    <div class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
+                      <Mail :size="14" />
+                    </div>
+                    <input
+                      v-model="forgotEmail"
+                      type="email"
+                      required
+                      placeholder="nama@upnvj.ac.id"
+                      class="w-full pl-9 pr-3 py-2 bg-surface/60 border border-gray-200 rounded-xl text-xs text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-all"
+                      :disabled="isSubmittingForgot"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-text-secondary mb-1">Catatan / Alasan (Opsional)</label>
+                  <textarea
+                    v-model="forgotNotes"
+                    rows="2"
+                    placeholder="Contoh: Lupa kata sandi sejak pergantian semester."
+                    class="w-full px-3 py-2 bg-surface/60 border border-gray-200 rounded-xl text-xs text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-all resize-none"
+                    :disabled="isSubmittingForgot"
+                  ></textarea>
+                </div>
+
+                <div class="p-2.5 rounded-xl bg-brand-50/60 border border-brand-200/60 text-[11px] text-text-secondary">
+                  <p class="font-semibold text-dark-green mb-0.5">Proses Verifikasi Internal</p>
+                  <p class="text-text-muted leading-tight">Admin TU Lab akan memverifikasi identitas Anda dan menyiapkan kata sandi sementara.</p>
+                </div>
+
+                <div class="flex gap-2 pt-1">
+                  <button
+                    type="submit"
+                    :disabled="isSubmittingForgot"
+                    class="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#0c5a30] to-[#094726] hover:from-[#094726] hover:to-[#07371d] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Loader2 v-if="isSubmittingForgot" :size="14" class="animate-spin" />
+                    <Send v-else :size="13" />
+                    <span>{{ isSubmittingForgot ? 'Mengirim...' : 'Kirim Permohonan' }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    @click="closeForgotModal"
+                    class="px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-text-secondary text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- STEP 2: KONFIRMASI TIKET TERKIRIM -->
+            <div v-else class="space-y-3.5">
+              <div>
+                <h3 class="text-base font-extrabold text-text-primary">Tiket Berhasil Diajukan!</h3>
+                <p class="text-xs text-text-muted mt-1 leading-relaxed">
+                  {{ forgotSuccessData?.message || 'Permohonan reset kata sandi berhasil diajukan.' }}
+                </p>
+              </div>
+
+              <div class="p-3.5 rounded-2xl bg-surface border border-gray-200/80 space-y-2 text-xs">
+                <div class="flex justify-between items-center py-0.5 border-b border-gray-100">
+                  <span class="text-text-muted text-[11px]">ID Tiket</span>
+                  <span class="font-mono font-black text-dark-green tracking-wide">#{{ (forgotSuccessData?.requestId || '').slice(0, 8).toUpperCase() }}</span>
+                </div>
+                <div class="flex justify-between items-center py-0.5 border-b border-gray-100">
+                  <span class="text-text-muted text-[11px]">Email Pemohon</span>
+                  <span class="font-semibold text-text-primary truncate max-w-[170px]">{{ forgotEmail }}</span>
+                </div>
+                <div class="flex justify-between items-center py-0.5">
+                  <span class="text-text-muted text-[11px]">Status</span>
+                  <span class="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200/70 text-amber-700 font-bold text-[10px]">
+                    Menunggu Verifikasi Admin
+                  </span>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-xl bg-brand-50/70 border border-brand-200/70 text-xs space-y-1">
+                <p class="font-bold text-dark-green text-[11.5px]">Langkah Selanjutnya:</p>
+                <p class="text-text-secondary text-[11px] leading-relaxed">
+                  Silakan temui petugas di <strong>Ruang Tata Usaha & Lab FIK UPNVJ</strong> atau hubungi <strong>admin@upnvj.ac.id</strong> untuk verifikasi kilat dan pengambilan kata sandi sementara.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                @click="closeForgotModal"
+                class="w-full py-2.5 rounded-xl bg-dark-green hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              >
+                Kembali ke Halaman Masuk
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
   </div>
 </template>

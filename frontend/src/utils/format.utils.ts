@@ -32,10 +32,13 @@ export function formatTime(
   timeZone = DEFAULT_TIMEZONE
 ): string {
   if (!date) return '--:--'
-  // If already in HH:mm or HH:mm:ss string format (e.g., "08:00")
-  if (typeof date === 'string' && date.length <= 8 && date.includes(':')) {
-    const timeOnly = date.substring(0, 5)
-    return includeWibSuffix ? `${timeOnly} WIB` : timeOnly
+  // If already in HH:mm or HH:mm:ss string format (e.g., "08:00" or "08.00")
+  if (typeof date === 'string') {
+    const match = date.trim().match(/^(\d{1,2})[:.](\d{1,2})/)
+    if (match && !date.includes('T')) {
+      const timeOnly = `${match[1]!.padStart(2, '0')}:${match[2]!.padStart(2, '0')}`
+      return includeWibSuffix ? `${timeOnly} WIB` : timeOnly
+    }
   }
   const d = typeof date === 'string' ? new Date(date) : date
   if (isNaN(d.getTime())) return String(date)
@@ -44,7 +47,9 @@ export function formatTime(
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  }).format(d)
+  })
+    .format(d)
+    .replace('.', ':')
   return includeWibSuffix ? `${timeStr} WIB` : timeStr
 }
 
