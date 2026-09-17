@@ -8,6 +8,19 @@ export interface DisplayAnnouncementDto {
   end_at: string
 }
 
+export interface DisplayLaboratoryFacilityDto {
+  id: string
+  quantity: number
+  condition: 'GOOD' | 'DAMAGED' | 'UNDER_MAINTENANCE'
+  facility: {
+    id: string
+    code: string
+    name: string
+    category: string
+    description?: string | null
+  }
+}
+
 export interface DisplayLaboratoryDto {
   id: string
   code: string
@@ -16,6 +29,7 @@ export interface DisplayLaboratoryDto {
   maximum_capacity: number
   image?: string | null
   status: 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'CLOSED'
+  laboratoryFacilities?: DisplayLaboratoryFacilityDto[]
 }
 
 export interface DisplayScheduleDto {

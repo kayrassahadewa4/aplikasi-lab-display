@@ -4,6 +4,7 @@ import {
   ScheduleStatus,
   RequestStatus,
   UsageStatus,
+  FacilityCondition,
 } from '@prisma/client';
 
 export class DisplayAnnouncementDto {
@@ -21,6 +22,26 @@ export class DisplayAnnouncementDto {
 
   @ApiProperty()
   end_at: Date;
+}
+
+export class DisplayLaboratoryFacilityDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  quantity: number;
+
+  @ApiProperty({ enum: FacilityCondition })
+  condition: FacilityCondition;
+
+  @ApiProperty()
+  facility: {
+    id: string;
+    code: string;
+    name: string;
+    category: string;
+    description?: string | null;
+  };
 }
 
 export class DisplayLaboratoryDto {
@@ -44,6 +65,9 @@ export class DisplayLaboratoryDto {
 
   @ApiProperty({ enum: LaboratoryStatus })
   status: LaboratoryStatus;
+
+  @ApiProperty({ type: [DisplayLaboratoryFacilityDto], required: false })
+  laboratoryFacilities?: DisplayLaboratoryFacilityDto[];
 }
 
 export class DisplayScheduleDto {

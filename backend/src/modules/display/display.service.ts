@@ -54,6 +54,25 @@ export class DisplayService {
         maximum_capacity: true,
         image: true,
         status: true,
+        laboratoryFacilities: {
+          select: {
+            id: true,
+            quantity: true,
+            condition: true,
+            facility: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+                category: true,
+                description: true,
+              },
+            },
+          },
+          orderBy: {
+            quantity: 'desc',
+          },
+        },
       },
       orderBy: {
         code: 'asc',

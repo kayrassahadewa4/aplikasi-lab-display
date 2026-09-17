@@ -10,10 +10,14 @@ import { UpdateFacilityDto } from './dto/update-facility.dto.js';
 import { ResponseFacilityDto } from './dto/response-facility.dto.js';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto.js';
 import { Prisma } from '@prisma/client';
+import { EventsGateway } from '../display/events.gateway.js';
 
 @Injectable()
 export class FacilityService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventsGateway: EventsGateway,
+  ) {}
 
   async create(
     createFacilityDto: CreateFacilityDto,
@@ -45,6 +49,11 @@ export class FacilityService {
             },
           },
         },
+      });
+
+      this.eventsGateway.emitDisplayUpdate('display:sync', {
+        type: 'FACILITY_CREATED',
+        id: facility.id,
       });
 
       return facility;
@@ -174,6 +183,11 @@ export class FacilityService {
         },
       });
 
+      this.eventsGateway.emitDisplayUpdate('display:sync', {
+        type: 'FACILITY_UPDATED',
+        id: facility.id,
+      });
+
       return facility;
     } catch (error) {
       if (
@@ -205,6 +219,11 @@ export class FacilityService {
 
       await this.prisma.facility.delete({
         where: { id },
+      });
+
+      this.eventsGateway.emitDisplayUpdate('display:sync', {
+        type: 'FACILITY_DELETED',
+        id,
       });
     } catch (error) {
       if (

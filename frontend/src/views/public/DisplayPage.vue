@@ -32,6 +32,11 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  Wrench,
+  Tv,
+  Wind,
+  Printer,
+  X,
 } from 'lucide-vue-next'
 import {
   displayService,
@@ -39,6 +44,7 @@ import {
   type DisplayLaboratoryDto,
   type DisplayScheduleDto,
   type DisplayRoomRequestDto,
+  type DisplayLaboratoryFacilityDto,
 } from '@/services/display.service'
 import { formatTime } from '@/utils/format.utils'
 
@@ -92,6 +98,18 @@ const infoSlides = [
     iconBg: 'bg-amber-100/90 dark:bg-[#132c1f] border-amber-300 dark:border-amber-600/70',
     description: 'Seluruh pengguna lab wajib menjaga kebersihan fasilitas, merapikan kembali kursi, serta dilarang membawa makanan dan minuman.',
     highlight: 'Pastikan melakukan Shut Down pada komputer dan log out dari akun pribadi sebelum meninggalkan lab.',
+  },
+  {
+    id: 'facility-readiness',
+    tab: 'Kesiapan Alat',
+    title: 'Pemeriksaan & Pemeliharaan Peralatan Lab',
+    badge: 'Inventaris Real-Time',
+    badgeClass: 'bg-emerald-700 text-white',
+    icon: Wrench,
+    iconColor: 'text-emerald-700 dark:text-[#4ade80]',
+    iconBg: 'bg-emerald-100/90 dark:bg-[#132c1f] border-emerald-300 dark:border-emerald-600/70',
+    description: 'Seluruh perangkat komputer, proyektor, AC, printer, dan koneksi internet dipantau kondisinya secara berkala oleh Staf Laboran FIK.',
+    highlight: 'Laporkan kendala perangkat atau fasilitas yang memerlukan perbaikan ke staf laboran yang bertugas.',
   },
 ]
 
@@ -269,6 +287,81 @@ const computeRemainingMinutes = (startTime: string, endTime: string): number => 
   }
 }
 
+// Equipment Data Interfaces
+export interface LabEquipmentItem {
+  id: string
+  name: string
+  code: string
+  category: string
+  quantity: number
+  condition: 'GOOD' | 'DAMAGED' | 'UNDER_MAINTENANCE'
+  description?: string | null
+}
+
+export interface LabEquipmentSummary {
+  totalUnits: number
+  goodUnits: number
+  damagedUnits: number
+  maintenanceUnits: number
+  healthPercentage: number
+  hasIssue: boolean
+  items: LabEquipmentItem[]
+}
+
+function computeEquipmentSummary(facilities?: DisplayLaboratoryFacilityDto[]): LabEquipmentSummary {
+  if (!facilities || facilities.length === 0) {
+    return {
+      totalUnits: 0,
+      goodUnits: 0,
+      damagedUnits: 0,
+      maintenanceUnits: 0,
+      healthPercentage: 100,
+      hasIssue: false,
+      items: [],
+    }
+  }
+
+  let totalUnits = 0
+  let goodUnits = 0
+  let damagedUnits = 0
+  let maintenanceUnits = 0
+
+  const items: LabEquipmentItem[] = facilities.map((lf) => {
+    const qty = lf.quantity || 1
+    totalUnits += qty
+    if (lf.condition === 'GOOD') {
+      goodUnits += qty
+    } else if (lf.condition === 'DAMAGED') {
+      damagedUnits += qty
+    } else if (lf.condition === 'UNDER_MAINTENANCE') {
+      maintenanceUnits += qty
+    }
+
+    return {
+      id: lf.id,
+      name: lf.facility?.name || 'Peralatan Lab',
+      code: lf.facility?.code || 'FAC',
+      category: lf.facility?.category || 'Umum',
+      quantity: qty,
+      condition: lf.condition || 'GOOD',
+      description: lf.facility?.description,
+    }
+  })
+
+  const healthPercentage = totalUnits > 0 ? Math.round((goodUnits / totalUnits) * 100) : 100
+  const hasIssue = damagedUnits > 0 || maintenanceUnits > 0
+
+  return {
+    totalUnits,
+    goodUnits,
+    damagedUnits,
+    maintenanceUnits,
+    healthPercentage,
+    hasIssue,
+    items,
+  }
+}
+
 export interface FormattedLiveSession {
   id: string
   labId: string
@@ -287,6 +380,7 @@ export interface FormattedLiveSession {
   status: 'IN_USE' | 'UPCOMING' | 'AVAILABLE' | 'MAINTENANCE'
   capacity: number
   occupancy: number
+  equipmentSummary: LabEquipmentSummary
 }
 
 // Computed: Build live lab sessions list combining laboratories, usages, schedules, and requests
@@ -302,6 +396,8 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
   const { laboratories, schedules, room_requests, room_usage } = displayData.value
 
   return laboratories.map((lab: DisplayLaboratoryDto) => {
+    const equipmentSummary = computeEquipmentSummary(lab.laboratoryFacilities)
+
     // If laboratory is in maintenance or closed
     if (lab.status === 'MAINTENANCE' || lab.status === 'CLOSED') {
       return {
@@ -322,6 +418,7 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
         status: 'MAINTENANCE',
         capacity: lab.maximum_capacity,
         occupancy: 0,
+        equipmentSummary,
       }
     }
 
@@ -445,6 +542,7 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
           status: 'IN_USE',
           capacity: lab.maximum_capacity,
           occupancy,
+          equipmentSummary,
         }
       }
     }
@@ -495,6 +593,7 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
         status: 'UPCOMING',
         capacity: lab.maximum_capacity,
         occupancy: 0,
+        equipmentSummary,
       }
     }
 
@@ -517,6 +616,7 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
       status: 'AVAILABLE',
       capacity: lab.maximum_capacity,
       occupancy: 0,
+      equipmentSummary,
     }
   })
 })
@@ -532,6 +632,72 @@ const availableLabsCount = computed(() => {
 const upcomingLabsCount = computed(() => {
   return liveLabSessions.value.filter((s) => s.status === 'UPCOMING').length
 })
+
+// Overall Equipment Statistics Across All Labs
+const overallEquipmentStats = computed(() => {
+  let total = 0
+  let good = 0
+  let damaged = 0
+  let maintenance = 0
+
+  liveLabSessions.value.forEach((s) => {
+    if (s.equipmentSummary) {
+      total += s.equipmentSummary.totalUnits
+      good += s.equipmentSummary.goodUnits
+      damaged += s.equipmentSummary.damagedUnits
+      maintenance += s.equipmentSummary.maintenanceUnits
+    }
+  })
+
+  const healthRate = total > 0 ? Math.round((good / total) * 100) : 100
+  return {
+    total,
+    good,
+    damaged,
+    maintenance,
+    healthRate,
+  }
+})
+
+// Live Equipment Inspector Modal State & Helpers
+const selectedLabForEquipment = ref<FormattedLiveSession | null>(null)
+const isEquipmentModalOpen = ref(false)
+
+const openEquipmentModal = (session: FormattedLiveSession) => {
+  selectedLabForEquipment.value = session
+  isEquipmentModalOpen.value = true
+}
+
+const openOverallEquipmentModal = () => {
+  const firstSession = liveLabSessions.value[0]
+  if (firstSession) {
+    selectedLabForEquipment.value = firstSession
+    isEquipmentModalOpen.value = true
+  }
+}
+
+const closeEquipmentModal = () => {
+  isEquipmentModalOpen.value = false
+  selectedLabForEquipment.value = null
+}
+
+const getEquipmentIcon = (name: string, _category?: string) => {
+  const n = (name || '').toLowerCase()
+  if (n.includes('komputer') || n.includes('pc') || n.includes('desktop')) return Monitor
+  if (n.includes('proyektor') || n.includes('lcd') || n.includes('screen')) return Tv
+  if (n.includes('pendingin') || n.includes('ac') || n.includes('air conditioner')) return Wind
+  if (n.includes('printer') || n.includes('cetak')) return Printer
+  if (n.includes('internet') || n.includes('wifi') || n.includes('lan') || n.includes('jaringan')) return Wifi
+  if (n.includes('papan') || n.includes('whiteboard')) return BookOpen
+  return Cpu
+}
+
+const getLabPcQuantity = (session: FormattedLiveSession): number => {
+  const pcItem = session.equipmentSummary?.items.find((i) =>
+    i.name.toLowerCase().includes('komputer') || i.name.toLowerCase().includes('pc'),
+  )
+  return pcItem?.quantity || session.capacity
+}
 
 interface StreamItem {
   id: string
@@ -934,6 +1100,20 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="flex items-center gap-2">
+            <button
+              @click="openOverallEquipmentModal"
+              type="button"
+              :class="[
+                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-all duration-300 flex items-center gap-1.5 shadow-sm tracking-wide cursor-pointer hover:scale-105 active:scale-95',
+                isDarkMode
+                  ? 'text-amber-300 bg-amber-500/20 border-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.25)] hover:bg-amber-500/30'
+                  : 'text-emerald-950 bg-amber-100 border-amber-300 hover:bg-amber-200'
+              ]"
+              title="Klik untuk inspeksi kesiapan seluruh peralatan lab"
+            >
+              <Wrench :size="12" class="text-amber-400" />
+              <span>{{ overallEquipmentStats.healthRate }}% ALAT SIAP ({{ overallEquipmentStats.good }}/{{ overallEquipmentStats.total }})</span>
+            </button>
             <span
               :class="[
                 'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 shadow-sm tracking-wide',
@@ -1258,6 +1438,34 @@ onUnmounted(() => {
                         </span>
                       </span>
                     </div>
+
+                    <!-- Real-time Equipment Readiness Strip -->
+                    <button
+                      @click="openEquipmentModal(session)"
+                      type="button"
+                      :class="[
+                        'w-full py-1.5 px-2.5 rounded-lg border flex items-center justify-between text-[11px] font-semibold transition-all cursor-pointer hover:opacity-90',
+                        isDarkMode
+                          ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200 hover:border-emerald-400'
+                          : 'bg-emerald-50 border-emerald-200 text-emerald-900 hover:border-emerald-400'
+                      ]"
+                    >
+                      <span class="flex items-center gap-1.5 truncate">
+                        <Wrench :size="12" class="text-emerald-400 shrink-0" />
+                        <span class="truncate">Fasilitas: <strong>{{ session.equipmentSummary.goodUnits }} / {{ session.equipmentSummary.totalUnits }} Unit Siap</strong></span>
+                      </span>
+                      <span
+                        :class="[
+                          'text-[9.5px] font-bold px-1.5 py-0.5 rounded shrink-0 flex items-center gap-1',
+                          session.equipmentSummary.healthPercentage >= 90
+                            ? 'bg-emerald-500/20 text-emerald-300'
+                            : 'bg-amber-500/20 text-amber-300'
+                        ]"
+                      >
+                        <span>{{ session.equipmentSummary.healthPercentage }}% Siap</span>
+                        <span>&bull; Cek Alat &rarr;</span>
+                      </span>
+                    </button>
                   </div>
                 </div>
 
@@ -1290,6 +1498,24 @@ onUnmounted(() => {
                 <p :class="['text-[11px] font-semibold truncate', isDarkMode ? 'text-sky-300' : 'text-gray-600']">
                   Dosen: <span :class="['font-bold', isDarkMode ? 'text-white' : 'text-gray-900']">{{ session.instructor }}</span>
                 </p>
+
+                <!-- Equipment Readiness Trigger for UPCOMING -->
+                <button
+                  @click="openEquipmentModal(session)"
+                  type="button"
+                  :class="[
+                    'w-full py-1 px-2 rounded-lg border text-[10.5px] font-semibold flex items-center justify-between transition-all cursor-pointer mt-1.5',
+                    isDarkMode
+                      ? 'bg-sky-900/40 border-sky-600/50 text-sky-200 hover:border-sky-400'
+                      : 'bg-white border-sky-200 text-sky-900 hover:border-sky-400'
+                  ]"
+                >
+                  <span class="flex items-center gap-1.5 truncate">
+                    <Wrench :size="11" class="text-sky-400 shrink-0" />
+                    <span>Inventaris Alat: <strong>{{ session.equipmentSummary.goodUnits }}/{{ session.equipmentSummary.totalUnits }} Siap</strong></span>
+                  </span>
+                  <span class="text-[9.5px] font-bold underline">Lihat &rarr;</span>
+                </button>
               </div>
 
               <!-- STATE: MAINTENANCE -->
@@ -1307,13 +1533,13 @@ onUnmounted(() => {
                 <p class="text-[11px] font-medium">Pemeriksaan teknis sedang dilakukan oleh Staf Laboran.</p>
               </div>
 
-              <!-- STATE: AVAILABLE (Substantial 3-Tile Feature Showcase) -->
+              <!-- STATE: AVAILABLE (Substantial 3-Tile Feature Showcase with Live Data) -->
               <div v-else class="space-y-2 py-0.5">
                 <div :class="['flex items-center gap-1.5 text-xs font-bold', isDarkMode ? 'text-[#4ade80]' : 'text-teal-800']">
                   <CheckCircle2 :size="15" class="shrink-0" />
                   <span>Laboratorium Terbuka & Siap Digunakan</span>
                 </div>
-                <!-- 3 Colorful Micro-Tiles (Replaces the empty void) -->
+                <!-- 3 Dynamic Feature Micro-Tiles -->
                 <div class="grid grid-cols-3 gap-2 text-[10.5px]">
                   <div
                     :class="[
@@ -1324,8 +1550,8 @@ onUnmounted(() => {
                     ]"
                   >
                     <Monitor :size="15" :class="isDarkMode ? 'text-[#4ade80]' : 'text-emerald-700'" class="mb-1" />
-                    <span class="font-bold text-[11px] leading-tight">{{ session.capacity }} PC Siap</span>
-                    <span class="text-[9px] opacity-75">Core i7 • 16GB</span>
+                    <span class="font-bold text-[11px] leading-tight">{{ getLabPcQuantity(session) }} PC Aktif</span>
+                    <span class="text-[9px] opacity-75">Siap Praktikum</span>
                   </div>
                   <div
                     :class="[
@@ -1337,7 +1563,7 @@ onUnmounted(() => {
                   >
                     <Wifi :size="15" :class="isDarkMode ? 'text-[#4ade80]' : 'text-teal-700'" class="mb-1" />
                     <span class="font-bold text-[11px] leading-tight">Gigabit LAN</span>
-                    <span class="text-[9px] opacity-75">WiFi FIK Cepat</span>
+                    <span class="text-[9px] opacity-75">Koneksi Kampus</span>
                   </div>
                   <div
                     :class="[
@@ -1348,10 +1574,37 @@ onUnmounted(() => {
                     ]"
                   >
                     <Sparkles :size="15" :class="isDarkMode ? 'text-[#4ade80]' : 'text-sky-700'" class="mb-1" />
-                    <span class="font-bold text-[11px] leading-tight">AC & Proyektor</span>
-                    <span class="text-[9px] opacity-75">Kondusif & Dingin</span>
+                    <span class="font-bold text-[11px] leading-tight">{{ session.equipmentSummary.goodUnits }} Alat Siap</span>
+                    <span class="text-[9px] opacity-75">Kondisi Prima</span>
                   </div>
                 </div>
+
+                <!-- Interactive Equipment Checker Button -->
+                <button
+                  @click="openEquipmentModal(session)"
+                  type="button"
+                  :class="[
+                    'w-full py-1.5 px-2.5 rounded-xl border-2 flex items-center justify-between text-[10.5px] font-bold transition-all cursor-pointer shadow-2xs hover:scale-[1.01] active:scale-[0.99]',
+                    isDarkMode
+                      ? 'bg-emerald-950/60 border-emerald-600/50 text-[#4ade80] hover:border-emerald-400 hover:bg-emerald-900/40'
+                      : 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100 hover:border-emerald-400'
+                  ]"
+                >
+                  <span class="flex items-center gap-1.5">
+                    <Wrench :size="12" class="text-emerald-500 shrink-0" />
+                    <span>Status Alat: {{ session.equipmentSummary.goodUnits }}/{{ session.equipmentSummary.totalUnits }} Tersedia</span>
+                  </span>
+                  <span
+                    :class="[
+                      'px-2 py-0.5 rounded-md text-[9.5px] font-mono font-bold tracking-wide uppercase',
+                      session.equipmentSummary.healthPercentage === 100
+                        ? 'bg-emerald-500/20 text-emerald-300'
+                        : 'bg-amber-500/20 text-amber-300'
+                    ]"
+                  >
+                    {{ session.equipmentSummary.healthPercentage }}% Kesiapan • Rincian &rarr;
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -1964,6 +2217,341 @@ onUnmounted(() => {
         </div>
       </div>
     </footer>
+
+    <!-- 4. LIVE EQUIPMENT INSPECTOR MODAL (POPUP REAL-TIME DIALOG) -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div
+          v-if="isEquipmentModalOpen && selectedLabForEquipment"
+          class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-md"
+          @click.self="closeEquipmentModal"
+        >
+          <div
+            :class="[
+              'w-full max-w-4xl max-h-[90vh] rounded-2xl border-2 flex flex-col shadow-2xl overflow-hidden relative transition-all duration-300',
+              isDarkMode
+                ? 'bg-[#081710] border-emerald-500 text-white shadow-[0_0_50px_rgba(74,222,128,0.25)]'
+                : 'bg-white border-emerald-600 text-gray-900 shadow-2xl'
+            ]"
+          >
+            <!-- Modal Accent Top Line -->
+            <div
+              :class="[
+                'h-1.5 w-full shrink-0',
+                isDarkMode
+                  ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400'
+                  : 'bg-gradient-to-r from-[#0c5a30] via-emerald-600 to-teal-500'
+              ]"
+            />
+
+            <!-- Modal Header -->
+            <div
+              :class="[
+                'px-5 py-4 border-b flex items-start justify-between gap-3 shrink-0',
+                isDarkMode ? 'border-emerald-800/80 bg-[#0c2419]' : 'border-emerald-100 bg-emerald-50/60'
+              ]"
+            >
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span
+                    :class="[
+                      'px-2.5 py-0.5 rounded-lg font-mono text-xs font-bold border-2',
+                      isDarkMode
+                        ? 'bg-emerald-500/25 border-emerald-400 text-[#4ade80]'
+                        : 'bg-emerald-600 border-emerald-700 text-white'
+                    ]"
+                  >
+                    {{ selectedLabForEquipment.labCode }}
+                  </span>
+                  <h3 class="text-base sm:text-lg font-bold tracking-tight">
+                    {{ selectedLabForEquipment.labName }}
+                  </h3>
+                  <span
+                    :class="[
+                      'text-xs font-bold px-2.5 py-0.5 rounded-full border flex items-center gap-1',
+                      selectedLabForEquipment.status === 'IN_USE'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                        : selectedLabForEquipment.status === 'AVAILABLE'
+                          ? 'bg-teal-500/20 text-teal-300 border-teal-500/40'
+                          : 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                    ]"
+                  >
+                    <span class="w-2 h-2 rounded-full bg-current"></span>
+                    <span>{{ selectedLabForEquipment.status }}</span>
+                  </span>
+                </div>
+                <p :class="['text-xs font-medium flex items-center gap-1.5', isDarkMode ? 'text-emerald-200/80' : 'text-emerald-800']">
+                  <MapPin :size="13" class="shrink-0" />
+                  <span>{{ selectedLabForEquipment.location }} &bull; Kapasitas: {{ selectedLabForEquipment.capacity }} Kursi</span>
+                </p>
+              </div>
+
+              <!-- Close Button -->
+              <button
+                @click="closeEquipmentModal"
+                type="button"
+                :class="[
+                  'p-2 rounded-xl border-2 transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0',
+                  isDarkMode
+                    ? 'bg-white/10 hover:bg-white/20 border-emerald-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
+                ]"
+                title="Tutup Modal"
+                aria-label="Tutup"
+              >
+                <X :size="18" />
+              </button>
+            </div>
+
+            <!-- Lab Switcher Tabs -->
+            <div
+              :class="[
+                'px-5 py-2 border-b flex items-center gap-1.5 overflow-x-auto shrink-0 custom-scrollbar',
+                isDarkMode ? 'border-emerald-900 bg-[#06120c]' : 'border-gray-100 bg-gray-50'
+              ]"
+            >
+              <span class="text-[11px] font-bold uppercase tracking-wider opacity-70 shrink-0 mr-1">
+                Pilih Lab:
+              </span>
+              <button
+                v-for="labSession in liveLabSessions"
+                :key="labSession.id"
+                @click="selectedLabForEquipment = labSession"
+                type="button"
+                :class="[
+                  'px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 border',
+                  selectedLabForEquipment.id === labSession.id
+                    ? isDarkMode
+                      ? 'bg-emerald-500/30 text-[#4ade80] border-emerald-400 shadow-xs'
+                      : 'bg-[#0c5a30] text-white border-emerald-700 shadow-xs'
+                    : isDarkMode
+                      ? 'bg-[#0d2117] text-emerald-300 border-emerald-800 hover:border-emerald-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-400'
+                ]"
+              >
+                <span>{{ labSession.labCode }}</span>
+                <span
+                  :class="[
+                    'w-1.5 h-1.5 rounded-full',
+                    labSession.equipmentSummary.healthPercentage === 100 ? 'bg-emerald-400' : 'bg-amber-400'
+                  ]"
+                />
+              </button>
+            </div>
+
+            <!-- Modal Body (Scrollable) -->
+            <div class="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+              <!-- Summary Health Banner -->
+              <div
+                :class="[
+                  'p-4 rounded-xl border-2 space-y-3',
+                  isDarkMode ? 'bg-[#0d261a] border-emerald-600/60' : 'bg-emerald-50 border-emerald-200'
+                ]"
+              >
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                  <div class="flex items-center gap-2">
+                    <Wrench :size="18" :class="isDarkMode ? 'text-[#4ade80]' : 'text-emerald-700'" />
+                    <h4 class="text-sm font-bold tracking-tight">
+                      Indeks Kesiapan & Kelaikan Peralatan Lab
+                    </h4>
+                  </div>
+                  <span
+                    :class="[
+                      'px-3 py-1 rounded-full font-mono text-xs font-bold border-2',
+                      selectedLabForEquipment.equipmentSummary.healthPercentage === 100
+                        ? isDarkMode
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400'
+                          : 'bg-emerald-600 text-white border-emerald-700'
+                        : isDarkMode
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-400'
+                          : 'bg-amber-500 text-slate-950 border-amber-600'
+                    ]"
+                  >
+                    {{ selectedLabForEquipment.equipmentSummary.healthPercentage }}% SIAP DIGUNAKAN
+                  </span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div
+                  :class="[
+                    'w-full rounded-full h-3 p-0.5 overflow-hidden border',
+                    isDarkMode ? 'bg-black/40 border-emerald-800' : 'bg-white border-emerald-200'
+                  ]"
+                >
+                  <div
+                    class="bg-gradient-to-r from-emerald-600 via-emerald-400 to-teal-300 h-full rounded-full transition-all duration-500"
+                    :style="{ width: `${selectedLabForEquipment.equipmentSummary.healthPercentage}%` }"
+                  />
+                </div>
+
+                <!-- 4 Quick Counter Badges -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                  <div
+                    :class="[
+                      'p-2.5 rounded-lg border text-center font-bold',
+                      isDarkMode ? 'bg-[#07170f] border-emerald-800/80 text-white' : 'bg-white border-emerald-100 text-gray-900'
+                    ]"
+                  >
+                    <span class="text-[10.5px] block opacity-75 font-normal">Total Peralatan</span>
+                    <span class="text-base font-mono font-bold">{{ selectedLabForEquipment.equipmentSummary.totalUnits }} Unit</span>
+                  </div>
+                  <div
+                    :class="[
+                      'p-2.5 rounded-lg border text-center font-bold',
+                      isDarkMode ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300' : 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
+                    ]"
+                  >
+                    <span class="text-[10.5px] block opacity-75 font-normal">Kondisi Baik</span>
+                    <span class="text-base font-mono font-bold">{{ selectedLabForEquipment.equipmentSummary.goodUnits }} Unit</span>
+                  </div>
+                  <div
+                    :class="[
+                      'p-2.5 rounded-lg border text-center font-bold',
+                      isDarkMode ? 'bg-amber-950/40 border-amber-500/50 text-amber-300' : 'bg-amber-100/70 border-amber-300 text-amber-950'
+                    ]"
+                  >
+                    <span class="text-[10.5px] block opacity-75 font-normal">Dalam Pemeliharaan</span>
+                    <span class="text-base font-mono font-bold">{{ selectedLabForEquipment.equipmentSummary.maintenanceUnits }} Unit</span>
+                  </div>
+                  <div
+                    :class="[
+                      'p-2.5 rounded-lg border text-center font-bold',
+                      isDarkMode ? 'bg-rose-950/40 border-rose-500/50 text-rose-300' : 'bg-rose-100/70 border-rose-300 text-rose-950'
+                    ]"
+                  >
+                    <span class="text-[10.5px] block opacity-75 font-normal">Rusak / Trouble</span>
+                    <span class="text-base font-mono font-bold">{{ selectedLabForEquipment.equipmentSummary.damagedUnits }} Unit</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Equipment Items Grid -->
+              <div class="space-y-2">
+                <h5 class="text-xs font-bold uppercase tracking-wider opacity-80 flex items-center gap-1.5">
+                  <Activity :size="13" />
+                  <span>Daftar Fasilitas & Inventaris Real-Time</span>
+                </h5>
+
+                <!-- Empty state if no equipment found -->
+                <div
+                  v-if="selectedLabForEquipment.equipmentSummary.items.length === 0"
+                  :class="[
+                    'p-6 text-center rounded-xl border-2 border-dashed space-y-2',
+                    isDarkMode ? 'border-emerald-800 text-emerald-300' : 'border-gray-200 text-gray-500'
+                  ]"
+                >
+                  <Wrench :size="28" class="mx-auto opacity-50" />
+                  <p class="text-xs font-medium">Belum ada rincian peralatan yang terdata untuk laboratorium ini.</p>
+                </div>
+
+                <!-- Items list -->
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  <div
+                    v-for="item in selectedLabForEquipment.equipmentSummary.items"
+                    :key="item.id"
+                    :class="[
+                      'p-3 rounded-xl border-2 transition-all flex items-start gap-3 shadow-xs',
+                      isDarkMode
+                        ? 'bg-[#0d2218] border-emerald-700/60 hover:border-emerald-500'
+                        : 'bg-white border-gray-200 hover:border-emerald-300'
+                    ]"
+                  >
+                    <!-- Item Icon -->
+                    <div
+                      :class="[
+                        'w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs',
+                        isDarkMode
+                          ? 'bg-emerald-500/20 border-emerald-500/50 text-[#4ade80]'
+                          : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      ]"
+                    >
+                      <component :is="getEquipmentIcon(item.name, item.category)" :size="20" />
+                    </div>
+
+                    <!-- Item Details -->
+                    <div class="flex-1 min-w-0 space-y-1">
+                      <div class="flex items-center justify-between gap-1.5">
+                        <h6 class="font-bold text-xs sm:text-[13px] truncate">
+                          {{ item.name }}
+                        </h6>
+                        <span class="font-mono text-xs font-bold px-2 py-0.5 rounded-md border shrink-0"
+                          :class="isDarkMode ? 'bg-black/30 border-emerald-700/70 text-emerald-200' : 'bg-gray-100 border-gray-300 text-gray-800'"
+                        >
+                          {{ item.quantity }} Unit
+                        </span>
+                      </div>
+
+                      <div class="flex items-center gap-1.5 flex-wrap text-[10.5px]">
+                        <span
+                          :class="[
+                            'font-mono px-1.5 py-0.2 rounded border font-semibold',
+                            isDarkMode ? 'bg-[#06140d] border-emerald-800 text-emerald-300' : 'bg-gray-50 border-gray-200 text-gray-600'
+                          ]"
+                        >
+                          {{ item.code }}
+                        </span>
+                        <span class="opacity-60">&bull;</span>
+                        <span class="opacity-80">{{ item.category }}</span>
+                      </div>
+
+                      <!-- Status Badge -->
+                      <div class="pt-0.5">
+                        <span
+                          v-if="item.condition === 'GOOD'"
+                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/50"
+                        >
+                          <CheckCircle2 :size="11" />
+                          <span>Siap Pakai (Kondisi Baik)</span>
+                        </span>
+                        <span
+                          v-else-if="item.condition === 'UNDER_MAINTENANCE'"
+                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/50"
+                        >
+                          <AlertTriangle :size="11" />
+                          <span>Dalam Perawatan / Maintenance</span>
+                        </span>
+                        <span
+                          v-else
+                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50"
+                        >
+                          <AlertTriangle :size="11" />
+                          <span>Rusak (Perlu Perbaikan)</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div
+              :class="[
+                'px-5 py-3 border-t flex items-center justify-between gap-3 shrink-0',
+                isDarkMode ? 'border-emerald-800/80 bg-[#0c2419]' : 'border-gray-200 bg-gray-50'
+              ]"
+            >
+              <div class="flex items-center gap-1.5 text-xs opacity-75">
+                <ShieldCheck :size="14" class="text-emerald-500" />
+                <span>Data tersinkronisasi otomatis via WebSocket Display Center</span>
+              </div>
+              <button
+                @click="closeEquipmentModal"
+                type="button"
+                :class="[
+                  'px-4 py-1.5 rounded-xl font-bold text-xs border-2 transition-all cursor-pointer active:scale-95',
+                  isDarkMode
+                    ? 'bg-emerald-500 text-gray-950 border-emerald-400 hover:bg-emerald-400'
+                    : 'bg-[#0c5a30] text-white border-emerald-700 hover:bg-[#07371d]'
+                ]"
+              >
+                Tutup Jendela
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
