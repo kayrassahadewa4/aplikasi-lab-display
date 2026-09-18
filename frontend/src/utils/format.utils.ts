@@ -106,3 +106,16 @@ export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return `${text.slice(0, maxLength)}...`
 }
+
+/**
+ * Resolve relative upload paths (e.g. "/uploads/documents/xxx.pdf") to full backend URLs.
+ */
+export function getFileUrl(path?: string | null): string {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) {
+    return path
+  }
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api').replace(/\/api\/?$/, '')
+  return `${base}${path.startsWith('/') ? '' : '/'}${path}`
+}
+

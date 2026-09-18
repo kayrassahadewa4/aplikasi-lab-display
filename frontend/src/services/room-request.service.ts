@@ -28,6 +28,7 @@ export interface RoomRequest {
   participantCount: number
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
   rejectionReason: string | null
+  documentUrl: string | null
   approvedAt: string | null
   createdAt: string
   updatedAt: string
@@ -44,6 +45,7 @@ export interface CreateRoomRequestPayload {
   startTime: string // HH:mm
   endTime: string // HH:mm
   participantCount: number
+  documentUrl?: string | null
   status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
   isRecurring?: boolean
   occurrences?: number
@@ -60,6 +62,7 @@ export interface UpdateRoomRequestPayload {
   startTime?: string
   endTime?: string
   participantCount?: number
+  documentUrl?: string | null
   status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
   approvedBy?: string
   rejectionReason?: string
@@ -99,6 +102,7 @@ interface BackendRoomRequestDto {
   start_time: string // ISO DateTime string (TIME(6) serialized)
   end_time: string // ISO DateTime string (TIME(6) serialized)
   participant_count?: number
+  document_url?: string | null
   status?: string
   rejection_reason?: string | null
   applicant?: {
@@ -227,6 +231,7 @@ function mapToFrontend(dto: BackendRoomRequestDto): RoomRequest {
     participantCount: dto.participant_count || 0,
     status: (dto.status || 'PENDING') as RoomRequest['status'],
     rejectionReason: dto.rejection_reason || null,
+    documentUrl: dto.document_url || null,
     approvedAt: dto.approved_at ? formatTimestamp(dto.approved_at) : null,
     createdAt: dto.created_at ? formatTimestamp(dto.created_at) : '',
     updatedAt: dto.updated_at ? formatTimestamp(dto.updated_at) : '',
@@ -249,6 +254,7 @@ function mapCreateToBackend(payload: CreateRoomRequestPayload): any {
 
   if (payload.courseName) backendPayload.course_name = payload.courseName
   if (payload.className) backendPayload.class_name = payload.className
+  if (payload.documentUrl !== undefined) backendPayload.document_url = payload.documentUrl
   if (payload.isRecurring !== undefined) backendPayload.is_recurring = payload.isRecurring
   if (payload.occurrences !== undefined) backendPayload.occurrences = payload.occurrences
 
@@ -281,6 +287,8 @@ function mapUpdateToBackend(payload: UpdateRoomRequestPayload): any {
     backendPayload.end_time = toBackendTime(payload.endTime)
   if (payload.participantCount !== undefined)
     backendPayload.participant_count = payload.participantCount
+  if (payload.documentUrl !== undefined)
+    backendPayload.document_url = payload.documentUrl
   if (payload.status !== undefined) backendPayload.status = payload.status
   if (payload.approvedBy !== undefined)
     backendPayload.approved_by = payload.approvedBy
@@ -429,5 +437,24 @@ export const roomRequestService = {
     return this.updateRoomRequest(id, {
       status: 'CANCELLED',
     })
+  },
+
+  /**
+   * Upload supporting document/letter (PDF/PNG/JPG)
+   */
+  async uploadAttachment(file: File): Promise<{ url: string; originalname: string; size: number }> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await apiClient.post<{
+      success: boolean
+      statusCode: number
+      message: string
+      data: { url: string; originalname: string; size: number }
+    }>('/room-requests/upload-attachment', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data.data
   },
 }

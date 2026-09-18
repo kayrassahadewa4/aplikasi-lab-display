@@ -10,6 +10,8 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
@@ -20,7 +22,13 @@ import {
   ApiParam,
   ApiQuery,
   ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import * as fs from 'fs';
 import { RoomRequestService } from './room-request.service.js';
 import { CreateRoomRequestDto } from './dto/create-room-request.dto.js';
 import { UpdateRoomRequestDto } from './dto/update-room-request.dto.js';
@@ -39,6 +47,79 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 @ApiBearerAuth()
 export class RoomRequestController {
   constructor(private readonly roomRequestService: RoomRequestService) {}
+
+  @Post('upload-attachment')
+  @Roles('ADMIN', 'LABORAN', 'DOSEN')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (_req, _file, cb) => {
+          const uploadDir = join(process.cwd(), 'public', 'uploads', 'documents');
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          cb(null, uploadDir);
+        },
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          const ext = extname(file.originalname).toLowerCase();
+          cb(null, `doc-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        const allowedMimes = [
+          'application/pdf',
+          'image/jpeg',
+          'image/png',
+          'image/webp',
+        ];
+        if (!allowedMimes.includes(file.mimetype)) {
+          return cb(
+            new BadRequestException(
+              'Hanya berkas dokumen (PDF, JPEG, PNG, WEBP) yang diizinkan!',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB limit
+      },
+    }),
+  )
+  @ApiOperation({ summary: 'Upload supporting official letter/document for room request' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Document file (PDF, PNG, JPG, max 5MB)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Document uploaded successfully',
+  })
+  async uploadAttachment(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ url: string; originalname: string; size: number }> {
+    if (!file) {
+      throw new BadRequestException('Berkas lampiran tidak ditemukan!');
+    }
+    const relativeUrl = `/uploads/documents/${file.filename}`;
+    return {
+      url: relativeUrl,
+      originalname: file.originalname,
+      size: file.size,
+    };
+  }
 
   @Post()
   @Roles('ADMIN', 'LABORAN', 'DOSEN')

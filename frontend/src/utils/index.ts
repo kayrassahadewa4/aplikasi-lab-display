@@ -1,4 +1,4 @@
-export { formatDate, formatTime, formatDateTime, truncateText } from './format.utils'
+export { formatDate, formatTime, formatDateTime, truncateText, getFileUrl } from './format.utils'
 export { tokenStorage } from './token.utils'
 export { sessionManager } from './session.utils'
 export * from './error.utils'

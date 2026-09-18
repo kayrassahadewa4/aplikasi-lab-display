@@ -10,6 +10,8 @@ import {
   Megaphone,
   BarChart3,
   SlidersHorizontal,
+  Wrench,
+  Hammer,
 } from 'lucide-vue-next'
 
 export interface MenuItem {
@@ -44,6 +46,20 @@ export const useLaboranNavStore = defineStore('laboranNav', () => {
       label: 'Laboratorium',
       icon: FlaskConical,
       path: '/laboran/laboratories',
+      section: 'main',
+    },
+    {
+      id: 'issue-tickets',
+      label: 'Tiket Kendala Alat',
+      icon: Wrench,
+      path: '/laboran/issue-tickets',
+      section: 'main',
+    },
+    {
+      id: 'maintenance-logs',
+      label: 'Log Perawatan',
+      icon: Hammer,
+      path: '/laboran/maintenance-logs',
       section: 'main',
     },
     {

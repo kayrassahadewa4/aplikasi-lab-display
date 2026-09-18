@@ -20,7 +20,7 @@ interface LaboratoryFacilityInfo {
   laboratory: LaboratoryInfo
 }
 
-interface BackendFacilityDto {
+export interface BackendFacilityDto {
   id: string
   code: string
   name: string
@@ -180,4 +180,41 @@ export const facilityService = {
   async deleteFacility(id: string): Promise<void> {
     await apiClient.delete(`/facilities/${id}`)
   },
+
+  /**
+   * Fetch raw facilities with laboratory facilities assignments
+   */
+  async getRawFacilities(): Promise<BackendFacilityDto[]> {
+    const response = await apiClient.get<{ data: PaginatedResponse<BackendFacilityDto> }>('/facilities', {
+      params: { limit: 100 },
+    })
+    return response.data.data.data
+  },
+
+  /**
+   * Fetch facilities available inside a specific laboratory
+   */
+  async getFacilitiesByLaboratoryId(
+    laboratoryId: string
+  ): Promise<Array<{ id: string; code: string; name: string; category: string; condition?: string; quantity?: number }>> {
+    const rawList = await this.getRawFacilities()
+    const result: Array<{ id: string; code: string; name: string; category: string; condition?: string; quantity?: number }> = []
+    for (const fac of rawList) {
+      const match = fac.laboratoryFacilities?.find(
+        (lf) => lf.laboratory_id === laboratoryId || lf.laboratory?.id === laboratoryId
+      )
+      if (match) {
+        result.push({
+          id: fac.id,
+          code: fac.code,
+          name: fac.name,
+          category: fac.category,
+          condition: match.condition,
+          quantity: match.quantity,
+        })
+      }
+    }
+    return result
+  },
 }
+

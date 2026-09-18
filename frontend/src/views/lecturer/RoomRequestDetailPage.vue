@@ -19,11 +19,14 @@ import {
   Calendar,
   Trash2,
   Loader2,
-  Users,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Paperclip,
+  ExternalLink,
+  Download
 } from 'lucide-vue-next'
 import { roomRequestService, type RoomRequest } from '@/services/room-request.service'
+import { getFileUrl } from '@/utils/format.utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -316,6 +319,66 @@ const handleDeleteRequest = async () => {
 
           <div class="p-4 rounded-xl bg-surface/60 border border-gray-200/70 text-xs text-text-primary leading-relaxed whitespace-pre-line font-medium">
             {{ request.description }}
+          </div>
+        </div>
+
+        <!-- Document Attachment Card -->
+        <div class="bg-white rounded-2xl border border-gray-200/80 shadow-2xs p-6 space-y-4">
+          <div class="border-b border-gray-100 pb-3 flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-extrabold text-text-primary tracking-tight">Dokumen / Surat Pendukung</h3>
+              <p class="text-xs text-text-muted">Berkas resmi permohonan peminjaman ruangan laboratorium.</p>
+            </div>
+            <span
+              :class="[
+                'px-2.5 py-0.5 rounded-full text-[11px] font-bold',
+                request.documentUrl ? 'bg-emerald-50 text-dark-green border border-emerald-200' : 'bg-gray-100 text-text-muted'
+              ]"
+            >
+              {{ request.documentUrl ? '1 Berkas Terlampir' : 'Tidak Ada Berkas' }}
+            </span>
+          </div>
+
+          <div v-if="request.documentUrl" class="space-y-3">
+            <div class="p-4 rounded-xl border border-emerald-200/80 bg-emerald-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-white border border-emerald-200 text-dark-green flex items-center justify-center shrink-0 shadow-2xs">
+                  <Paperclip :size="18" />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-xs font-bold text-text-primary truncate">Surat Permohonan / TOR Kegiatan</p>
+                  <p class="text-[11px] text-text-muted font-mono truncate">{{ request.documentUrl.split('/').pop() }}</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <a
+                  :href="getFileUrl(request.documentUrl)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-dark-green hover:bg-[#547a5c] text-white text-xs font-bold shadow-2xs transition-colors cursor-pointer"
+                >
+                  <ExternalLink :size="13" />
+                  <span>Buka Dokumen</span>
+                </a>
+              </div>
+            </div>
+
+            <!-- Inlined Image Preview if image -->
+            <div
+              v-if="/\.(png|jpe?g|webp|gif)$/i.test(request.documentUrl)"
+              class="rounded-xl overflow-hidden border border-gray-200 max-h-96 flex items-center justify-center bg-gray-50 p-2"
+            >
+              <img
+                :src="getFileUrl(request.documentUrl)"
+                alt="Pratinjau Dokumen Pendukung"
+                class="max-h-80 object-contain rounded-lg"
+              />
+            </div>
+          </div>
+
+          <div v-else class="p-4 rounded-xl bg-surface/50 border border-dashed border-gray-200 text-center text-xs text-text-muted">
+            Tidak ada dokumen surat atau proposal yang dilampirkan pada permohonan ini.
           </div>
         </div>
 

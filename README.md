@@ -48,6 +48,7 @@ Dirancang khusus untuk layar Smart TV / Kiosk Display dengan antarmuka sinematik
 ### 3. 📝 Peminjaman Ruangan & Alur Persetujuan Bertingkat (*Room Request & Approval*)
 * Dosen atau perwakilan mahasiswa dapat mengajukan permohonan penggunaan lab di luar jadwal perkuliahan reguler.
 * Dasbor verifikasi bagi Kepala Lab dan Staf Laboran untuk menyetujui (*Approve*) atau menolak (*Reject*) permohonan disertai catatan verifikasi.
+* **Unggah Berkas Pendukung (*Attachment Upload*)**: Pemohon dapat melampirkan berkas surat permohonan resmi, proposal kegiatan, atau TOR (PDF/Gambar hingga 5MB) yang dapat langsung ditinjau dan diunduh oleh reviewer.
 * Notifikasi status persetujuan yang terintegrasi.
 
 ### 4. ⏱️ Check-In & Check-Out Penggunaan Ruang (*Live Room Usage Tracking*)
@@ -60,16 +61,27 @@ Dirancang khusus untuk layar Smart TV / Kiosk Display dengan antarmuka sinematik
 * Pemetaan fasilitas per laboratorium beserta kuantitas unit dan status kondisinya (`GOOD`, `DAMAGED`, `UNDER_MAINTENANCE`).
 * Setiap pembaruan status alat oleh staf laboran otomatis menyinkronkan data ke layar display publik.
 
-### 6. 📊 Laporan & Rekapitulasi (*Reporting*)
+### 6. 🛠️ Pelaporan Kerusakan Alat oleh Pengguna (*Ticketing / Issue Reporting*)
+* Dosen, mahasiswa, dan staf laboran dapat melaporkan kendala atau kerusakan perangkat keras/lunak secara terstruktur.
+* Dilengkapi nomor tiket otomatis (`TKT-YYYYMMDD-XXX`), pemilihan unit alat, tingkat urgensi (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), dan unggah foto bukti kerusakan.
+* Staf laboran dan admin dapat menindaklanjuti status investigasi hingga penyelesaian (`REPORTED` → `INVESTIGATING` → `RESOLVED` / `REJECTED` / `CLOSED`) disertai catatan teknis perbaikan.
+
+### 7. 📋 Log Riwayat Pemeliharaan Fasilitas (*Maintenance History Log*)
+* Pencatatan riwayat servis berkala, perbaikan darurat (*corrective repair*), upgrade komponen, atau penggantian unit inventaris.
+* Terintegrasi langsung dengan nomor tiket kendala alat (otomatis menyelesaikan tiket saat pemeliharaan selesai dicatat).
+* Pencatatan biaya servis, nota/kuitansi digital, pihak vendor pelaksana, dan teknisi yang bertugas.
+* Pembaruan kondisi alat pada log pemeliharaan otomatis memicu WebSocket (`display:sync`) sehingga status inventaris di **Public TV Display** terupdate secara *real-time*.
+
+### 8. 📊 Laporan & Rekapitulasi (*Reporting*)
 * Laporan histori penggunaan laboratorium berdasarkan filter rentang tanggal, jenis kegiatan, dan ruangan.
 * Fitur ekspor berkas rekapitulasi ke format spreadsheet (Excel) dan cetak PDF.
 
-### 7. 🔐 Keamanan & Kontrol Akses Berbasis Peran (*Role-Based Access Control*)
+### 9. 🔐 Keamanan & Kontrol Akses Berbasis Peran (*Role-Based Access Control*)
 * Autentikasi berbasis JWT (*JSON Web Token*) dengan enkripsi kata sandi menggunakan `bcrypt`.
 * Tiga tingkat hak akses utama:
-  1. **Admin**: Hak akses menyeluruh terhadap konfigurasi sistem, peran, pengguna, kalender akademik, dan audit log.
-  2. **Laboran**: Pengelolaan operasional harian lab, persetujuan peminjaman, check-in/out, inventaris fasilitas, dan pengumuman.
-  3. **Dosen / Pemohon**: Pengajuan peminjaman ruang, pengecekan ketersediaan jadwal, dan riwayat permohonan.
+  1. **Admin**: Hak akses menyeluruh terhadap konfigurasi sistem, peran, pengguna, kalender akademik, fasilitas, tiket kerusakan, pemeliharaan, dan audit log.
+  2. **Laboran**: Pengelolaan operasional harian lab, persetujuan peminjaman, check-in/out, inventaris fasilitas, triase tiket kendala, pencatatan log servis, dan pengumuman.
+  3. **Dosen / Pemohon**: Pengajuan peminjaman ruang beserta lampiran surat resmi, pelaporan kendala alat, pengecekan ketersediaan jadwal, dan riwayat permohonan.
 
 ---
 
@@ -139,12 +151,14 @@ display-jadwal-penggunaan-lab/
 │   │   │   ├── auth/                      # Otentikasi JWT & registrasi akun
 │   │   │   ├── display/                   # Endpoint khusus aggregasi data Display Publik & WS Gateway
 │   │   │   ├── facility/                  # Manajemen inventaris peralatan lab & kondisi alat
+│   │   │   ├── issue-ticket/              # Pelaporan kerusakan alat (Ticketing) & unggah foto bukti
 │   │   │   ├── laboratory/                # Master data laboratorium komputer
+│   │   │   ├── maintenance/               # Log pemeliharaan alat, servis berkala & sync WS display
 │   │   │   ├── notifications/             # Sistem pemberitahuan internal
 │   │   │   ├── operational-hour/          # Konfigurasi jam operasional lab
 │   │   │   ├── reports/                   # Modul laporan, histori okupansi & ekspor data
 │   │   │   ├── role/                      # Pengaturan hak akses peran (RBAC)
-│   │   │   ├── room-request/              # Peminjaman ruangan & alur persetujuan
+│   │   │   ├── room-request/              # Peminjaman ruangan, alur persetujuan & unggah surat/TOR
 │   │   │   ├── room-usage/                # Check-in, check-out & tracking kehadiran
 │   │   │   ├── schedule/                  # Jadwal perkuliahan & deteksi bentrok
 │   │   │   ├── settings/                  # Konfigurasi sistem umum

@@ -135,4 +135,13 @@ export class CreateRoomRequestDto {
   @Min(1)
   @Max(24)
   occurrences?: number;
+
+  @ApiPropertyOptional({
+    description: 'URL of uploaded supporting document/official letter (PDF/image)',
+    example: '/uploads/documents/document-1726000000-12345.pdf',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  document_url?: string;
 }

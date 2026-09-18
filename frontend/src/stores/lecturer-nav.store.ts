@@ -7,6 +7,7 @@ import {
   ClipboardList,
   FlaskConical,
   SlidersHorizontal,
+  Wrench,
 } from 'lucide-vue-next'
 
 export interface MenuItem {
@@ -41,6 +42,13 @@ export const useLecturerNavStore = defineStore('lecturerNav', () => {
       label: 'Laboratorium',
       icon: FlaskConical,
       path: '/lecturer/laboratories',
+      section: 'main',
+    },
+    {
+      id: 'issue-tickets',
+      label: 'Lapor Kendala Alat',
+      icon: Wrench,
+      path: '/lecturer/issue-tickets',
       section: 'main',
     },
     {

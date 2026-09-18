@@ -421,6 +421,7 @@ export class RoomRequestService {
                 end_time: endTime,
                 participant_count: createRoomRequestDto.participant_count,
                 status: initialStatus,
+                document_url: createRoomRequestDto.document_url || null,
               },
               include: {
                 applicant: {
@@ -476,6 +477,7 @@ export class RoomRequestService {
           end_time: endTime,
           participant_count: createRoomRequestDto.participant_count,
           status: initialStatus,
+          document_url: createRoomRequestDto.document_url || null,
         },
         include: {
           applicant: {
@@ -738,6 +740,9 @@ export class RoomRequestService {
       }
       if (updateRoomRequestDto.rejection_reason !== undefined) {
         updateData.rejection_reason = updateRoomRequestDto.rejection_reason;
+      }
+      if (updateRoomRequestDto.document_url !== undefined) {
+        updateData.document_url = updateRoomRequestDto.document_url;
       }
 
       const roomRequest = await this.prisma.roomRequest.update({

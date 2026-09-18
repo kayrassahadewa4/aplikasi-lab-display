@@ -15,6 +15,7 @@ import {
   DoorOpen,
   BarChart3,
   SlidersHorizontal,
+  Hammer,
 } from 'lucide-vue-next'
 
 export interface MenuItem {
@@ -73,6 +74,20 @@ export const useAdminNavStore = defineStore('adminNav', () => {
       label: 'Fasilitas Lab',
       icon: Wrench,
       path: '/admin/facilities',
+      section: 'main',
+    },
+    {
+      id: 'issue-tickets',
+      label: 'Tiket Kendala Alat',
+      icon: Wrench,
+      path: '/admin/issue-tickets',
+      section: 'main',
+    },
+    {
+      id: 'maintenance-logs',
+      label: 'Log Perawatan',
+      icon: Hammer,
+      path: '/admin/maintenance-logs',
       section: 'main',
     },
     {

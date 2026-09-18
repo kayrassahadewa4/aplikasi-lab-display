@@ -70,6 +70,9 @@ export class ResponseRoomRequestDto {
   rejection_reason?: string | null;
 
   @ApiPropertyOptional()
+  document_url?: string | null;
+
+  @ApiPropertyOptional()
   approved_at?: Date | null;
 
   @ApiProperty()

@@ -25,11 +25,16 @@ import {
   ChevronRight,
   Repeat,
   ChevronDown,
-  CalendarDays
+  CalendarDays,
+  Paperclip,
+  UploadCloud,
+  FileCheck,
+  Trash2,
+  ExternalLink
 } from 'lucide-vue-next'
 import { roomRequestService } from '@/services/room-request.service'
 import { laboratoryService, type LaboratoryData } from '@/services/laboratory.service'
-import { formatDate } from '@/utils/format.utils'
+import { formatDate, getFileUrl } from '@/utils/format.utils'
 import TimePicker24 from '@/components/common/TimePicker24.vue'
 
 const route = useRoute()
@@ -42,6 +47,13 @@ const isLoadingLabs = ref(true)
 const isSubmitting = ref(false)
 const submitError = ref<string | null>(null)
 const isPreviewExpanded = ref(false)
+
+// Document Attachment State
+const attachmentFile = ref<File | null>(null)
+const attachmentUrl = ref<string | null>(null)
+const isUploadingAttachment = ref(false)
+const attachmentError = ref<string | null>(null)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 // Form Data State
 const form = reactive({
@@ -232,6 +244,49 @@ const validateForm = (): boolean => {
   return isValid
 }
 
+const handleFileChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (!target.files || target.files.length === 0) return
+  const file = target.files[0]
+  if (!file) return
+
+  // Check 5MB limit
+  if (file.size > 5 * 1024 * 1024) {
+    attachmentError.value = 'Ukuran berkas maksimal 5MB.'
+    return
+  }
+
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    attachmentError.value = 'Format berkas harus berupa PDF, PNG, JPG, atau WEBP.'
+    return
+  }
+
+  attachmentError.value = null
+  isUploadingAttachment.value = true
+
+  try {
+    const res = await roomRequestService.uploadAttachment(file)
+    attachmentFile.value = file
+    attachmentUrl.value = res.url
+  } catch (err: any) {
+    console.error('Failed to upload attachment:', err)
+    attachmentError.value = err.message || 'Gagal mengunggah berkas lampiran.'
+  } finally {
+    isUploadingAttachment.value = false
+    target.value = ''
+  }
+}
+
+const removeAttachment = () => {
+  attachmentFile.value = null
+  attachmentUrl.value = null
+  attachmentError.value = null
+  if (fileInputRef.value) {
+    fileInputRef.value.value = ''
+  }
+}
+
 const handleSubmit = async () => {
   if (!validateForm()) return
 
@@ -249,6 +304,7 @@ const handleSubmit = async () => {
       startTime: form.startTime,
       endTime: form.endTime,
       participantCount: Number(form.participantCount),
+      documentUrl: attachmentUrl.value || undefined,
       isRecurring: form.isRecurring,
       occurrences: form.isRecurring ? Number(form.occurrences) : 1,
     })
@@ -764,6 +820,107 @@ const navigateTo = (path: string) => {
             </div>
           </div>
 
+          <!-- Section 5: Document Attachment (Surat Permohonan / TOR) -->
+          <div class="space-y-4 pt-2">
+            <div class="flex items-center gap-2 border-b border-gray-100 pb-2.5">
+              <div class="w-7 h-7 rounded-lg bg-emerald-100 text-dark-green flex items-center justify-center shrink-0">
+                <Paperclip :size="15" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-text-primary flex items-center gap-2">
+                  <span>Berkas Dokumen Pendukung (Opsional)</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-text-muted">
+                    PDF / Gambar (Maks. 5MB)
+                  </span>
+                </h3>
+              </div>
+            </div>
+
+            <!-- Upload Dropzone / Existing File Card -->
+            <div class="space-y-2">
+              <input
+                ref="fileInputRef"
+                type="file"
+                accept=".pdf,image/png,image/jpeg,image/webp"
+                class="hidden"
+                @change="handleFileChange"
+              />
+
+              <!-- Uploading State -->
+              <div
+                v-if="isUploadingAttachment"
+                class="p-6 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/40 flex flex-col items-center justify-center text-center space-y-2"
+              >
+                <Loader2 :size="24" class="text-dark-green animate-spin" />
+                <p class="text-xs font-bold text-dark-green">Mengunggah dokumen pendukung...</p>
+                <p class="text-[11px] text-text-muted">Mohon tunggu sebentar sampai berkas tersimpan.</p>
+              </div>
+
+              <!-- Uploaded State -->
+              <div
+                v-else-if="attachmentUrl"
+                class="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 flex items-center justify-between gap-3 shadow-2xs"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-10 h-10 rounded-xl bg-white border border-emerald-200 text-dark-green flex items-center justify-center shrink-0 shadow-2xs">
+                    <FileCheck :size="20" />
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-black text-text-primary truncate">
+                      {{ attachmentFile ? attachmentFile.name : 'Dokumen Pendukung Terlampir' }}
+                    </p>
+                    <div class="flex items-center gap-2 text-[11px] text-emerald-700 font-medium">
+                      <span>Berkas berhasil diunggah</span>
+                      <span>•</span>
+                      <a
+                        :href="getFileUrl(attachmentUrl)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="underline hover:text-dark-green inline-flex items-center gap-1 font-bold"
+                      >
+                        Pratinjau <ExternalLink :size="11" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  @click="removeAttachment"
+                  :disabled="isSubmitting"
+                  class="p-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer shrink-0"
+                  title="Hapus berkas"
+                >
+                  <Trash2 :size="16" />
+                </button>
+              </div>
+
+              <!-- Default Empty State -->
+              <div
+                v-else
+                @click="fileInputRef?.click()"
+                class="p-5 rounded-2xl border-2 border-dashed border-gray-200 hover:border-dark-green/50 bg-gray-50/50 hover:bg-emerald-50/20 transition-all duration-200 cursor-pointer text-center space-y-1.5 group"
+              >
+                <div class="w-10 h-10 rounded-xl bg-white group-hover:bg-brand-100 border border-gray-200 group-hover:border-emerald-200 text-text-muted group-hover:text-dark-green flex items-center justify-center mx-auto transition-colors shadow-2xs">
+                  <UploadCloud :size="20" />
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-text-primary group-hover:text-dark-green transition-colors">
+                    Klik untuk memilih surat permohonan / proposal / TOR
+                  </p>
+                  <p class="text-[11px] text-text-muted">
+                    Mendukung PDF, PNG, JPG, JPEG (Maks. 5 MB). Mempermudah persetujuan oleh laboran & pimpinan.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Error state -->
+              <p v-if="attachmentError" class="text-[11px] text-danger font-medium flex items-center gap-1">
+                <AlertCircle :size="12" />
+                <span>{{ attachmentError }}</span>
+              </p>
+            </div>
+          </div>
+
           <!-- Form Actions -->
           <div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
             <button
@@ -874,6 +1031,21 @@ const navigateTo = (path: string) => {
               </span>
               <span :class="['text-[10.5px] font-bold px-2 py-0.5 rounded-full', form.isRecurring ? 'bg-dark-green text-white' : 'bg-gray-100 text-text-muted']">
                 {{ form.isRecurring ? `Mingguan (${form.occurrences}x)` : 'Sekali Sesi' }}
+              </span>
+            </div>
+
+            <!-- Attached Document Indicator -->
+            <div class="flex items-center justify-between p-2 rounded-lg bg-surface/30">
+              <span class="text-text-muted text-[11px] font-medium flex items-center gap-1.5">
+                <Paperclip :size="13" class="text-dark-green" />
+                <span>Dokumen Pendukung</span>
+              </span>
+              <span v-if="attachmentUrl" class="text-[10.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-dark-green border border-emerald-200 flex items-center gap-1">
+                <FileCheck :size="11" />
+                <span>Terlampir</span>
+              </span>
+              <span v-else class="text-[10.5px] text-text-muted">
+                Tidak ada
               </span>
             </div>
 

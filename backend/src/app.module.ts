@@ -19,6 +19,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { ReportModule } from './modules/reports/report.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { MessagesModule } from './modules/messages/messages.module.js';
+import { IssueTicketModule } from './modules/issue-ticket/issue-ticket.module.js';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -47,6 +49,8 @@ import { AppService } from './app.service.js';
     ReportModule,
     NotificationsModule,
     MessagesModule,
+    IssueTicketModule,
+    MaintenanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

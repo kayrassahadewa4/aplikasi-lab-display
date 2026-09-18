@@ -121,6 +121,16 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/FacilityFormPage.vue'),
       },
       {
+        path: 'issue-tickets',
+        name: 'AdminIssueTickets',
+        component: () => import('@/views/shared/IssueTicketsPage.vue'),
+      },
+      {
+        path: 'maintenance-logs',
+        name: 'AdminMaintenanceLogs',
+        component: () => import('@/views/shared/MaintenanceLogsPage.vue'),
+      },
+      {
         path: 'academic-calendars',
         name: 'AdminAcademicCalendars',
         component: () => import('@/views/admin/AcademicCalendarsPage.vue'),
@@ -293,6 +303,16 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/laboran/DashboardPage.vue'),
       },
       {
+        path: 'issue-tickets',
+        name: 'LaboranIssueTickets',
+        component: () => import('@/views/shared/IssueTicketsPage.vue'),
+      },
+      {
+        path: 'maintenance-logs',
+        name: 'LaboranMaintenanceLogs',
+        component: () => import('@/views/shared/MaintenanceLogsPage.vue'),
+      },
+      {
         path: 'room-requests',
         name: 'LaboranRoomRequests',
         component: () => import('@/views/laboran/RoomRequestsPage.vue'),
@@ -403,6 +423,11 @@ export const routes: RouteRecordRaw[] = [
         path: '',
         name: 'LecturerDashboard',
         component: () => import('@/views/lecturer/DashboardPage.vue'),
+      },
+      {
+        path: 'issue-tickets',
+        name: 'LecturerIssueTickets',
+        component: () => import('@/views/shared/IssueTicketsPage.vue'),
       },
       {
         path: 'schedules',
