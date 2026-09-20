@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User, LoginCredentials } from '@/types'
+import type { User, LoginCredentials, GoogleLoginPayload } from '@/types'
 import { authService } from '@/services'
 import { sessionManager } from '@/utils'
 
@@ -50,6 +50,22 @@ export const useAuthStore = defineStore('auth', () => {
       return response.user
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Login failed'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const googleLogin = async (payload: GoogleLoginPayload) => {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await authService.googleLogin(payload)
+      user.value = response.user
+      return response.user
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Login Google gagal'
       throw err
     } finally {
       isLoading.value = false
@@ -162,6 +178,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Actions
     register,
     login,
+    googleLogin,
     logout,
     setUser,
     clearUser,

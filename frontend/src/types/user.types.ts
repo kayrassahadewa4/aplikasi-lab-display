@@ -36,3 +36,10 @@ export interface AuthResponse {
   accessToken: string
   user: User
 }
+
+export interface GoogleLoginPayload {
+  credential: string
+  target_role?: 'DOSEN' | 'LABORAN'
+  full_name?: string
+  avatar_url?: string
+}

@@ -1,5 +1,5 @@
 // Auth service - Real API implementation
-import type { LoginCredentials, AuthResponse, User } from '@/types'
+import type { LoginCredentials, AuthResponse, User, GoogleLoginPayload } from '@/types'
 import { tokenStorage, sessionManager } from '@/utils'
 import apiClient from './api'
 
@@ -62,6 +62,32 @@ export const authService = {
         throw new Error('Invalid email or password')
       }
       throw new Error('Login failed. Please try again.')
+    }
+  },
+
+  /**
+   * Google OAuth login strictly for Lecturer and Lab Staff
+   */
+  async googleLogin(payload: GoogleLoginPayload): Promise<AuthResponse> {
+    try {
+      const response = await apiClient.post<{
+        success: boolean
+        data: AuthResponse
+      }>('/auth/google', payload)
+
+      const { accessToken, user } = response.data.data
+
+      // Save token and user to localStorage
+      tokenStorage.saveAccessToken(accessToken)
+      sessionManager.saveUser(user)
+
+      return { accessToken, user }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        const msg = error.response.data.message
+        throw new Error(Array.isArray(msg) ? msg.join(', ') : msg)
+      }
+      throw error
     }
   },
 

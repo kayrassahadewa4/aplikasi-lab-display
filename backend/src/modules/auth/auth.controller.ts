@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { AuthResponseDto } from './dto/auth-response.dto.js';
 import { ForgotPasswordRequestDto } from './dto/forgot-password-request.dto.js';
+import { GoogleLoginDto } from './dto/google-login.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
 
@@ -47,6 +48,26 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(loginDto);
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Google OAuth login strictly for Lecturer and Lab Staff' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Google login successful',
+    type: AuthResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Restricted for Admin or inactive user',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid Google token or data',
+  })
+  async googleLogin(@Body() googleLoginDto: GoogleLoginDto): Promise<AuthResponseDto> {
+    return this.authService.googleLogin(googleLoginDto);
   }
 
   @Get('me')
