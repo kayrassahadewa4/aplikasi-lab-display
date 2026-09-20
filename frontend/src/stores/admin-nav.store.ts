@@ -77,20 +77,6 @@ export const useAdminNavStore = defineStore('adminNav', () => {
       section: 'main',
     },
     {
-      id: 'issue-tickets',
-      label: 'Tiket Kendala Alat',
-      icon: Wrench,
-      path: '/admin/issue-tickets',
-      section: 'main',
-    },
-    {
-      id: 'maintenance-logs',
-      label: 'Log Perawatan',
-      icon: Hammer,
-      path: '/admin/maintenance-logs',
-      section: 'main',
-    },
-    {
       id: 'academic-calendars',
       label: 'Kalender Akademik',
       icon: Calendar,

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminNavStore } from '@/stores/admin-nav.store'
+import { useLaboranNavStore } from '@/stores/laboran-nav.store'
 import {
   ArrowLeft,
   Wrench,
@@ -23,7 +24,11 @@ import { facilityService } from '@/services/facility.service'
 
 const route = useRoute()
 const router = useRouter()
-const navStore = useAdminNavStore()
+const adminNav = useAdminNavStore()
+const laboranNav = useLaboranNavStore()
+
+const isLaboran = computed(() => route.path.startsWith('/laboran'))
+const basePath = computed(() => (isLaboran.value ? '/laboran' : '/admin'))
 
 const facilityId = route.params.id as string
 const facility = ref<FacilityData | null>(null)
@@ -47,22 +52,30 @@ const loadFacility = async () => {
     const fac = await facilityService.getFacilityById(facilityId)
     facility.value = fac
 
-    navStore.setBreadcrumbs([
-      { label: 'Dashboard', path: '/admin' },
-      { label: 'Fasilitas Lab', path: '/admin/facilities' },
-      { label: fac.name },
-    ])
+    if (isLaboran.value) {
+      laboranNav.setBreadcrumbs([
+        { label: 'Portal Laboran', path: '/laboran' },
+        { label: 'Fasilitas Lab', path: '/laboran/facilities' },
+        { label: fac.name },
+      ])
+    } else {
+      adminNav.setBreadcrumbs([
+        { label: 'Dashboard', path: '/admin' },
+        { label: 'Fasilitas Lab', path: '/admin/facilities' },
+        { label: fac.name },
+      ])
+    }
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Gagal memuat data fasilitas lab'
     console.error('Failed to load facility:', err)
-    setTimeout(() => router.push('/admin/facilities'), 2000)
+    setTimeout(() => router.push(`${basePath.value}/facilities`), 2000)
   } finally {
     isLoading.value = false
   }
 }
 
 const handleEdit = () => {
-  router.push(`/admin/facilities/${facilityId}/edit`)
+  router.push(`${basePath.value}/facilities/${facilityId}/edit`)
 }
 
 const handleDelete = async () => {
@@ -76,7 +89,7 @@ const handleDelete = async () => {
     showToast.value = true
     setTimeout(() => {
       showToast.value = false
-      router.push('/admin/facilities')
+      router.push(`${basePath.value}/facilities`)
     }, 1000)
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Gagal menghapus fasilitas'
@@ -121,7 +134,7 @@ const handleDelete = async () => {
     <!-- 1. TOP HEADER & BREADCRUMB -->
     <div>
       <router-link
-        to="/admin/facilities"
+        :to="basePath + '/facilities'"
         class="inline-flex items-center gap-1.5 text-xs font-bold text-dark-green hover:underline mb-2 cursor-pointer"
       >
         <ArrowLeft :size="14" />

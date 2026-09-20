@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminNavStore } from '@/stores/admin-nav.store'
+import { useLaboranNavStore } from '@/stores/laboran-nav.store'
 import {
   ArrowLeft,
   Wrench,
@@ -23,7 +24,11 @@ import { facilityService } from '@/services/facility.service'
 
 const route = useRoute()
 const router = useRouter()
-const navStore = useAdminNavStore()
+const adminNav = useAdminNavStore()
+const laboranNav = useLaboranNavStore()
+
+const isLaboran = computed(() => route.path.startsWith('/laboran'))
+const basePath = computed(() => (isLaboran.value ? '/laboran' : '/admin'))
 
 const facilityId = computed(() => route.params.id as string | undefined)
 const isEditMode = computed(() => !!facilityId.value)
@@ -46,11 +51,19 @@ onMounted(async () => {
   if (isEditMode.value && facilityId.value) {
     await loadFacility(facilityId.value)
   } else {
-    navStore.setBreadcrumbs([
-      { label: 'Dashboard', path: '/admin' },
-      { label: 'Fasilitas Lab', path: '/admin/facilities' },
-      { label: 'Tambah Fasilitas' },
-    ])
+    if (isLaboran.value) {
+      laboranNav.setBreadcrumbs([
+        { label: 'Portal Laboran', path: '/laboran' },
+        { label: 'Fasilitas Lab', path: '/laboran/facilities' },
+        { label: 'Tambah Fasilitas' },
+      ])
+    } else {
+      adminNav.setBreadcrumbs([
+        { label: 'Dashboard', path: '/admin' },
+        { label: 'Fasilitas Lab', path: '/admin/facilities' },
+        { label: 'Tambah Fasilitas' },
+      ])
+    }
   }
 })
 
@@ -67,16 +80,25 @@ const loadFacility = async (id: string) => {
       description: facility.description,
     }
 
-    navStore.setBreadcrumbs([
-      { label: 'Dashboard', path: '/admin' },
-      { label: 'Fasilitas Lab', path: '/admin/facilities' },
-      { label: facility.name, path: `/admin/facilities/${facility.id}` },
-      { label: 'Ubah' },
-    ])
+    if (isLaboran.value) {
+      laboranNav.setBreadcrumbs([
+        { label: 'Portal Laboran', path: '/laboran' },
+        { label: 'Fasilitas Lab', path: '/laboran/facilities' },
+        { label: facility.name, path: `/laboran/facilities/${facility.id}` },
+        { label: 'Ubah' },
+      ])
+    } else {
+      adminNav.setBreadcrumbs([
+        { label: 'Dashboard', path: '/admin' },
+        { label: 'Fasilitas Lab', path: '/admin/facilities' },
+        { label: facility.name, path: `/admin/facilities/${facility.id}` },
+        { label: 'Ubah' },
+      ])
+    }
   } catch (err: any) {
     error.value = err.response?.data?.message || 'Gagal memuat data fasilitas lab'
     console.error('Failed to load facility:', err)
-    setTimeout(() => router.push('/admin/facilities'), 2000)
+    setTimeout(() => router.push(`${basePath.value}/facilities`), 2000)
   } finally {
     isLoading.value = false
   }
@@ -111,9 +133,9 @@ const handleSave = async () => {
     setTimeout(() => {
       showToast.value = false
       if (isEditMode.value && facilityId.value) {
-        router.push(`/admin/facilities/${facilityId.value}`)
+        router.push(`${basePath.value}/facilities/${facilityId.value}`)
       } else {
-        router.push('/admin/facilities')
+        router.push(`${basePath.value}/facilities`)
       }
     }, 1000)
   } catch (err: any) {
@@ -126,9 +148,9 @@ const handleSave = async () => {
 
 const handleCancel = () => {
   if (isEditMode.value && facilityId.value) {
-    router.push(`/admin/facilities/${facilityId.value}`)
+    router.push(`${basePath.value}/facilities/${facilityId.value}`)
   } else {
-    router.push('/admin/facilities')
+    router.push(`${basePath.value}/facilities`)
   }
 }
 </script>

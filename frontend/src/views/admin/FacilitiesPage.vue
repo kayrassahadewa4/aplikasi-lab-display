@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAdminNavStore } from '@/stores/admin-nav.store'
+import { useLaboranNavStore } from '@/stores/laboran-nav.store'
 import {
   Wrench,
   Plus,
@@ -23,21 +24,83 @@ import {
   Monitor,
   Check,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Boxes,
+  ShieldCheck
 } from 'lucide-vue-next'
 import type { FacilityData } from '@/mocks/admin-facilities.mock'
 import { facilityService } from '@/services/facility.service'
+import { issueTicketService } from '@/services/issue-ticket.service'
 import SummaryCard from '@/components/admin/SummaryCard.vue'
+import IssueTicketsPage from '@/views/shared/IssueTicketsPage.vue'
+import MaintenanceLogsPage from '@/views/shared/MaintenanceLogsPage.vue'
 
+const route = useRoute()
 const router = useRouter()
-const navStore = useAdminNavStore()
+const adminNav = useAdminNavStore()
+const laboranNav = useLaboranNavStore()
+
+const isLaboran = computed(() => route.path.startsWith('/laboran'))
+const basePath = computed(() => (isLaboran.value ? '/laboran' : '/admin'))
+
+// Tabs State
+type TabType = 'inventory' | 'tickets' | 'maintenance'
+const activeTab = ref<TabType>('inventory')
+const openTicketsCount = ref(0)
+
+const fetchOpenTicketsCount = async () => {
+  try {
+    const res = await issueTicketService.getAll()
+    openTicketsCount.value = (res.data || []).filter(
+      (t) => t.status === 'REPORTED' || t.status === 'INVESTIGATING'
+    ).length
+  } catch (e) {
+    // silently catch
+  }
+}
+
+const syncTabFromRoute = () => {
+  const tab = route.query.tab as string
+  if (tab === 'tickets' || tab === 'maintenance') {
+    activeTab.value = tab
+  } else {
+    activeTab.value = 'inventory'
+  }
+}
+
+const setTab = (tab: TabType) => {
+  activeTab.value = tab
+  router.replace({
+    path: route.path,
+    query: {
+      ...route.query,
+      tab: tab === 'inventory' ? undefined : tab,
+    },
+  })
+}
+
+watch(
+  () => route.query.tab,
+  () => {
+    syncTabFromRoute()
+  }
+)
 
 onMounted(() => {
-  navStore.setBreadcrumbs([
-    { label: 'Dashboard', path: '/admin' },
-    { label: 'Fasilitas Lab' },
-  ])
+  if (isLaboran.value) {
+    laboranNav.setBreadcrumbs([
+      { label: 'Portal Laboran', path: '/laboran' },
+      { label: 'Fasilitas Lab' },
+    ])
+  } else {
+    adminNav.setBreadcrumbs([
+      { label: 'Dashboard', path: '/admin' },
+      { label: 'Fasilitas Lab' },
+    ])
+  }
+  syncTabFromRoute()
   loadFacilities()
+  fetchOpenTicketsCount()
 })
 
 // Reactive State
@@ -125,15 +188,15 @@ const paginatedFacilities = computed(() => {
 
 // Actions Handlers
 const navigateToCreate = () => {
-  router.push('/admin/facilities/create')
+  router.push(`${basePath.value}/facilities/create`)
 }
 
 const navigateToDetail = (fac: FacilityData) => {
-  router.push(`/admin/facilities/${fac.id}`)
+  router.push(`${basePath.value}/facilities/${fac.id}`)
 }
 
 const navigateToEdit = (fac: FacilityData) => {
-  router.push(`/admin/facilities/${fac.id}/edit`)
+  router.push(`${basePath.value}/facilities/${fac.id}/edit`)
 }
 
 const openDeleteModal = (fac: FacilityData) => {
@@ -175,16 +238,16 @@ const confirmDeleteFacility = async () => {
           </h1>
           <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-100/80 border border-brand-200 text-dark-green text-[11px] font-bold">
             <Wrench :size="12" class="text-primary-dark" />
-            Inventaris Aset & Alat
+            Manajemen Terpadu Fasilitas
           </span>
         </div>
         <p class="text-xs sm:text-sm text-text-muted font-normal">
-          Kelola perangkat keras, komputer, proyektor, dan fasilitas laboratorium.
+          Kelola inventaris aset, tiket kendala alat, dan log riwayat pemeliharaan laboratorium dalam satu sistem terpadu.
         </p>
       </div>
 
-      <!-- Primary Action CTA Button Navigating to Dedicated Create Page -->
-      <div class="self-start sm:self-auto shrink-0">
+      <!-- Primary Action CTA Button Navigating to Dedicated Create Page (Inventory Tab only) -->
+      <div v-if="activeTab === 'inventory'" class="self-start sm:self-auto shrink-0">
         <button
           @click="navigateToCreate"
           class="inline-flex items-center gap-2 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-full bg-dark-green hover:bg-[#547a5c] text-white text-xs sm:text-xs font-bold shadow-xs hover:shadow-md transition-all duration-150 cursor-pointer"
@@ -194,6 +257,60 @@ const confirmDeleteFacility = async () => {
         </button>
       </div>
     </div>
+
+    <!-- Tab Navigation Bar -->
+    <div class="flex items-center gap-1 sm:gap-2 border-b border-gray-200/80">
+      <button
+        type="button"
+        @click="setTab('inventory')"
+        :class="[
+          'inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer -mb-px',
+          activeTab === 'inventory'
+            ? 'border-dark-green text-dark-green bg-brand-50/40 rounded-t-xl'
+            : 'border-transparent text-text-muted hover:text-text-primary hover:border-gray-300'
+        ]"
+      >
+        <Boxes :size="16" />
+        <span>Inventaris Fasilitas</span>
+      </button>
+
+      <button
+        type="button"
+        @click="setTab('tickets')"
+        :class="[
+          'inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer -mb-px',
+          activeTab === 'tickets'
+            ? 'border-dark-green text-dark-green bg-brand-50/40 rounded-t-xl'
+            : 'border-transparent text-text-muted hover:text-text-primary hover:border-gray-300'
+        ]"
+      >
+        <Wrench :size="16" />
+        <span>Tiket Kendala Alat</span>
+        <span
+          v-if="openTicketsCount > 0"
+          class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white leading-none"
+        >
+          {{ openTicketsCount }}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        @click="setTab('maintenance')"
+        :class="[
+          'inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer -mb-px',
+          activeTab === 'maintenance'
+            ? 'border-dark-green text-dark-green bg-brand-50/40 rounded-t-xl'
+            : 'border-transparent text-text-muted hover:text-text-primary hover:border-gray-300'
+        ]"
+      >
+        <ShieldCheck :size="16" />
+        <span>Log Riwayat Pemeliharaan</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: Inventaris Fasilitas Content -->
+    <div v-if="activeTab === 'inventory'" class="space-y-6">
 
     <!-- 2. Metric Summary Widgets -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -447,6 +564,18 @@ const confirmDeleteFacility = async () => {
           </button>
         </div>
       </div>
+    </div>
+    </div>
+    <!-- END OF TAB 1: Inventaris Fasilitas -->
+
+    <!-- TAB 2: Tiket Kendala Alat Content -->
+    <div v-else-if="activeTab === 'tickets'" class="animate-in fade-in duration-200">
+      <IssueTicketsPage :embedded="true" />
+    </div>
+
+    <!-- TAB 3: Log Riwayat Pemeliharaan Content -->
+    <div v-else-if="activeTab === 'maintenance'" class="animate-in fade-in duration-200">
+      <MaintenanceLogsPage :embedded="true" />
     </div>
 
   </div>

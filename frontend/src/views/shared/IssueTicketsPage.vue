@@ -45,6 +45,15 @@ import { useAdminNavStore } from '@/stores/admin-nav.store'
 
 const route = useRoute()
 
+const props = withDefaults(
+  defineProps<{
+    embedded?: boolean
+  }>(),
+  {
+    embedded: false,
+  }
+)
+
 // Navigation Stores for Breadcrumbs
 const lecturerNav = useLecturerNavStore()
 const laboranNav = useLaboranNavStore()
@@ -410,7 +419,9 @@ const getStatusLabel = (status: IssueStatus) => {
 }
 
 onMounted(async () => {
-  setupBreadcrumbs()
+  if (!props.embedded) {
+    setupBreadcrumbs()
+  }
   await Promise.all([loadLaboratories(), fetchTickets()])
 })
 </script>
@@ -433,8 +444,8 @@ onMounted(async () => {
       </button>
     </div>
 
-    <!-- Header Section -->
-    <div class="space-y-3 pb-2 border-b border-gray-200/60 w-full min-w-0">
+    <!-- Header Section (only shown when standalone) -->
+    <div v-if="!props.embedded" class="space-y-3 pb-2 border-b border-gray-200/60 w-full min-w-0">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div class="flex items-center gap-2.5 mb-1">
@@ -469,6 +480,37 @@ onMounted(async () => {
             <span>Laporkan Kendala Baru</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Embedded Header Action Bar (when embedded in Facilities Hub) -->
+    <div v-else class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-brand-50/40 p-4 rounded-2xl border border-brand-100/80">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-brand-100 text-dark-green flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+          <Wrench :size="17" />
+        </div>
+        <div>
+          <h2 class="text-sm font-bold text-text-primary">Tiket Kendala & Kerusakan Alat</h2>
+          <p class="text-[11px] text-text-muted">Pelaporan kerusakan, pembaruan status perbaikan, dan tindak lanjut teknis laboran.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+        <button
+          @click="fetchTickets"
+          :disabled="isLoading"
+          class="p-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-text-secondary transition-colors cursor-pointer"
+          title="Muat ulang tiket"
+        >
+          <RefreshCw :size="15" :class="{ 'animate-spin': isLoading }" />
+        </button>
+
+        <button
+          @click="showCreateModal = true"
+          class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-dark-green hover:bg-[#547a5c] text-white text-xs font-bold shadow-xs shadow-dark-green/20 transition-all duration-150 active:scale-95 cursor-pointer"
+        >
+          <Plus :size="15" />
+          <span>Laporkan Kendala Baru</span>
+        </button>
       </div>
     </div>
 

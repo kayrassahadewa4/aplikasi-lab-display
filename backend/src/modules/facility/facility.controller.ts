@@ -33,11 +33,11 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 @Controller('facilities')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
-@Roles('ADMIN')
 export class FacilityController {
   constructor(private readonly facilityService: FacilityService) {}
 
   @Post()
+  @Roles('ADMIN', 'LABORAN')
   @ApiOperation({ summary: 'Create a new facility' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -114,6 +114,7 @@ export class FacilityController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN', 'LABORAN')
   @ApiOperation({ summary: 'Update a facility' })
   @ApiParam({
     name: 'id',
@@ -146,6 +147,7 @@ export class FacilityController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN', 'LABORAN')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a facility' })
   @ApiParam({

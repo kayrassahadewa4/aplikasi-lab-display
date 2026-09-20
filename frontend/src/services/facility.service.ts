@@ -185,10 +185,10 @@ export const facilityService = {
    * Fetch raw facilities with laboratory facilities assignments
    */
   async getRawFacilities(): Promise<BackendFacilityDto[]> {
-    const response = await apiClient.get<{ data: PaginatedResponse<BackendFacilityDto> }>('/facilities', {
+    const response = await apiClient.get<any>('/facilities', {
       params: { limit: 100 },
     })
-    return response.data.data.data
+    return response.data?.data?.data || response.data?.data || []
   },
 
   /**

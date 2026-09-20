@@ -151,58 +151,42 @@ export const maintenanceService = {
     if (filters?.laboratory_id) params.laboratory_id = filters.laboratory_id
     if (filters?.facility_id) params.facility_id = filters.facility_id
 
-    const response = await apiClient.get<{
-      success: boolean
-      statusCode: number
-      message: string
-      data: BackendMaintenanceLogDto[]
-      meta: {
-        page: number
-        limit: number
-        total: number
-        totalPages: number
-      }
-    }>('/maintenance-logs', { params })
+    const response = await apiClient.get<any>('/maintenance-logs', { params })
+
+    const rawList = Array.isArray(response.data?.data?.data)
+      ? response.data.data.data
+      : Array.isArray(response.data?.data)
+        ? response.data.data
+        : []
+
+    const meta = response.data?.data?.meta || response.data?.meta || { page: 1, limit: 10, total: 0, totalPages: 1 }
 
     return {
-      data: (response.data.data || []).map(mapToFrontend),
-      meta: response.data.meta || { page: 1, limit: 10, total: 0, totalPages: 1 },
+      data: rawList.map(mapToFrontend),
+      meta,
     }
   },
 
   async getById(id: string): Promise<MaintenanceLog> {
-    const response = await apiClient.get<{
-      success: boolean
-      statusCode: number
-      message: string
-      data: BackendMaintenanceLogDto
-    }>(`/maintenance-logs/${id}`)
-    return mapToFrontend(response.data.data)
+    const response = await apiClient.get<any>(`/maintenance-logs/${id}`)
+    const item = response.data?.data?.id ? response.data.data : (response.data?.data || response.data)
+    return mapToFrontend(item)
   },
 
   async create(payload: CreateMaintenanceLogPayload): Promise<MaintenanceLog> {
-    const response = await apiClient.post<{
-      success: boolean
-      statusCode: number
-      message: string
-      data: BackendMaintenanceLogDto
-    }>('/maintenance-logs', payload)
-    return mapToFrontend(response.data.data)
+    const response = await apiClient.post<any>('/maintenance-logs', payload)
+    const item = response.data?.data?.id ? response.data.data : (response.data?.data || response.data)
+    return mapToFrontend(item)
   },
 
   async uploadAttachment(file: File): Promise<{ url: string; originalname: string; size: number }> {
     const formData = new FormData()
     formData.append('file', file)
-    const response = await apiClient.post<{
-      success: boolean
-      statusCode: number
-      message: string
-      data: { url: string; originalname: string; size: number }
-    }>('/maintenance-logs/upload-attachment', formData, {
+    const response = await apiClient.post<any>('/maintenance-logs/upload-attachment', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     })
-    return response.data.data
+    return response.data?.data || response.data
   },
 }

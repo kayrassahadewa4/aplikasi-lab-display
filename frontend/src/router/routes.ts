@@ -122,13 +122,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'issue-tickets',
-        name: 'AdminIssueTickets',
-        component: () => import('@/views/shared/IssueTicketsPage.vue'),
+        redirect: () => ({ path: '/admin/facilities', query: { tab: 'tickets' } }),
       },
       {
         path: 'maintenance-logs',
-        name: 'AdminMaintenanceLogs',
-        component: () => import('@/views/shared/MaintenanceLogsPage.vue'),
+        redirect: () => ({ path: '/admin/facilities', query: { tab: 'maintenance' } }),
       },
       {
         path: 'academic-calendars',
@@ -303,14 +301,32 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/laboran/DashboardPage.vue'),
       },
       {
+        path: 'facilities',
+        name: 'LaboranFacilities',
+        component: () => import('@/views/laboran/FacilitiesPage.vue'),
+      },
+      {
+        path: 'facilities/create',
+        name: 'LaboranFacilityCreate',
+        component: () => import('@/views/admin/FacilityFormPage.vue'),
+      },
+      {
+        path: 'facilities/:id',
+        name: 'LaboranFacilityDetail',
+        component: () => import('@/views/admin/FacilityDetailPage.vue'),
+      },
+      {
+        path: 'facilities/:id/edit',
+        name: 'LaboranFacilityEdit',
+        component: () => import('@/views/admin/FacilityFormPage.vue'),
+      },
+      {
         path: 'issue-tickets',
-        name: 'LaboranIssueTickets',
-        component: () => import('@/views/shared/IssueTicketsPage.vue'),
+        redirect: () => ({ path: '/laboran/facilities', query: { tab: 'tickets' } }),
       },
       {
         path: 'maintenance-logs',
-        name: 'LaboranMaintenanceLogs',
-        component: () => import('@/views/shared/MaintenanceLogsPage.vue'),
+        redirect: () => ({ path: '/laboran/facilities', query: { tab: 'maintenance' } }),
       },
       {
         path: 'room-requests',

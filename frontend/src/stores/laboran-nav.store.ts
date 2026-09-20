@@ -49,17 +49,10 @@ export const useLaboranNavStore = defineStore('laboranNav', () => {
       section: 'main',
     },
     {
-      id: 'issue-tickets',
-      label: 'Tiket Kendala Alat',
+      id: 'facilities',
+      label: 'Fasilitas Lab',
       icon: Wrench,
-      path: '/laboran/issue-tickets',
-      section: 'main',
-    },
-    {
-      id: 'maintenance-logs',
-      label: 'Log Perawatan',
-      icon: Hammer,
-      path: '/laboran/maintenance-logs',
+      path: '/laboran/facilities',
       section: 'main',
     },
     {
