@@ -125,8 +125,16 @@ export const routes: RouteRecordRaw[] = [
         redirect: () => ({ path: '/admin/facilities', query: { tab: 'tickets' } }),
       },
       {
+        path: 'issue-tickets/:id',
+        redirect: (to) => ({ path: '/admin/facilities', query: { tab: 'tickets', ticketId: to.params.id } }),
+      },
+      {
         path: 'maintenance-logs',
         redirect: () => ({ path: '/admin/facilities', query: { tab: 'maintenance' } }),
+      },
+      {
+        path: 'maintenance-logs/:id',
+        redirect: (to) => ({ path: '/admin/facilities', query: { tab: 'maintenance', logId: to.params.id } }),
       },
       {
         path: 'academic-calendars',
@@ -325,8 +333,16 @@ export const routes: RouteRecordRaw[] = [
         redirect: () => ({ path: '/laboran/facilities', query: { tab: 'tickets' } }),
       },
       {
+        path: 'issue-tickets/:id',
+        redirect: (to) => ({ path: '/laboran/facilities', query: { tab: 'tickets', ticketId: to.params.id } }),
+      },
+      {
         path: 'maintenance-logs',
         redirect: () => ({ path: '/laboran/facilities', query: { tab: 'maintenance' } }),
+      },
+      {
+        path: 'maintenance-logs/:id',
+        redirect: (to) => ({ path: '/laboran/facilities', query: { tab: 'maintenance', logId: to.params.id } }),
       },
       {
         path: 'room-requests',
@@ -444,6 +460,10 @@ export const routes: RouteRecordRaw[] = [
         path: 'issue-tickets',
         name: 'LecturerIssueTickets',
         component: () => import('@/views/shared/IssueTicketsPage.vue'),
+      },
+      {
+        path: 'issue-tickets/:id',
+        redirect: (to) => ({ path: '/lecturer/issue-tickets', query: { ticketId: to.params.id } }),
       },
       {
         path: 'schedules',

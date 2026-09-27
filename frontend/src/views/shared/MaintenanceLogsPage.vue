@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   AlertCircle,
   CheckCircle2,
@@ -49,6 +49,7 @@ import { useLaboranNavStore } from '@/stores/laboran-nav.store'
 import { useAdminNavStore } from '@/stores/admin-nav.store'
 
 const route = useRoute()
+const router = useRouter()
 
 const props = withDefaults(
   defineProps<{
@@ -336,6 +337,34 @@ const openDetail = (log: MaintenanceLog) => {
   showDetailModal.value = true
 }
 
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  if (route.query.logId) {
+    const query = { ...route.query }
+    delete query.logId
+    router.replace({ path: route.path, query })
+  }
+}
+
+// Auto-open maintenance log detail from route query ?logId=...
+const checkRouteLog = async () => {
+  const logId = route.query.logId as string
+  if (!logId) return
+
+  let log = logs.value.find((l) => l.id === logId)
+  if (!log) {
+    try {
+      log = await maintenanceService.getById(logId)
+    } catch (err) {
+      console.warn('Failed to load specific maintenance log from query:', err)
+    }
+  }
+
+  if (log) {
+    openDetail(log)
+  }
+}
+
 // Helpers for badges
 const getTypeLabel = (type: MaintenanceType) => {
   switch (type) {
@@ -403,7 +432,15 @@ onMounted(async () => {
     setupBreadcrumbs()
   }
   await Promise.all([loadLaboratories(), fetchLogs()])
+  await checkRouteLog()
 })
+
+watch(
+  () => route.query.logId,
+  () => {
+    checkRouteLog()
+  }
+)
 </script>
 
 <template>
@@ -984,7 +1021,7 @@ onMounted(async () => {
             </span>
             <h3 class="text-base font-extrabold text-text-primary mt-1">{{ activeLog.title }}</h3>
           </div>
-          <button @click="showDetailModal = false" class="text-text-muted hover:text-text-primary cursor-pointer">
+          <button @click="closeDetailModal" class="text-text-muted hover:text-text-primary cursor-pointer">
             <X :size="18" />
           </button>
         </div>
@@ -1056,7 +1093,7 @@ onMounted(async () => {
 
         <div class="pt-3 border-t border-gray-100 flex justify-end">
           <button
-            @click="showDetailModal = false"
+            @click="closeDetailModal"
             class="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-text-secondary hover:bg-gray-50"
           >
             Tutup

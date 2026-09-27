@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   AlertCircle,
   AlertTriangle,
@@ -44,6 +44,7 @@ import { useLaboranNavStore } from '@/stores/laboran-nav.store'
 import { useAdminNavStore } from '@/stores/admin-nav.store'
 
 const route = useRoute()
+const router = useRouter()
 
 const props = withDefaults(
   defineProps<{
@@ -321,6 +322,34 @@ const openDetail = (ticket: IssueTicket) => {
   showDetailModal.value = true
 }
 
+const closeDetailModal = () => {
+  showDetailModal.value = false
+  if (route.query.ticketId) {
+    const query = { ...route.query }
+    delete query.ticketId
+    router.replace({ path: route.path, query })
+  }
+}
+
+// Auto-open ticket detail from route query ?ticketId=...
+const checkRouteTicket = async () => {
+  const ticketId = route.query.ticketId as string
+  if (!ticketId) return
+
+  let ticket = tickets.value.find((t) => t.id === ticketId)
+  if (!ticket) {
+    try {
+      ticket = await issueTicketService.getById(ticketId)
+    } catch (err) {
+      console.warn('Failed to load specific ticket from query:', err)
+    }
+  }
+
+  if (ticket) {
+    openDetail(ticket)
+  }
+}
+
 // Open Status Update Modal (Laboran / Admin only)
 const openStatusUpdate = (ticket: IssueTicket) => {
   activeTicket.value = ticket
@@ -423,7 +452,15 @@ onMounted(async () => {
     setupBreadcrumbs()
   }
   await Promise.all([loadLaboratories(), fetchTickets()])
+  await checkRouteTicket()
 })
+
+watch(
+  () => route.query.ticketId,
+  () => {
+    checkRouteTicket()
+  }
+)
 </script>
 
 <template>
@@ -957,7 +994,7 @@ onMounted(async () => {
             </span>
             <h3 class="text-base font-extrabold text-text-primary mt-1">{{ activeTicket.title }}</h3>
           </div>
-          <button @click="showDetailModal = false" class="text-text-muted hover:text-text-primary cursor-pointer">
+          <button @click="closeDetailModal" class="text-text-muted hover:text-text-primary cursor-pointer">
             <X :size="18" />
           </button>
         </div>
@@ -1026,7 +1063,7 @@ onMounted(async () => {
 
         <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
           <button
-            @click="showDetailModal = false"
+            @click="closeDetailModal"
             class="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold text-text-secondary hover:bg-gray-50"
           >
             Tutup

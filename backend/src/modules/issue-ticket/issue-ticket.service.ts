@@ -83,7 +83,7 @@ export class IssueTicketService {
         `Laporan Kendala Baru: ${ticket.ticket_number}`,
         `${reporterName} melaporkan kendala "${ticket.title}" di ${laboratory.name}.`,
         'system',
-        `/laboran/issue-tickets/${ticket.id}`,
+        `/laboran/facilities?tab=tickets&ticketId=${ticket.id}`,
       );
     } catch (err) {
       console.warn('Failed to notify laboran for new issue ticket:', err);
@@ -204,7 +204,7 @@ export class IssueTicketService {
         title: `Status Tiket ${updated.ticket_number} Diperbarui`,
         message: `Tiket "${updated.title}" kini berstatus ${updated.status}.`,
         category: 'system',
-        link_url: `/lecturer/issue-tickets/${updated.id}`,
+        link_url: `/lecturer/issue-tickets?ticketId=${updated.id}`,
       });
     } catch (err) {
       console.warn('Failed to notify ticket reporter:', err);
