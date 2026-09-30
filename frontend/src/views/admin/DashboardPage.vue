@@ -308,11 +308,12 @@ const formatDisplayTime = (timeStr?: string) => {
             <BaseAvatar
               :src="authStore.userAvatar"
               :name="userGreetingName"
-              size="xl"
-              class="ring-4 ring-emerald-400/30 shadow-md"
+              size="2xl"
+              previewable
+              class="ring-4 ring-emerald-400/40 shadow-lg ring-offset-2 ring-offset-[#094726]"
             />
             <span
-              class="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#094726] shadow-2xs"
+              class="absolute bottom-0.5 right-0.5 w-4.5 h-4.5 rounded-full bg-emerald-400 border-2 border-[#094726] shadow-2xs pointer-events-none"
               title="Online"
             />
           </div>

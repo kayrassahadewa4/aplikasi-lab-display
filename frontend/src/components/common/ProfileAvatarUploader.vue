@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Camera, Trash2, Upload, Loader2, AlertCircle, CheckCircle2 } from 'lucide-vue-next'
+import { Camera, Trash2, Upload, Loader2, AlertCircle, CheckCircle2, Eye } from 'lucide-vue-next'
 import BaseAvatar from './BaseAvatar.vue'
 import { userService } from '@/services/user.service'
 import { useAuthStore } from '@/stores/auth.store'
@@ -30,6 +30,7 @@ const emit = defineEmits<{
 const authStore = useAuthStore()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const avatarRef = ref<InstanceType<typeof BaseAvatar> | null>(null)
 const isUploading = ref(false)
 const isDeleting = ref(false)
 const errorMessage = ref('')
@@ -140,7 +141,7 @@ const handleDeletePhoto = async () => {
         :class="{ 'cursor-pointer group': editable }"
         @click="triggerFileInput"
       >
-        <BaseAvatar :src="currentAvatar" :name="displayName" :size="size" />
+        <BaseAvatar ref="avatarRef" :src="currentAvatar" :name="displayName" :size="size" />
 
         <!-- Loading Overlay -->
         <div
@@ -182,6 +183,18 @@ const handleDeletePhoto = async () => {
         >
           <Upload :size="13" />
           <span>{{ isUploading ? 'Mengunggah...' : 'Pilih Foto' }}</span>
+        </button>
+
+        <button
+          v-if="currentAvatar"
+          type="button"
+          :disabled="isUploading || isDeleting"
+          @click="avatarRef?.openModal()"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200/90 bg-white hover:bg-surface text-text-primary text-xs font-bold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+          title="Lihat Foto Profil Resolusi Penuh HD"
+        >
+          <Eye :size="13" class="text-dark-green" />
+          <span>Lihat HD</span>
         </button>
 
         <button
