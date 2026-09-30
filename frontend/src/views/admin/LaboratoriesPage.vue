@@ -81,9 +81,14 @@ const loadLaboratories = async () => {
   }
 }
 
-// Reload on search query change
+// Reload on search query change with debounce
+let labSearchTimer: any = null
 watch(searchQuery, () => {
-  loadLaboratories()
+  if (labSearchTimer) clearTimeout(labSearchTimer)
+  labSearchTimer = setTimeout(() => {
+    currentPage.value = 1
+    loadLaboratories()
+  }, 300)
 })
 
 // Summary Cards Metrics

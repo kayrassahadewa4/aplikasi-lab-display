@@ -63,7 +63,7 @@ const dotClasses = {
 <template>
   <span
     :class="[
-      'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] border transition-all duration-150 shadow-2xs select-none',
+      'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-2xs font-semibold border transition-all duration-150 shadow-2xs select-none badge-crisp',
       variantClasses[config.variant],
     ]"
   >

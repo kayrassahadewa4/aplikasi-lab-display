@@ -135,83 +135,85 @@ export class DashboardService {
   }
 
   /**
-   * Get laboratory statistics with usage data
+   * Get laboratory statistics with usage data (Optimized single batch query)
    */
   async getLaboratoryStatistics(): Promise<LaboratoryStatisticDto[]> {
-    const laboratories = await this.prisma.laboratory.findMany({
-      select: {
-        id: true,
-        code: true,
-        name: true,
-        operationalHours: true,
-      },
-      orderBy: { code: 'asc' },
-    });
-
-    const statistics = await Promise.all(
-      laboratories.map(async (lab) => {
-        const [scheduleCount, requestCount, usageCount] = await Promise.all([
-          this.prisma.schedule.count({
-            where: {
-              laboratory_id: lab.id,
-              status: { not: ScheduleStatus.CANCELLED },
+    const [laboratories, roomUsages] = await Promise.all([
+      this.prisma.laboratory.findMany({
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          operationalHours: true,
+          _count: {
+            select: {
+              schedules: {
+                where: { status: { not: ScheduleStatus.CANCELLED } },
+              },
+              roomRequests: true,
             },
-          }),
-          this.prisma.roomRequest.count({
-            where: { laboratory_id: lab.id },
-          }),
-          this.prisma.roomUsage.count({
-            where: {
-              OR: [
-                { request: { laboratory_id: lab.id } },
-                { schedule: { laboratory_id: lab.id } },
-              ],
-            },
-          }),
-        ]);
-
-        // Calculate occupancy based on operational hours
-        const totalWeeklyHours = lab.operationalHours.reduce((sum, oh) => {
-          const openTime = new Date(oh.open_time);
-          const closeTime = new Date(oh.close_time);
-          const hours = this.calculateDurationHours(openTime, closeTime);
-          return sum + hours;
-        }, 0);
-
-        // Fallback if no operational hours defined for lab (Mon-Fri 07:00-22:00 = 75h)
-        const effectiveWeeklyHours = totalWeeklyHours > 0 ? totalWeeklyHours : 75;
-
-        // Estimate occupied hours from schedules
-        const schedules = await this.prisma.schedule.findMany({
-          where: {
-            laboratory_id: lab.id,
-            status: { not: ScheduleStatus.CANCELLED },
           },
-          select: { start_time: true, end_time: true },
-        });
-
-        const occupiedHours = schedules.reduce((sum, schedule) => {
-          const start = new Date(schedule.start_time);
-          const end = new Date(schedule.end_time);
-          return sum + this.calculateDurationHours(start, end);
-        }, 0);
-
-        const occupancyPercentage = Math.min(
-          100,
-          Math.max(0, Math.round((occupiedHours / effectiveWeeklyHours) * 100)),
-        );
-
-        return {
-          laboratory_id: lab.id,
-          laboratory_code: lab.code,
-          laboratory_name: lab.name,
-          total_schedules: scheduleCount,
-          total_requests: requestCount,
-          total_usage: usageCount,
-          occupancy_percentage: occupancyPercentage,
-        };
+          schedules: {
+            where: { status: { not: ScheduleStatus.CANCELLED } },
+            select: { start_time: true, end_time: true },
+          },
+        },
+        orderBy: { code: 'asc' },
       }),
-    );
+      this.prisma.roomUsage.findMany({
+        select: {
+          request: { select: { laboratory_id: true } },
+          schedule: { select: { laboratory_id: true } },
+        },
+      }),
+    ]);
+
+    // Build a map of usage counts per laboratory
+    const usageCountMap = new Map<string, number>();
+    for (const usage of roomUsages) {
+      const labId = usage.request?.laboratory_id || usage.schedule?.laboratory_id;
+      if (labId) {
+        usageCountMap.set(labId, (usageCountMap.get(labId) || 0) + 1);
+      }
+    }
+
+    const statistics: LaboratoryStatisticDto[] = laboratories.map((lab) => {
+      const scheduleCount = lab._count.schedules;
+      const requestCount = lab._count.roomRequests;
+      const usageCount = usageCountMap.get(lab.id) || 0;
+
+      // Calculate occupancy based on operational hours
+      const totalWeeklyHours = lab.operationalHours.reduce((sum, oh) => {
+        const openTime = new Date(oh.open_time);
+        const closeTime = new Date(oh.close_time);
+        const hours = this.calculateDurationHours(openTime, closeTime);
+        return sum + hours;
+      }, 0);
+
+      // Fallback if no operational hours defined for lab (Mon-Fri 07:00-22:00 = 75h)
+      const effectiveWeeklyHours = totalWeeklyHours > 0 ? totalWeeklyHours : 75;
+
+      const occupiedHours = lab.schedules.reduce((sum, schedule) => {
+        const start = new Date(schedule.start_time);
+        const end = new Date(schedule.end_time);
+        return sum + this.calculateDurationHours(start, end);
+      }, 0);
+
+      const occupancyPercentage = Math.min(
+        100,
+        Math.max(0, Math.round((occupiedHours / effectiveWeeklyHours) * 100)),
+      );
+
+      return {
+        laboratory_id: lab.id,
+        laboratory_code: lab.code,
+        laboratory_name: lab.name,
+        total_schedules: scheduleCount,
+        total_requests: requestCount,
+        total_usage: usageCount,
+        occupancy_percentage: occupancyPercentage,
+      };
+    });
 
     return statistics;
   }
@@ -342,7 +344,7 @@ export class DashboardService {
   }
 
   /**
-   * Get occupancy statistics per laboratory
+   * Get occupancy statistics per laboratory (Optimized single query)
    */
   async getOccupancyStatistics(): Promise<OccupancyStatisticDto[]> {
     const laboratories = await this.prisma.laboratory.findMany({
@@ -351,57 +353,50 @@ export class DashboardService {
         code: true,
         name: true,
         operationalHours: true,
-      },
-      orderBy: { code: 'asc' },
-    });
-
-    const occupancyStats = await Promise.all(
-      laboratories.map(async (lab) => {
-        // Calculate total available hours per week
-        const totalWeeklyHours = lab.operationalHours.reduce((sum, oh) => {
-          const openTime = new Date(oh.open_time);
-          const closeTime = new Date(oh.close_time);
-          const hours = this.calculateDurationHours(openTime, closeTime);
-          return sum + hours;
-        }, 0);
-
-        // Fallback if no operational hours configured (Mon-Fri 07:00-22:00 = 75h)
-        const effectiveWeeklyHours = totalWeeklyHours > 0 ? totalWeeklyHours : 75;
-
-        // Get all active schedules for this lab
-        const schedules = await this.prisma.schedule.findMany({
-          where: {
-            laboratory_id: lab.id,
-            status: { not: ScheduleStatus.CANCELLED },
-          },
+        schedules: {
+          where: { status: { not: ScheduleStatus.CANCELLED } },
           select: {
             start_time: true,
             end_time: true,
           },
-        });
+        },
+      },
+      orderBy: { code: 'asc' },
+    });
 
-        // Calculate occupied hours from schedules
-        const occupiedHours = schedules.reduce((sum, schedule) => {
-          const start = new Date(schedule.start_time);
-          const end = new Date(schedule.end_time);
-          return sum + this.calculateDurationHours(start, end);
-        }, 0);
+    const occupancyStats: OccupancyStatisticDto[] = laboratories.map((lab) => {
+      // Calculate total available hours per week
+      const totalWeeklyHours = lab.operationalHours.reduce((sum, oh) => {
+        const openTime = new Date(oh.open_time);
+        const closeTime = new Date(oh.close_time);
+        const hours = this.calculateDurationHours(openTime, closeTime);
+        return sum + hours;
+      }, 0);
 
-        const occupancyPercentage = Math.min(
-          100,
-          Math.max(0, Math.round((occupiedHours / effectiveWeeklyHours) * 100)),
-        );
+      // Fallback if no operational hours configured (Mon-Fri 07:00-22:00 = 75h)
+      const effectiveWeeklyHours = totalWeeklyHours > 0 ? totalWeeklyHours : 75;
 
-        return {
-          laboratory_id: lab.id,
-          laboratory_code: lab.code,
-          laboratory_name: lab.name,
-          occupied_hours: Math.round(occupiedHours * 100) / 100,
-          available_hours: Math.round(effectiveWeeklyHours * 100) / 100,
-          occupancy_percentage: occupancyPercentage,
-        };
-      }),
-    );
+      // Calculate occupied hours from schedules
+      const occupiedHours = lab.schedules.reduce((sum, schedule) => {
+        const start = new Date(schedule.start_time);
+        const end = new Date(schedule.end_time);
+        return sum + this.calculateDurationHours(start, end);
+      }, 0);
+
+      const occupancyPercentage = Math.min(
+        100,
+        Math.max(0, Math.round((occupiedHours / effectiveWeeklyHours) * 100)),
+      );
+
+      return {
+        laboratory_id: lab.id,
+        laboratory_code: lab.code,
+        laboratory_name: lab.name,
+        occupied_hours: Math.round(occupiedHours * 100) / 100,
+        available_hours: Math.round(effectiveWeeklyHours * 100) / 100,
+        occupancy_percentage: occupancyPercentage,
+      };
+    });
 
     return occupancyStats;
   }

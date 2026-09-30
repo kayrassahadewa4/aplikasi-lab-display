@@ -179,7 +179,7 @@ const loadDashboardData = async () => {
     const [summary, userResponse, requestsResponse, announcementsResponse, labStats, usageResponse] = await Promise.all([
       dashboardService.getSummary().catch(() => null),
       userService.getUsers({ page: 1, limit: 1 }).catch(() => ({ meta: { total: 0 } as any })),
-      roomRequestService.getRoomRequests({ status: 'PENDING', page: 1, limit: 5 }).catch(() => ({ data: [] })),
+      roomRequestService.getRoomRequests({ page: 1, limit: 5 }).catch(() => ({ data: [] })),
       announcementService.getAnnouncements({ page: 1, limit: 3 }).catch(() => ({ data: [] })),
       dashboardService.getLaboratoryStatistics().catch(() => []),
       roomUsageService.getRoomUsages({ limit: 5 }).catch(() => ({ data: [] }))
@@ -187,12 +187,7 @@ const loadDashboardData = async () => {
 
     dashboardSummary.value = summary
     totalUsers.value = userResponse.meta?.total || 0
-    let reqData = requestsResponse.data || []
-    if (reqData.length === 0) {
-      const allReqs = await roomRequestService.getRoomRequests({ page: 1, limit: 5 }).catch(() => ({ data: [] }))
-      reqData = allReqs.data || []
-    }
-    pendingRoomRequests.value = reqData
+    pendingRoomRequests.value = requestsResponse.data || []
 
     // Robust announcements loading & unwrapping
     if (Array.isArray(announcementsResponse)) {

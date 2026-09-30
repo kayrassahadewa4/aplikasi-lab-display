@@ -2622,10 +2622,10 @@ onUnmounted(() => {
 
 @keyframes marquee {
   0% {
-    transform: translateX(100%);
+    transform: translate3d(100%, 0, 0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translate3d(-100%, 0, 0);
   }
 }
 
@@ -2633,6 +2633,12 @@ onUnmounted(() => {
   display: inline-block;
   white-space: nowrap;
   animation: marquee 35s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  transform: translate3d(0, 0, 0);
 }
 
 .animate-marquee:hover {

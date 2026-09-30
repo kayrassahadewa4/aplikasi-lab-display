@@ -33,13 +33,13 @@ withDefaults(defineProps<Props>(), {
     <div class="absolute -right-8 -bottom-8 w-24 h-24 rounded-full bg-emerald-100/30 blur-2xl pointer-events-none group-hover:bg-emerald-200/40 transition-colors duration-300" />
 
     <div class="space-y-1 relative z-10 min-w-0 pr-2">
-      <span class="text-text-muted text-[10.5px] font-black uppercase tracking-wider block transition-colors duration-200 group-hover:text-dark-green truncate">
+      <span class="text-text-muted text-2xs font-black uppercase tracking-wider block transition-colors duration-200 group-hover:text-dark-green truncate">
         {{ title }}
       </span>
       <span class="text-2xl sm:text-3xl font-black text-text-primary block tracking-tight transition-all duration-200 group-hover:text-dark-green group-hover:translate-x-0.5">
         {{ value }}
       </span>
-      <span v-if="subtext" class="text-[11px] text-text-muted font-medium block truncate">
+      <span v-if="subtext" class="text-2xs text-text-muted font-medium block truncate">
         {{ subtext }}
       </span>
     </div>

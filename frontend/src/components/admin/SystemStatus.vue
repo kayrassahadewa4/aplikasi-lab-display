@@ -30,14 +30,14 @@ defineProps<Props>()
           </div>
           <div>
             <p class="text-xs font-bold text-text-primary leading-tight">{{ service.name }}</p>
-            <p v-if="service.lastCheck" class="text-[10.5px] text-text-muted mt-0.5">{{ service.lastCheck }}</p>
+            <p v-if="service.lastCheck" class="text-2xs text-text-muted mt-0.5">{{ service.lastCheck }}</p>
           </div>
         </div>
 
         <div class="flex items-center gap-1.5">
           <span
             :class="[
-              'text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 border',
+              'text-3xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 border badge-crisp',
               service.status === 'online'
                 ? 'bg-brand-50 text-dark-green border-brand-200/80'
                 : 'bg-red-50 text-danger border-red-200/60',

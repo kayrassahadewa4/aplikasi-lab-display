@@ -143,9 +143,14 @@ const loadFacilities = async () => {
   }
 }
 
-// Reload on search query change
+// Reload on search query change with 300ms debounce
+let searchDebounceTimer: any = null
 watch(searchQuery, () => {
-  loadFacilities()
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer)
+  searchDebounceTimer = setTimeout(() => {
+    currentPage.value = 1
+    loadFacilities()
+  }, 300)
 })
 
 // Summary Cards Metrics

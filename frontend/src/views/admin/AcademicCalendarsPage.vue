@@ -83,9 +83,14 @@ const loadCalendars = async () => {
   }
 }
 
-// Reload on search query change
+// Reload on search query change with debounce
+let calendarSearchTimer: any = null
 watch(searchQuery, () => {
-  loadCalendars()
+  if (calendarSearchTimer) clearTimeout(calendarSearchTimer)
+  calendarSearchTimer = setTimeout(() => {
+    currentPage.value = 1
+    loadCalendars()
+  }, 300)
 })
 
 // Summary Cards Metrics

@@ -85,9 +85,19 @@ const loadSchedules = async () => {
   }
 }
 
-// Reload on pagination, search, or filter change
-watch([currentPage, searchQuery, selectedLabFilter, selectedStatusFilter], () => {
+// Reload on pagination or dropdown filter change
+watch([currentPage, selectedLabFilter, selectedStatusFilter], () => {
   loadSchedules()
+})
+
+// Debounce search query to prevent redundant backend calls
+let scheduleSearchTimer: any = null
+watch(searchQuery, () => {
+  if (scheduleSearchTimer) clearTimeout(scheduleSearchTimer)
+  scheduleSearchTimer = setTimeout(() => {
+    currentPage.value = 1
+    loadSchedules()
+  }, 300)
 })
 
 // Summary Metrics

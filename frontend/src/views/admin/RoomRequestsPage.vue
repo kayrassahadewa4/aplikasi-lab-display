@@ -78,9 +78,19 @@ const loadRoomRequests = async () => {
   }
 }
 
-// Watch for filter changes
-watch([searchQuery, selectedStatusFilter, currentPage], () => {
+// Watch for status filter and pagination changes
+watch([selectedStatusFilter, currentPage], () => {
   loadRoomRequests()
+})
+
+// Debounce search query to prevent excessive backend requests
+let reqSearchTimer: any = null
+watch(searchQuery, () => {
+  if (reqSearchTimer) clearTimeout(reqSearchTimer)
+  reqSearchTimer = setTimeout(() => {
+    currentPage.value = 1
+    loadRoomRequests()
+  }, 300)
 })
 
 // Watch for lab filter changes (client-side filtering)

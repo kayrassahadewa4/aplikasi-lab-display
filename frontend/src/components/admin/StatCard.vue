@@ -101,13 +101,13 @@ withDefaults(defineProps<Props>(), {
 
     <!-- Bottom: Trend & Subtext -->
     <div
-      class="mt-2 pt-2 border-t flex items-center gap-1.5 text-[11px] relative z-10"
+      class="mt-2 pt-2 border-t flex items-center gap-1.5 text-2xs relative z-10"
       :class="highlighted ? 'border-white/10' : 'border-gray-100/60'"
     >
       <div
         v-if="trend"
         :class="[
-          'inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md font-black text-[10.5px]',
+          'inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md font-black text-2xs badge-crisp',
           highlighted
             ? (trend.isPositive ? 'bg-amber-400/25 text-amber-300' : 'bg-rose-500/25 text-rose-200')
             : (trend.isPositive ? 'bg-emerald-100 text-dark-green' : 'bg-rose-50 text-rose-600')
@@ -119,7 +119,7 @@ withDefaults(defineProps<Props>(), {
 
       <span
         :class="[
-          'truncate font-semibold text-[11px]',
+          'truncate font-semibold text-2xs',
           highlighted ? 'text-emerald-100/80' : 'text-text-muted'
         ]"
       >

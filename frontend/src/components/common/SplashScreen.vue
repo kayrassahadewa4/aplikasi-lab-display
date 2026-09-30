@@ -189,12 +189,12 @@ onUnmounted(() => {
           </div>
 
           <!-- Status Text & Persentase Berjalan -->
-          <div class="flex items-center justify-between text-[11px] font-medium tracking-wide text-white/75 mt-2.5 px-1">
+          <div class="flex items-center justify-between text-2xs font-medium tracking-wide text-white/75 mt-2.5 px-1">
             <span class="flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>{{ statusText }}</span>
             </span>
-            <span class="font-mono text-[10.5px] font-bold text-amber-400">{{ progress }}%</span>
+            <span class="font-mono text-2xs font-bold text-amber-400">{{ progress }}%</span>
           </div>
         </div>
 
@@ -202,7 +202,7 @@ onUnmounted(() => {
 
       <!-- Footer Subtitle / Institutional Seal -->
       <div class="absolute bottom-6 text-center z-10 px-4">
-        <p class="text-[9.5px] sm:text-[10px] tracking-[0.2em] font-medium uppercase text-white/40 font-mono">
+        <p class="text-3xs tracking-[0.2em] font-medium uppercase text-white/40 font-mono">
           Sistem Display Jadwal & Operasional Laboratorium
         </p>
       </div>

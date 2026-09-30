@@ -65,9 +65,13 @@ const loadOperationalHours = async () => {
   }
 }
 
-// Reload on search query change
+// Reload on search query change with debounce
+let opHourSearchTimer: any = null
 watch(searchQuery, () => {
-  loadOperationalHours()
+  if (opHourSearchTimer) clearTimeout(opHourSearchTimer)
+  opHourSearchTimer = setTimeout(() => {
+    loadOperationalHours()
+  }, 300)
 })
 
 // Current Day of Week Helper
