@@ -30,7 +30,7 @@ import {
 import { scheduleService, type ScheduleData } from '@/services/schedule.service'
 import { roomRequestService, type RoomRequest } from '@/services/room-request.service'
 import { laboratoryService, type LaboratoryData } from '@/services/laboratory.service'
-import { formatDate, formatTime, formatDateTime, formatShortDate } from '@/utils/format.utils'
+import { formatDate, formatTime, formatDateTime, formatShortDate, formatDayName } from '@/utils/format.utils'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -143,7 +143,7 @@ const loadLecturerDashboard = async () => {
     schedules.value = filteredSchedules.slice(0, 5).map((s, idx) => ({
       id: s.id,
       timeSlot: `${s.startTime} – ${s.endTime}`,
-      dateLabel: s.dayName || 'Regular Session',
+      dateLabel: s.dayName ? formatDayName(s.dayName) : 'Sesi Rutin',
       roomName: s.laboratoryName || 'Laboratory Room',
       roomCode: s.laboratoryCode || `LAB-${idx + 1}`,
       courseName: s.courseName,

@@ -24,6 +24,7 @@ import {
 } from 'lucide-vue-next'
 import type { OperationalHourData } from '@/mocks/admin-operational-hours.mock'
 import { operationalHourService } from '@/services/operational-hour.service'
+import { formatDayName } from '@/utils/format.utils'
 import SummaryCard from '@/components/admin/SummaryCard.vue'
 
 const router = useRouter()
@@ -74,9 +75,9 @@ watch(searchQuery, () => {
   }, 300)
 })
 
-// Current Day of Week Helper
+// Current Day of Week Helper (Indonesian)
 const currentDayName = computed(() => {
-  const days: OperationalHourData['day'][] = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
   const todayIdx = new Date().getDay()
   return days[todayIdx]
 })
@@ -106,7 +107,7 @@ const navigateToEdit = (hour: OperationalHourData) => {
           <h1 class="text-2xl sm:text-[28px] font-extrabold text-text-primary tracking-tight leading-tight">
             Jam Operasional
           </h1>
-          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-100/80 border border-brand-200 text-dark-green text-[11px] font-bold">
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-brand-100/80 border border-brand-200 text-dark-green text-2xs font-bold badge-crisp">
             <Clock :size="12" class="text-primary-dark" />
             Jam Operasional Standar
           </span>
@@ -206,7 +207,7 @@ const navigateToEdit = (hour: OperationalHourData) => {
         :key="hour.id"
         :class="[
           'bg-white rounded-2xl border shadow-2xs p-5 flex flex-col justify-between transition-all relative',
-          hour.day === currentDayName ? 'border-brand-300 ring-2 ring-brand-100' : 'border-gray-200/70'
+          formatDayName(hour.day) === currentDayName ? 'border-brand-300 ring-2 ring-brand-100' : 'border-gray-200/70'
         ]"
       >
         <div class="space-y-3">
@@ -216,19 +217,19 @@ const navigateToEdit = (hour: OperationalHourData) => {
               <Layers :size="14" class="text-dark-green shrink-0" />
               <div class="flex-1 min-w-0">
                 <p class="text-xs font-bold text-text-primary truncate">{{ hour.laboratoryName }}</p>
-                <p class="text-[10px] text-text-muted font-medium">{{ hour.laboratoryCode }}</p>
+                <p class="text-3xs text-text-muted font-medium">{{ hour.laboratoryCode }}</p>
               </div>
             </div>
           </div>
 
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <h3 class="font-extrabold text-base text-text-primary">{{ hour.day }}</h3>
-              <span v-if="hour.day === currentDayName" class="px-2 py-0.2 rounded-full bg-brand-100 text-dark-green text-[9px] font-extrabold uppercase">
+              <h3 class="font-extrabold text-base text-text-primary">{{ formatDayName(hour.day) }}</h3>
+              <span v-if="formatDayName(hour.day) === currentDayName" class="px-2 py-0.5 rounded-full bg-brand-100 text-dark-green text-3xs font-extrabold uppercase badge-crisp">
                 Hari Ini
               </span>
             </div>
-            <span :class="['px-2.5 py-0.5 rounded-full text-[10px] font-bold border', hour.status === 'Open' ? 'bg-emerald-50 text-dark-green border-brand-200' : 'bg-gray-100 text-gray-600 border-gray-200']">
+            <span :class="['px-2.5 py-0.5 rounded-full text-3xs font-bold border badge-crisp', hour.status === 'Open' ? 'bg-emerald-50 text-dark-green border-brand-200' : 'bg-gray-100 text-gray-600 border-gray-200']">
               {{ hour.status === 'Open' ? 'Buka' : 'Tutup' }}
             </span>
           </div>
@@ -245,7 +246,7 @@ const navigateToEdit = (hour: OperationalHourData) => {
           </div>
 
           <div v-else class="p-3 rounded-xl bg-gray-50 text-center text-xs text-text-muted font-medium">
-            Laboratorium Tutup pada hari {{ hour.day }}
+            Laboratorium Tutup pada hari {{ formatDayName(hour.day) }}
           </div>
         </div>
 

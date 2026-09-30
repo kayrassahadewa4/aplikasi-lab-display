@@ -23,6 +23,7 @@ import { operationalHourService } from '@/services/operational-hour.service'
 import { laboratoryService } from '@/services/laboratory.service'
 import type { LaboratoryData } from '@/mocks/admin-laboratories.mock'
 import TimePicker24 from '@/components/common/TimePicker24.vue'
+import { formatDayName } from '@/utils/format.utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -103,7 +104,7 @@ const loadOperationalHour = async () => {
     navStore.setBreadcrumbs([
       { label: 'Dashboard', path: '/admin' },
       { label: 'Jam Operasional', path: '/admin/operational-hours' },
-      { label: operationalHour.day },
+      { label: formatDayName(operationalHour.day) },
       { label: 'Ubah' },
     ])
   } catch (err: any) {
@@ -362,7 +363,7 @@ const handleCancel = () => {
             </div>
             <div class="flex items-center justify-between py-1.5 border-b border-gray-50">
               <span class="text-text-muted font-medium">Hari Operasional</span>
-              <span class="font-bold text-dark-green">{{ form.day }}</span>
+              <span class="font-bold text-dark-green">{{ formatDayName(form.day) }}</span>
             </div>
             <div class="flex items-center justify-between py-1.5 border-b border-gray-50">
               <span class="text-text-muted font-medium">Jam Operasional</span>

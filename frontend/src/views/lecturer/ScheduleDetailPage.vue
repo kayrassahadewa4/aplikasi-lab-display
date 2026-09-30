@@ -24,6 +24,7 @@ import {
   ShieldCheck
 } from 'lucide-vue-next'
 import { scheduleService, type ScheduleData } from '@/services/schedule.service'
+import { formatDayName } from '@/utils/format.utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -128,7 +129,7 @@ const navigateTo = (path: string) => {
             </span>
           </div>
           <p class="text-xs sm:text-sm text-text-muted font-medium">
-            Hari: <span class="font-bold text-text-secondary">{{ schedule.dayName }}</span> • {{ schedule.startTime }} – {{ schedule.endTime }} WIB • Ruang: {{ schedule.laboratoryCode }}
+            Hari: <span class="font-bold text-text-secondary">{{ formatDayName(schedule.dayName) }}</span> • {{ schedule.startTime }} – {{ schedule.endTime }} WIB • Ruang: {{ schedule.laboratoryCode }}
           </p>
         </div>
       </div>
@@ -169,7 +170,7 @@ const navigateTo = (path: string) => {
                 <Calendar :size="13" class="text-dark-green" />
                 <span>Hari Pelaksanaan</span>
               </div>
-              <p class="text-xs font-black text-text-primary truncate">{{ schedule.dayName }}</p>
+              <p class="text-xs font-black text-text-primary truncate">{{ formatDayName(schedule.dayName) }}</p>
             </div>
 
             <div class="p-4 rounded-xl border border-gray-100 bg-surface/60 space-y-1">
@@ -263,7 +264,7 @@ const navigateTo = (path: string) => {
             </div>
             <div class="flex justify-between py-1 border-b border-gray-50">
               <span class="text-text-muted">Hari Rutin</span>
-              <span class="font-bold text-dark-green">{{ schedule.dayName }}</span>
+              <span class="font-bold text-dark-green">{{ formatDayName(schedule.dayName) }}</span>
             </div>
             <div class="flex justify-between py-1">
               <span class="text-text-muted">Rentang Waktu</span>

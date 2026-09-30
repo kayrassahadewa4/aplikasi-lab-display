@@ -1,6 +1,35 @@
 const DEFAULT_LOCALE = 'id-ID'
 const DEFAULT_TIMEZONE = 'Asia/Jakarta'
 
+export const DAY_TRANSLATIONS: Record<string, string> = {
+  Sunday: 'Minggu',
+  Monday: 'Senin',
+  Tuesday: 'Selasa',
+  Wednesday: 'Rabu',
+  Thursday: 'Kamis',
+  Friday: 'Jumat',
+  Saturday: 'Sabtu',
+  minggu: 'Minggu',
+  senin: 'Senin',
+  selasa: 'Selasa',
+  rabu: 'Rabu',
+  kamis: 'Kamis',
+  jumat: 'Jumat',
+  sabtu: 'Sabtu',
+}
+
+/**
+ * Format day name to Indonesian (e.g. "Thursday" -> "Kamis", 4 -> "Kamis")
+ */
+export function formatDayName(day?: string | number | null): string {
+  if (day === undefined || day === null || day === '') return '-'
+  if (typeof day === 'number') {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+    return days[day] || 'Senin'
+  }
+  return DAY_TRANSLATIONS[day] || day
+}
+
 /**
  * Format Date to Indonesian Date string (e.g. "Minggu, 23 Agustus 2026" or "23 Agustus 2026")
  */

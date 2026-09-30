@@ -29,6 +29,7 @@ import {
 } from 'lucide-vue-next'
 import type { ScheduleData } from '@/mocks/admin-schedules.mock'
 import { scheduleService } from '@/services/schedule.service'
+import { formatDayName } from '@/utils/format.utils'
 import SummaryCard from '@/components/admin/SummaryCard.vue'
 
 const router = useRouter()
@@ -318,7 +319,7 @@ const confirmDeleteSchedule = async () => {
 
               <!-- Day & Time -->
               <td class="py-3.5 px-4 font-medium text-text-secondary">
-                {{ sch.dayName }}, {{ sch.startTime }} - {{ sch.endTime }}
+                {{ formatDayName(sch.dayName) }}, {{ sch.startTime }} - {{ sch.endTime }}
               </td>
 
               <!-- Class -->

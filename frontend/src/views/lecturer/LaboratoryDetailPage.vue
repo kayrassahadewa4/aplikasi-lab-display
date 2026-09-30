@@ -25,6 +25,7 @@ import {
 } from 'lucide-vue-next'
 import { laboratoryService, type LaboratoryData } from '@/services/laboratory.service'
 import { scheduleService, type ScheduleData } from '@/services/schedule.service'
+import { formatDayName } from '@/utils/format.utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -226,7 +227,7 @@ const handleRequestLaboratory = () => {
                 <div class="flex items-center gap-2">
                   <span class="font-mono font-extrabold text-dark-green inline-flex items-center gap-1.5">
                     <Clock :size="13" class="text-brand-600 shrink-0" />
-                    <span>{{ session.dayName }} • {{ session.startTime }} – {{ session.endTime }} WIB</span>
+                    <span>{{ formatDayName(session.dayName) }} • {{ session.startTime }} – {{ session.endTime }} WIB</span>
                   </span>
                   <span class="text-text-muted">•</span>
                   <span class="font-bold text-text-primary">{{ session.courseName }}</span>

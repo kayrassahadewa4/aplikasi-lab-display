@@ -25,6 +25,7 @@ import { roomUsageService, type RoomUsage, type CreateRoomUsagePayload, type Upd
 import { roomRequestService, type RoomRequest } from '@/services/room-request.service'
 import { scheduleService, type ScheduleData } from '@/services/schedule.service'
 import { laboratoryService, type LaboratoryData } from '@/services/laboratory.service'
+import { formatDayName } from '@/utils/format.utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -393,7 +394,7 @@ const handleCancel = () => {
               >
                 <option value="" disabled>Pilih jadwal perkuliahan...</option>
                 <option v-for="sch in schedules" :key="sch.id" :value="sch.id">
-                  {{ sch.courseName }} ({{ sch.className }}) — {{ sch.laboratoryCode || sch.laboratoryName }} • {{ sch.dayName }} {{ sch.startTime }}–{{ sch.endTime }} ({{ sch.lecturerName }})
+                  {{ sch.courseName }} ({{ sch.className }}) — {{ sch.laboratoryCode || sch.laboratoryName }} • {{ formatDayName(sch.dayName) }} {{ sch.startTime }}–{{ sch.endTime }} ({{ sch.lecturerName }})
                 </option>
               </select>
             </div>

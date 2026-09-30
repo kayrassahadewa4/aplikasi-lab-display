@@ -23,6 +23,7 @@ import {
   ShieldCheck
 } from 'lucide-vue-next'
 import { scheduleService, type ScheduleData } from '@/services/schedule.service'
+import { formatDayName } from '@/utils/format.utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -124,7 +125,7 @@ const handleOpenRoomUsage = () => {
             </span>
           </div>
           <p class="text-xs sm:text-sm text-text-muted font-medium">
-            {{ scheduleItem.laboratoryName }} ({{ scheduleItem.laboratoryCode }}) • {{ scheduleItem.dayName }} {{ scheduleItem.startTime }} – {{ scheduleItem.endTime }} WIB
+            {{ scheduleItem.laboratoryName }} ({{ scheduleItem.laboratoryCode }}) • {{ formatDayName(scheduleItem.dayName) }} {{ scheduleItem.startTime }} – {{ scheduleItem.endTime }} WIB
           </p>
         </div>
       </div>
@@ -165,7 +166,7 @@ const handleOpenRoomUsage = () => {
                 <Calendar :size="13" class="text-dark-green" />
                 <span>Hari Pelaksanaan</span>
               </div>
-              <p class="text-xs font-black text-text-primary truncate">{{ scheduleItem.dayName }}</p>
+              <p class="text-xs font-black text-text-primary truncate">{{ formatDayName(scheduleItem.dayName) }}</p>
             </div>
 
             <div class="p-4 rounded-xl border border-gray-100 bg-surface/60 space-y-1">
@@ -266,7 +267,7 @@ const handleOpenRoomUsage = () => {
             </div>
             <div class="flex justify-between py-1 border-b border-gray-50">
               <span class="text-text-muted">Hari Berulang</span>
-              <span class="font-bold text-dark-green">{{ scheduleItem.dayName }}</span>
+              <span class="font-bold text-dark-green">{{ formatDayName(scheduleItem.dayName) }}</span>
             </div>
             <div class="flex justify-between py-1">
               <span class="text-text-muted">Sesi Waktu</span>

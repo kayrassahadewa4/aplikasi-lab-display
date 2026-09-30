@@ -23,7 +23,7 @@ import {
 } from 'lucide-vue-next'
 import type { ScheduleData } from '@/mocks/admin-schedules.mock'
 import { scheduleService } from '@/services/schedule.service'
-import { formatDateTime } from '@/utils/format.utils'
+import { formatDateTime, formatDayName } from '@/utils/format.utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -168,7 +168,7 @@ const handleDelete = async () => {
             </span>
           </div>
           <p class="text-xs sm:text-sm text-text-muted font-medium">
-            {{ sch.laboratoryName }} ({{ sch.laboratoryCode }}) • Rutin Setiap {{ sch.dayName }} {{ sch.startTime }} – {{ sch.endTime }} WIB
+            {{ sch.laboratoryName }} ({{ sch.laboratoryCode }}) • Rutin Setiap {{ formatDayName(sch.dayName) }} {{ sch.startTime }} – {{ sch.endTime }} WIB
           </p>
         </div>
       </div>
@@ -223,7 +223,7 @@ const handleDelete = async () => {
                 <Calendar :size="13" class="text-dark-green" />
                 <span>Hari Pelaksanaan</span>
               </div>
-              <p class="text-xs font-black text-text-primary truncate">{{ sch.dayName }}</p>
+              <p class="text-xs font-black text-text-primary truncate">{{ formatDayName(sch.dayName) }}</p>
             </div>
 
             <div class="p-4 rounded-xl border border-gray-100 bg-surface/60 space-y-1">
@@ -308,7 +308,7 @@ const handleDelete = async () => {
             </div>
             <div class="flex justify-between py-1 border-b border-gray-50">
               <span class="text-text-muted">Hari Berulang</span>
-              <span class="font-bold text-dark-green">{{ sch.dayName }}</span>
+              <span class="font-bold text-dark-green">{{ formatDayName(sch.dayName) }}</span>
             </div>
             <div class="flex justify-between py-1">
               <span class="text-text-muted">Sesi Waktu</span>

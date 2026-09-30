@@ -30,6 +30,7 @@ import { academicCalendarService } from '@/services/academic-calendar.service'
 import type { LaboratoryData } from '@/mocks/admin-laboratories.mock'
 import type { AcademicPeriodData } from '@/mocks/admin-academic-calendar.mock'
 import TimePicker24 from '@/components/common/TimePicker24.vue'
+import { formatDayName } from '@/utils/format.utils'
 
 const route = useRoute()
 const router = useRouter()
@@ -542,7 +543,7 @@ const handleCancel = () => {
                 <div>
                   <h4 class="text-xs font-extrabold text-emerald-900">Jadwal Tetap Mingguan (16x Pertemuan Perkuliahan)</h4>
                   <p class="text-[11px] text-emerald-700/90">
-                    Otomatis berulang setiap {{ form.dayName === 'Monday' ? 'Senin' : form.dayName === 'Tuesday' ? 'Selasa' : form.dayName === 'Wednesday' ? 'Rabu' : form.dayName === 'Thursday' ? 'Kamis' : form.dayName === 'Friday' ? 'Jumat' : form.dayName === 'Saturday' ? 'Sabtu' : 'Minggu' }} sepanjang semester dan tersinkronisasi ke Layar Display.
+                    Otomatis berulang setiap {{ formatDayName(form.dayName) }} sepanjang semester dan tersinkronisasi ke Layar Display.
                   </p>
                 </div>
               </div>
@@ -630,7 +631,7 @@ const handleCancel = () => {
             </div>
             <div class="flex items-center justify-between py-1.5 border-b border-gray-50">
               <span class="text-text-muted font-medium">Sesi Waktu</span>
-              <span class="font-mono font-bold text-text-primary">{{ form.dayName }}, {{ form.startTime }} – {{ form.endTime }}</span>
+              <span class="font-mono font-bold text-text-primary">{{ formatDayName(form.dayName) }}, {{ form.startTime }} – {{ form.endTime }}</span>
             </div>
             <div class="flex items-center justify-between py-1.5">
               <span class="text-text-muted font-medium">Durasi</span>
