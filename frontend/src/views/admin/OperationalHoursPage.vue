@@ -82,6 +82,23 @@ const currentDayName = computed(() => {
   return days[todayIdx]
 })
 
+const todayOperationalHour = computed(() => {
+  return hoursList.value.find(h => formatDayName(h.day) === currentDayName.value)
+})
+
+const isTodayOpen = computed(() => {
+  if (!todayOperationalHour.value) return true
+  return todayOperationalHour.value.status === 'Open'
+})
+
+const todayHoursSubtext = computed(() => {
+  if (!todayOperationalHour.value) return undefined
+  if (todayOperationalHour.value.status === 'Open') {
+    return `${todayOperationalHour.value.openTime} – ${todayOperationalHour.value.closeTime} WIB`
+  }
+  return 'Laboratorium Tutup Hari Ini'
+})
+
 // Summary Metrics
 const openDaysCount = computed(() => hoursList.value.filter(h => h.status === 'Open').length)
 const closedDaysCount = computed(() => hoursList.value.filter(h => h.status === 'Closed').length)
@@ -154,7 +171,10 @@ const navigateToEdit = (hour: OperationalHourData) => {
       />
       <SummaryCard
         title="Jadwal Hari Ini"
-        :value="`${currentDayName} (BUKA)`"
+        :value="currentDayName"
+        :badge-text="isTodayOpen ? 'Buka' : 'Tutup'"
+        :badge-variant="isTodayOpen ? 'success' : 'danger'"
+        :subtext="todayHoursSubtext"
         :icon="Calendar"
         icon-bg-class="bg-sky-50"
         icon-color-class="text-sky-700"

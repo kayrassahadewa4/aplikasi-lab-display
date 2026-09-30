@@ -3,7 +3,10 @@ import type { Component } from 'vue'
 
 interface Props {
   title: string
-  value: string | number
+  value?: string | number
+  badgeText?: string
+  badgeVariant?: 'success' | 'danger' | 'warning' | 'info' | 'default'
+  badgeClass?: string
   icon?: Component
   iconBgClass?: string
   iconColorClass?: string
@@ -13,6 +16,7 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   clickable: false,
+  badgeVariant: 'success',
   iconBgClass: 'bg-emerald-50 border border-emerald-200/60',
   iconColorClass: 'text-dark-green',
 })
@@ -36,9 +40,29 @@ withDefaults(defineProps<Props>(), {
       <span class="text-text-muted text-2xs font-black uppercase tracking-wider block transition-colors duration-200 group-hover:text-dark-green truncate">
         {{ title }}
       </span>
-      <span class="text-2xl sm:text-3xl font-black text-text-primary block tracking-tight transition-all duration-200 group-hover:text-dark-green group-hover:translate-x-0.5">
-        {{ value }}
-      </span>
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <slot name="value">
+          <span class="text-2xl sm:text-3xl font-black text-text-primary block tracking-tight transition-all duration-200 group-hover:text-dark-green group-hover:translate-x-0.5">
+            {{ value }}
+          </span>
+        </slot>
+        <span
+          v-if="badgeText"
+          :class="[
+            'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-2xs font-extrabold uppercase badge-crisp border shadow-2xs transition-transform group-hover:scale-105',
+            badgeClass ? badgeClass :
+            badgeVariant === 'success' ? 'bg-emerald-50 text-dark-green border-emerald-200/80 ring-1 ring-emerald-500/10' :
+            badgeVariant === 'danger' ? 'bg-rose-50 text-rose-700 border-rose-200/80 ring-1 ring-rose-500/10' :
+            badgeVariant === 'warning' ? 'bg-amber-50 text-amber-700 border-amber-200/80 ring-1 ring-amber-500/10' :
+            badgeVariant === 'info' ? 'bg-sky-50 text-sky-700 border-sky-200/80 ring-1 ring-sky-500/10' :
+            'bg-gray-100 text-gray-700 border-gray-200'
+          ]"
+        >
+          <span v-if="badgeVariant === 'success'" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+          <span v-else-if="badgeVariant === 'danger'" class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+          <span>{{ badgeText }}</span>
+        </span>
+      </div>
       <span v-if="subtext" class="text-2xs text-text-muted font-medium block truncate">
         {{ subtext }}
       </span>
