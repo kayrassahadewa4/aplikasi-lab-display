@@ -266,7 +266,7 @@ export class AuthService {
   }> {
     const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID') || process.env.GOOGLE_CLIENT_ID;
 
-    // 1. If it looks like a real Google JWT token (three dot-separated segments)
+    // 1. Official Google JWT token verification
     if (credential.includes('.') && credential.split('.').length === 3) {
       try {
         if (googleClientId) {
@@ -277,6 +277,9 @@ export class AuthService {
           });
           const payload = ticket.getPayload();
           if (payload && payload.email) {
+            if (payload.email_verified === false) {
+              throw new UnauthorizedException('Email Google belum terverifikasi oleh Google.');
+            }
             return {
               email: payload.email,
               name: payload.name || payload.email.split('@')[0],
@@ -285,11 +288,14 @@ export class AuthService {
             };
           }
         } else {
-          // If no GOOGLE_CLIENT_ID set yet, verify using Google's public tokeninfo endpoint
+          // If no GOOGLE_CLIENT_ID configured, verify using Google's public tokeninfo endpoint
           const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
           if (response.ok) {
             const data: any = await response.json();
             if (data.email) {
+              if (data.email_verified === 'false' || data.email_verified === false) {
+                throw new UnauthorizedException('Email Google belum terverifikasi oleh Google.');
+              }
               return {
                 email: data.email,
                 name: data.name || data.email.split('@')[0],
@@ -300,55 +306,58 @@ export class AuthService {
           }
         }
       } catch (err: any) {
-        console.warn('Google token verification failed via official client, checking dev fallback:', err.message);
+        if (err instanceof UnauthorizedException) throw err;
+        console.warn('Google token verification failed via official client:', err.message);
       }
     }
 
     // 2. Dev / Simulation Mode Fallback:
-    // Allows instant testing in local environment without GCP configuration if credential is an email or JSON
-    if (credential.includes('@')) {
-      return {
-        email: credential.toLowerCase().trim(),
-        name: credential.split('@')[0].replace(/[._-]/g, ' '),
-        sub: `dev-${credential}`,
-      };
-    }
+    // Strictly restricted to non-production environments with mock flag or local test setup
+    const isDevMockAllowed =
+      process.env.NODE_ENV !== 'production' &&
+      (process.env.ALLOW_DEV_OAUTH_MOCK === 'true' || !googleClientId);
 
-    // Try decoding JSON payload if sent by dev simulator
-    try {
-      const parsed = JSON.parse(credential);
-      if (parsed.email) {
+    if (isDevMockAllowed) {
+      if (credential.includes('@')) {
         return {
-          email: parsed.email.toLowerCase().trim(),
-          name: parsed.name || parsed.email.split('@')[0],
-          picture: parsed.picture,
-          sub: parsed.sub || `dev-${parsed.email}`,
+          email: credential.toLowerCase().trim(),
+          name: credential.split('@')[0].replace(/[._-]/g, ' '),
+          sub: `dev-${credential}`,
         };
       }
-    } catch {
-      // not JSON
-    }
 
-    // Decode base64 JWT payload directly if valid JWT
-    if (credential.includes('.') && credential.split('.').length === 3) {
+      // Try decoding JSON payload if sent by dev simulator
       try {
-        const payloadBase64 = credential.split('.')[1];
-        const decodedJson = Buffer.from(payloadBase64, 'base64').toString('utf8');
-        const parsed = JSON.parse(decodedJson);
+        const parsed = JSON.parse(credential);
         if (parsed.email) {
           return {
             email: parsed.email.toLowerCase().trim(),
             name: parsed.name || parsed.email.split('@')[0],
             picture: parsed.picture,
-            sub: parsed.sub || `google-${parsed.email}`,
+            sub: parsed.sub || `dev-${parsed.email}`,
           };
         }
-      } catch {
-        // not valid base64
+      } catch {}
+
+      // Decode base64 JWT payload directly in dev simulator
+      if (credential.includes('.') && credential.split('.').length === 3) {
+        try {
+          const payloadBase64 = credential.split('.')[1];
+          const decodedJson = Buffer.from(payloadBase64, 'base64').toString('utf8');
+          const parsed = JSON.parse(decodedJson);
+          if (parsed.email) {
+            return {
+              email: parsed.email.toLowerCase().trim(),
+              name: parsed.name || parsed.email.split('@')[0],
+              picture: parsed.picture,
+              sub: parsed.sub || `google-${parsed.email}`,
+            };
+          }
+        } catch {}
       }
     }
 
-    throw new BadRequestException('Token kredensial Google tidak valid.');
+    throw new BadRequestException('Token kredensial Google tidak valid atau gagal diverifikasi.');
   }
 
   async googleLogin(dto: GoogleLoginDto): Promise<AuthResponseDto> {
@@ -356,6 +365,20 @@ export class AuthService {
     const email = googleProfile.email.toLowerCase().trim();
     const fullName = dto.full_name?.trim() || googleProfile.name || email.split('@')[0];
     const avatarUrl = dto.avatar_url || googleProfile.picture || null;
+
+    // RULE 1: Block Student Domains
+    // Students typically have emails like user@mahasiswa.upnvj.ac.id, user@student.upnvj.ac.id, etc.
+    const studentDomainPatterns = [
+      /@mahasiswa\./i,
+      /@student\./i,
+      /@mhs\./i,
+      /@alumni\./i,
+    ];
+    if (studentDomainPatterns.some((pattern) => pattern.test(email))) {
+      throw new UnauthorizedException(
+        'Akun mahasiswa tidak diizinkan mengakses portal Dosen/Laboran. Silakan gunakan portal mahasiswa yang sesuai.',
+      );
+    }
 
     // 1. Check if user already exists
     let user = await this.prisma.user.findUnique({
@@ -372,10 +395,17 @@ export class AuthService {
     });
 
     if (user) {
-      // STRICT ROLE ENFORCEMENT: Only LABORAN and DOSEN allowed!
+      // RULE 2: STRICT ROLE ENFORCEMENT for existing accounts
+      // Only LABORAN and DOSEN are allowed. ADMIN must use official password!
       if (user.role.code === 'ADMIN') {
         throw new UnauthorizedException(
-          'Login Google hanya diperuntukkan bagi akun Dosen dan Laboran. Akun Administrator wajib menggunakan login kata sandi resmi.'
+          'Login Google hanya diperuntukkan bagi akun Dosen dan Laboran. Akun Administrator wajib menggunakan login kata sandi resmi.',
+        );
+      }
+
+      if (user.role.code !== 'LABORAN' && user.role.code !== 'DOSEN') {
+        throw new UnauthorizedException(
+          `Peran akun '${user.role.name}' tidak memiliki izin untuk masuk melalui portal ini.`,
         );
       }
 
@@ -401,18 +431,35 @@ export class AuthService {
         });
       }
     } else {
-      // 2. New User Auto-Provisioning (Strictly DOSEN or LABORAN, never ADMIN)
-      let requestedRole = (dto.target_role || 'DOSEN').toUpperCase();
-      if (requestedRole === 'ADMIN') {
-        requestedRole = 'DOSEN';
+      // RULE 3: NEW USER AUTO-PROVISIONING SECURITY
+      // A. Laboran accounts CANNOT be self-registered / auto-provisioned!
+      // Any attempt to claim LABORAN without pre-registration is rejected.
+      if (dto.target_role?.toUpperCase() === 'LABORAN') {
+        throw new UnauthorizedException(
+          'Akun Staf Laboran wajib didaftarkan terlebih dahulu oleh Administrator TU Laboratorium sebelum dapat menggunakan login Google.',
+        );
+      }
+
+      // B. Lecturer Auto-Provisioning:
+      // Only allowed if email domain is official university lecturer domain (@upnvj.ac.id)
+      // Generic public emails (@gmail.com, @yahoo.com, etc.) that are NOT already in the database MUST be rejected!
+      const isInstitutionalDomain = email.endsWith('@upnvj.ac.id');
+      const isLocalDevMockAllowed =
+        process.env.NODE_ENV !== 'production' &&
+        (process.env.ALLOW_DEV_OAUTH_MOCK === 'true' || !process.env.GOOGLE_CLIENT_ID);
+
+      if (!isInstitutionalDomain && !isLocalDevMockAllowed) {
+        throw new UnauthorizedException(
+          `Email (${email}) belum terdaftar sebagai Dosen atau Laboran resmi di LabDisplay. Silakan hubungi Administrator TU untuk mendaftarkan akun Anda.`,
+        );
       }
 
       const role = await this.prisma.role.findUnique({
-        where: { code: requestedRole },
+        where: { code: 'DOSEN' },
       });
 
       if (!role) {
-        throw new BadRequestException(`Peran '${requestedRole}' tidak ditemukan dalam sistem.`);
+        throw new BadRequestException('Peran DOSEN tidak ditemukan dalam sistem.');
       }
 
       // Generate a secure random password for the database record

@@ -59,6 +59,7 @@ let socket: Socket | null = null
 let clockTimer: number | null = null
 let pollTimer: number | null = null
 let infoSlideTimer: number | null = null
+let kioskHygieneTimer: number | null = null
 
 // Separate Dedicated Widget: Operational & Lab Service Showcase Slides
 const activeInfoSlide = ref(0)
@@ -144,48 +145,58 @@ const toggleDarkMode = () => {
   }
 }
 
-// Fetch display data
+// Static DateTimeFormat singletons to eliminate ICU formatter allocations on 24/7 TV displays
+const staticTimeFormatter = new Intl.DateTimeFormat('id-ID', {
+  timeZone: 'Asia/Jakarta',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+})
+
+const staticDateFormatter = new Intl.DateTimeFormat('id-ID', {
+  timeZone: 'Asia/Jakarta',
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+})
+
+const staticHourFormatter = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Jakarta',
+  hour: '2-digit',
+  hour12: false,
+})
+
+// Fetch display data with mutex guard against overlapping requests
+let isFetching = false
 const fetchDisplayData = async () => {
+  if (isFetching) return
+  isFetching = true
   try {
     const data = await displayService.getDisplayData()
     displayData.value = data
   } catch (err) {
     console.error('Failed to fetch display data:', err)
   } finally {
+    isFetching = false
     isLoading.value = false
   }
 }
 
-// Indonesian WIB Date & Time
+// Indonesian WIB Date & Time (Optimized using static formatters)
 const formattedTime = computed(() => {
-  return new Intl.DateTimeFormat('id-ID', {
-    timeZone: 'Asia/Jakarta',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(now.value)
+  return staticTimeFormatter.format(now.value)
 })
 
 const formattedDate = computed(() => {
-  return new Intl.DateTimeFormat('id-ID', {
-    timeZone: 'Asia/Jakarta',
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(now.value)
+  return staticDateFormatter.format(now.value)
 })
 
 // Current Session Phase (Pagi, Siang, Sore, Malam)
 const currentSessionPhase = computed(() => {
   try {
-    const formatter = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Jakarta',
-      hour: '2-digit',
-      hour12: false,
-    })
-    const h = parseInt(formatter.format(now.value), 10)
+    const h = parseInt(staticHourFormatter.format(now.value), 10)
     if (h >= 6 && h < 11) {
       return { label: 'Sesi Pagi', period: '07:00 – 11:00 WIB', darkBadge: 'bg-emerald-500/20 text-[#4ade80] border-emerald-400/50', lightBadge: 'bg-emerald-50 text-emerald-800 border-emerald-200' }
     }
@@ -882,13 +893,36 @@ onMounted(() => {
     const wsUrl =
       (import.meta.env.VITE_WS_URL as string) || fallbackWs || 'http://localhost:3000'
 
-    socket = io(wsUrl, { transports: ['websocket', 'polling'] })
+    socket = io(wsUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
+      autoConnect: true,
+    })
+
     socket.on('connect', () => {
       isSocketConnected.value = true
+      fetchDisplayData()
     })
-    socket.on('disconnect', () => {
+
+    socket.on('disconnect', (reason) => {
+      isSocketConnected.value = false
+      console.warn('WebSocket disconnected:', reason)
+    })
+
+    socket.on('reconnect', (attempt) => {
+      isSocketConnected.value = true
+      console.info(`WebSocket reconnected successfully on attempt #${attempt}`)
+      fetchDisplayData()
+    })
+
+    socket.on('connect_error', () => {
       isSocketConnected.value = false
     })
+
     socket.on('display:sync', () => {
       fetchDisplayData()
     })
@@ -913,12 +947,23 @@ onMounted(() => {
 
   // Start auto-rotation for Info & Service Showcase widget
   resetInfoSlideTimer()
+
+  // 24/7 TV Display Hygiene: Schedule soft reload at 03:00 AM WIB (when lab is idle) to purge browser RAM
+  kioskHygieneTimer = window.setInterval(() => {
+    try {
+      const jakartaHour = parseInt(staticHourFormatter.format(new Date()), 10)
+      if (jakartaHour === 3) {
+        window.location.reload()
+      }
+    } catch {}
+  }, 1800000) // check every 30 minutes
 })
 
 onUnmounted(() => {
   if (clockTimer) clearInterval(clockTimer)
   if (pollTimer) clearInterval(pollTimer)
   if (infoSlideTimer) clearInterval(infoSlideTimer)
+  if (kioskHygieneTimer) clearInterval(kioskHygieneTimer)
   if (socket) socket.disconnect()
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
 })

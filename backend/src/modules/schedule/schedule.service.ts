@@ -161,8 +161,10 @@ export class ScheduleService {
     startTime: Date,
     endTime: Date,
     excludeScheduleId?: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    const conflictingSchedules = await this.prisma.schedule.findMany({
+    const client = tx || this.prisma;
+    const conflictingSchedules = await client.schedule.findMany({
       where: {
         laboratory_id: laboratoryId,
         day_of_week: dayOfWeek,
@@ -180,6 +182,53 @@ export class ScheduleService {
         throw new ConflictException(
           `Schedule conflicts with existing schedule '${existingSchedule.course_name}' (${this.formatTime(existingSchedule.start_time)} - ${this.formatTime(existingSchedule.end_time)})`,
         );
+      }
+    }
+  }
+
+  /**
+   * RULE 4B: Validate no conflict with approved room requests during the academic calendar
+   */
+  private async validateConflictWithApprovedRoomRequests(
+    laboratoryId: string,
+    academicCalendarId: string,
+    dayOfWeek: number,
+    startTime: Date,
+    endTime: Date,
+    tx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const client = tx || this.prisma;
+    const calendar = await client.academicCalendar.findUnique({
+      where: { id: academicCalendarId },
+    });
+    if (!calendar) return;
+
+    const approvedRequests = await client.roomRequest.findMany({
+      where: {
+        laboratory_id: laboratoryId,
+        status: 'APPROVED',
+        request_date: {
+          gte: calendar.start_date,
+          lte: calendar.end_date,
+        },
+      },
+    });
+
+    for (const req of approvedRequests) {
+      const reqDay = new Date(req.request_date).getDay();
+      if (reqDay === dayOfWeek) {
+        const newStart = this.compareTime(startTime, req.end_time);
+        const newEnd = this.compareTime(endTime, req.start_time);
+        if (newStart < 0 && newEnd > 0) {
+          const dateStr = new Intl.DateTimeFormat('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }).format(new Date(req.request_date));
+          throw new ConflictException(
+            `Jadwal bentrok dengan peminjaman ruangan yang telah disetujui: '${req.activity_name}' pada ${dateStr} (${this.formatTime(req.start_time)} - ${this.formatTime(req.end_time)})`,
+          );
+        }
       }
     }
   }
@@ -211,43 +260,61 @@ export class ScheduleService {
         endTime,
       );
 
-      // RULE 4: Validate no schedule conflicts
-      await this.validateScheduleConflict(
-        createScheduleDto.laboratory_id,
-        createScheduleDto.day_of_week,
-        startTime,
-        endTime,
-      );
+      // Execute row-locking and creation inside an interactive PostgreSQL transaction
+      const schedule = await this.prisma.$transaction(async (tx) => {
+        // 1. Lock the laboratory row to serialize concurrent scheduling attempts
+        await tx.$executeRaw`SELECT id FROM "Laboratory" WHERE id = ${createScheduleDto.laboratory_id}::uuid FOR UPDATE`;
 
-      // Create schedule
-      const schedule = await this.prisma.schedule.create({
-        data: {
-          laboratory_id: createScheduleDto.laboratory_id,
-          academic_calendar_id: createScheduleDto.academic_calendar_id,
-          course_name: createScheduleDto.course_name,
-          lecturer_name: createScheduleDto.lecturer_name,
-          class_name: createScheduleDto.class_name,
-          day_of_week: createScheduleDto.day_of_week,
-          start_time: startTime,
-          end_time: endTime,
-          status: createScheduleDto.status,
-        },
-        include: {
-          laboratory: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
+        // RULE 4: Validate no schedule conflicts
+        await this.validateScheduleConflict(
+          createScheduleDto.laboratory_id,
+          createScheduleDto.day_of_week,
+          startTime,
+          endTime,
+          undefined,
+          tx,
+        );
+
+        // RULE 4B: Validate no conflict with approved room requests
+        await this.validateConflictWithApprovedRoomRequests(
+          createScheduleDto.laboratory_id,
+          createScheduleDto.academic_calendar_id,
+          createScheduleDto.day_of_week,
+          startTime,
+          endTime,
+          tx,
+        );
+
+        // Create schedule within tx
+        return await tx.schedule.create({
+          data: {
+            laboratory_id: createScheduleDto.laboratory_id,
+            academic_calendar_id: createScheduleDto.academic_calendar_id,
+            course_name: createScheduleDto.course_name,
+            lecturer_name: createScheduleDto.lecturer_name,
+            class_name: createScheduleDto.class_name,
+            day_of_week: createScheduleDto.day_of_week,
+            start_time: startTime,
+            end_time: endTime,
+            status: createScheduleDto.status,
+          },
+          include: {
+            laboratory: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+              },
+            },
+            academicCalendar: {
+              select: {
+                id: true,
+                academic_year: true,
+                semester: true,
+              },
             },
           },
-          academicCalendar: {
-            select: {
-              id: true,
-              academic_year: true,
-              semester: true,
-            },
-          },
-        },
+        });
       });
 
       this.eventsGateway.emitDisplayUpdate('display:sync', {
@@ -420,22 +487,6 @@ export class ScheduleService {
         );
       }
 
-      // RULE 4: Validate schedule conflicts if laboratory, day, or time changed
-      if (
-        updateScheduleDto.laboratory_id ||
-        updateScheduleDto.day_of_week !== undefined ||
-        updateScheduleDto.start_time ||
-        updateScheduleDto.end_time
-      ) {
-        await this.validateScheduleConflict(
-          laboratoryId,
-          dayOfWeek,
-          startTime,
-          endTime,
-          id, // Exclude current schedule from conflict check
-        );
-      }
-
       // Prepare update data
       const updateData: any = {};
       if (updateScheduleDto.laboratory_id !== undefined) {
@@ -466,26 +517,61 @@ export class ScheduleService {
         updateData.status = updateScheduleDto.status;
       }
 
-      // Update schedule
-      const schedule = await this.prisma.schedule.update({
-        where: { id },
-        data: updateData,
-        include: {
-          laboratory: {
-            select: {
-              id: true,
-              code: true,
-              name: true,
+      // Execute row-locking and update inside an interactive PostgreSQL transaction
+      const schedule = await this.prisma.$transaction(async (tx) => {
+        // Lock laboratory row if room, day, or time changed
+        if (
+          updateScheduleDto.laboratory_id ||
+          updateScheduleDto.day_of_week !== undefined ||
+          updateScheduleDto.start_time ||
+          updateScheduleDto.end_time ||
+          updateScheduleDto.status === ScheduleStatus.SCHEDULED ||
+          updateScheduleDto.status === ScheduleStatus.ACTIVE
+        ) {
+          await tx.$executeRaw`SELECT id FROM "Laboratory" WHERE id = ${laboratoryId}::uuid FOR UPDATE`;
+
+          // RULE 4: Validate schedule conflicts
+          await this.validateScheduleConflict(
+            laboratoryId,
+            dayOfWeek,
+            startTime,
+            endTime,
+            id, // Exclude current schedule from conflict check
+            tx,
+          );
+
+          // RULE 4B: Validate conflict with approved room requests
+          const calId = updateScheduleDto.academic_calendar_id || existingSchedule.academic_calendar_id;
+          await this.validateConflictWithApprovedRoomRequests(
+            laboratoryId,
+            calId,
+            dayOfWeek,
+            startTime,
+            endTime,
+            tx,
+          );
+        }
+
+        return await tx.schedule.update({
+          where: { id },
+          data: updateData,
+          include: {
+            laboratory: {
+              select: {
+                id: true,
+                code: true,
+                name: true,
+              },
+            },
+            academicCalendar: {
+              select: {
+                id: true,
+                academic_year: true,
+                semester: true,
+              },
             },
           },
-          academicCalendar: {
-            select: {
-              id: true,
-              academic_year: true,
-              semester: true,
-            },
-          },
-        },
+        });
       });
 
       this.eventsGateway.emitDisplayUpdate('display:sync', {

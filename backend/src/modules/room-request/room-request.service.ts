@@ -188,8 +188,10 @@ export class RoomRequestService {
     startTime: Date,
     endTime: Date,
     excludeRequestId?: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    const duplicateRequest = await this.prisma.roomRequest.findFirst({
+    const client = tx || this.prisma;
+    const duplicateRequest = await client.roomRequest.findFirst({
       where: {
         applicant_id: applicantId,
         laboratory_id: laboratoryId,
@@ -215,8 +217,10 @@ export class RoomRequestService {
     startTime: Date,
     endTime: Date,
     excludeRequestId?: string,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
-    const approvedRequests = await this.prisma.roomRequest.findMany({
+    const client = tx || this.prisma;
+    const approvedRequests = await client.roomRequest.findMany({
       where: {
         laboratory_id: laboratoryId,
         request_date: requestDate,
@@ -243,10 +247,12 @@ export class RoomRequestService {
     requestDate: Date,
     startTime: Date,
     endTime: Date,
+    tx?: Prisma.TransactionClient,
   ): Promise<void> {
+    const client = tx || this.prisma;
     const dayOfWeek = this.getDayOfWeek(requestDate);
 
-    const schedules = await this.prisma.schedule.findMany({
+    const schedules = await client.schedule.findMany({
       where: {
         laboratory_id: laboratoryId,
         day_of_week: dayOfWeek,
@@ -335,88 +341,137 @@ export class RoomRequestService {
         targetDates.push(targetDate);
       }
 
-      // Multi-date pre-validation (All-or-Nothing validation across all weekly meetings)
-      for (let i = 0; i < targetDates.length; i++) {
-        const checkDate = targetDates[i];
-        const dateStr = new Intl.DateTimeFormat('id-ID', {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        }).format(checkDate);
-        const meetingPrefix = occurrences > 1 ? `Pertemuan ke-${i + 1} (${dateStr})` : `Tanggal ${dateStr}`;
-
-        try {
-          // RULE 3 & 7: Validate academic calendar and date not in past
-          await this.validateAcademicCalendarAndDate(checkDate);
-
-          // RULE 5: Validate operational hours
-          await this.validateOperationalHour(
-            createRoomRequestDto.laboratory_id,
-            checkDate,
-            startTime,
-            endTime,
-          );
-
-          // RULE 8: Validate duplicate request
-          await this.validateDuplicateRequest(
-            applicantId,
-            createRoomRequestDto.laboratory_id,
-            checkDate,
-            startTime,
-            endTime,
-          );
-
-          // RULE 9: Validate conflict with approved requests
-          await this.validateConflictWithApprovedRequests(
-            createRoomRequestDto.laboratory_id,
-            checkDate,
-            startTime,
-            endTime,
-          );
-
-          // RULE 10: Validate conflict with schedule
-          await this.validateConflictWithSchedule(
-            createRoomRequestDto.laboratory_id,
-            checkDate,
-            startTime,
-            endTime,
-          );
-        } catch (err: any) {
-          if (
-            err instanceof ConflictException ||
-            err instanceof BadRequestException
-          ) {
-            throw new ConflictException(
-              `Bentrok pada ${meetingPrefix}: ${err.message}. Mohon periksa kembali jadwal atau pilih waktu/ruangan lain.`,
-            );
-          }
-          throw err;
-        }
-      }
-
       const isApproved = createRoomRequestDto.status === RequestStatus.APPROVED;
       const approvedAt = isApproved ? new Date() : null;
       const initialStatus = createRoomRequestDto.status || RequestStatus.PENDING;
 
-      if (occurrences > 1) {
-        // Batch creation within Prisma transaction for 16x recurring requests
-        const createdRequests = await this.prisma.$transaction(
-          targetDates.map((targetDate, i) => {
-            const meetingSuffix = `(Pertemuan ${i + 1}/${occurrences})`;
-            const meetingDesc = `${createRoomRequestDto.description}\n[Jadwal Mingguan Terjadwal: Pertemuan ${i + 1} dari ${occurrences}]`;
+      // Execute row-locking and creation inside an interactive PostgreSQL transaction
+      const { primaryRequest, createdCount, isRecurringBatch } = await this.prisma.$transaction(
+        async (tx) => {
+          // 1. Exclusive row-level lock on the laboratory to serialize concurrent booking/scheduling attempts
+          await tx.$executeRaw`SELECT id FROM "Laboratory" WHERE id = ${createRoomRequestDto.laboratory_id}::uuid FOR UPDATE`;
 
-            return this.prisma.roomRequest.create({
+          // 2. Multi-date pre-validation (All-or-Nothing validation across all weekly meetings) within locked tx
+          for (let i = 0; i < targetDates.length; i++) {
+            const checkDate = targetDates[i];
+            const dateStr = new Intl.DateTimeFormat('id-ID', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            }).format(checkDate);
+            const meetingPrefix = occurrences > 1 ? `Pertemuan ke-${i + 1} (${dateStr})` : `Tanggal ${dateStr}`;
+
+            try {
+              // RULE 3 & 7: Validate academic calendar and date not in past
+              await this.validateAcademicCalendarAndDate(checkDate);
+
+              // RULE 5: Validate operational hours
+              await this.validateOperationalHour(
+                createRoomRequestDto.laboratory_id,
+                checkDate,
+                startTime,
+                endTime,
+              );
+
+              // RULE 8: Validate duplicate request
+              await this.validateDuplicateRequest(
+                applicantId,
+                createRoomRequestDto.laboratory_id,
+                checkDate,
+                startTime,
+                endTime,
+                undefined,
+                tx,
+              );
+
+              // RULE 9: Validate conflict with approved requests
+              await this.validateConflictWithApprovedRequests(
+                createRoomRequestDto.laboratory_id,
+                checkDate,
+                startTime,
+                endTime,
+                undefined,
+                tx,
+              );
+
+              // RULE 10: Validate conflict with schedule
+              await this.validateConflictWithSchedule(
+                createRoomRequestDto.laboratory_id,
+                checkDate,
+                startTime,
+                endTime,
+                tx,
+              );
+            } catch (err: any) {
+              if (
+                err instanceof ConflictException ||
+                err instanceof BadRequestException
+              ) {
+                throw new ConflictException(
+                  `Bentrok pada ${meetingPrefix}: ${err.message}. Mohon periksa kembali jadwal atau pilih waktu/ruangan lain.`,
+                );
+              }
+              throw err;
+            }
+          }
+
+          if (occurrences > 1) {
+            // Batch creation within Prisma transaction for recurring requests
+            const createdRequests: any[] = [];
+            for (let i = 0; i < targetDates.length; i++) {
+              const targetDate = targetDates[i];
+              const meetingSuffix = `(Pertemuan ${i + 1}/${occurrences})`;
+              const meetingDesc = `${createRoomRequestDto.description}\n[Jadwal Mingguan Terjadwal: Pertemuan ${i + 1} dari ${occurrences}]`;
+
+              const req = await tx.roomRequest.create({
+                data: {
+                  applicant_id: applicantId,
+                  laboratory_id: createRoomRequestDto.laboratory_id,
+                  approved_by: createRoomRequestDto.approved_by || null,
+                  approved_at: approvedAt,
+                  activity_name: `${createRoomRequestDto.activity_name} ${meetingSuffix}`,
+                  course_name: createRoomRequestDto.course_name,
+                  class_name: createRoomRequestDto.class_name,
+                  description: meetingDesc,
+                  request_date: targetDate,
+                  start_time: startTime,
+                  end_time: endTime,
+                  participant_count: createRoomRequestDto.participant_count,
+                  status: initialStatus,
+                  document_url: createRoomRequestDto.document_url || null,
+                },
+                include: {
+                  applicant: {
+                    select: { id: true, full_name: true, email: true, avatar_url: true },
+                  },
+                  laboratory: {
+                    select: { id: true, code: true, name: true },
+                  },
+                },
+              });
+              createdRequests.push(req);
+            }
+
+            return {
+              primaryRequest: createdRequests[0],
+              createdCount: createdRequests.length,
+              isRecurringBatch: true,
+            };
+          } else {
+            // Single-date creation (one-off / ad-hoc / rapat)
+            const singleDate = targetDates[0];
+            const roomRequest = await tx.roomRequest.create({
               data: {
                 applicant_id: applicantId,
                 laboratory_id: createRoomRequestDto.laboratory_id,
                 approved_by: createRoomRequestDto.approved_by || null,
                 approved_at: approvedAt,
-                activity_name: `${createRoomRequestDto.activity_name} ${meetingSuffix}`,
+                activity_name: createRoomRequestDto.activity_name,
                 course_name: createRoomRequestDto.course_name,
                 class_name: createRoomRequestDto.class_name,
-                description: meetingDesc,
-                request_date: targetDate,
+                description: createRoomRequestDto.description,
+                request_date: singleDate,
                 start_time: startTime,
                 end_time: endTime,
                 participant_count: createRoomRequestDto.participant_count,
@@ -432,86 +487,52 @@ export class RoomRequestService {
                 },
               },
             });
-          }),
-        );
 
-        const primaryRequest = createdRequests[0];
+            return {
+              primaryRequest: roomRequest,
+              createdCount: 1,
+              isRecurringBatch: false,
+            };
+          }
+        },
+        { timeout: 15000 },
+      );
 
-        // Trigger system notification to Admins & Laboran
-        try {
-          const lecturerName = primaryRequest.applicant?.full_name || 'Dosen Pengajar';
+      // Trigger system notification to Admins & Laboran
+      try {
+        const reqDate =
+          typeof createRoomRequestDto.request_date === 'string'
+            ? createRoomRequestDto.request_date
+            : new Date(primaryRequest.request_date).toISOString().split('T')[0];
+        const lecturerName = primaryRequest.applicant?.full_name || 'Dosen';
+
+        if (isRecurringBatch) {
           await this.notificationsService.notifyAdminsAndLaboran(
             'Permohonan Jadwal Mingguan Baru (16x Pertemuan)',
             `Dosen ${lecturerName} mengajukan jadwal mingguan (${occurrences}x pertemuan) untuk "${createRoomRequestDto.activity_name}" di ${primaryRequest.laboratory.name}.`,
             'requests',
             `/laboran/room-requests/${primaryRequest.id}`,
           );
-        } catch (err) {
-          console.warn('Failed to send recurring request creation notification:', err);
+        } else {
+          await this.notificationsService.notifyAdminsAndLaboran(
+            'Permohonan Pinjam Ruangan Baru',
+            `Dosen ${lecturerName} mengajukan pinjam ${primaryRequest.laboratory.name} untuk "${createRoomRequestDto.activity_name}" pada ${reqDate}.`,
+            'requests',
+            `/laboran/room-requests/${primaryRequest.id}`,
+          );
         }
-
-        this.eventsGateway.emitDisplayUpdate('display:sync', {
-          type: 'ROOM_REQUEST_CREATED',
-          id: primaryRequest.id,
-          recurring: true,
-          count: createdRequests.length,
-        });
-
-        return primaryRequest;
-      }
-
-      // Single-date creation (one-off / ad-hoc / rapat)
-      const singleDate = targetDates[0];
-      const roomRequest = await this.prisma.roomRequest.create({
-        data: {
-          applicant_id: applicantId,
-          laboratory_id: createRoomRequestDto.laboratory_id,
-          approved_by: createRoomRequestDto.approved_by || null,
-          approved_at: approvedAt,
-          activity_name: createRoomRequestDto.activity_name,
-          course_name: createRoomRequestDto.course_name,
-          class_name: createRoomRequestDto.class_name,
-          description: createRoomRequestDto.description,
-          request_date: singleDate,
-          start_time: startTime,
-          end_time: endTime,
-          participant_count: createRoomRequestDto.participant_count,
-          status: initialStatus,
-          document_url: createRoomRequestDto.document_url || null,
-        },
-        include: {
-          applicant: {
-            select: { id: true, full_name: true, email: true, avatar_url: true },
-          },
-          laboratory: {
-            select: { id: true, code: true, name: true },
-          },
-        },
-      });
-
-      // Trigger automatic system notification to Admins & Laboran
-      try {
-        const reqDate =
-          typeof createRoomRequestDto.request_date === 'string'
-            ? createRoomRequestDto.request_date
-            : new Date(roomRequest.request_date).toISOString().split('T')[0];
-        const lecturerName = roomRequest.applicant?.full_name || 'Dosen';
-        await this.notificationsService.notifyAdminsAndLaboran(
-          'Permohonan Pinjam Ruangan Baru',
-          `Dosen ${lecturerName} mengajukan pinjam ${roomRequest.laboratory.name} untuk "${createRoomRequestDto.activity_name}" pada ${reqDate}.`,
-          'requests',
-          `/laboran/room-requests/${roomRequest.id}`,
-        );
       } catch (err) {
         console.warn('Failed to send request creation notification:', err);
       }
 
       this.eventsGateway.emitDisplayUpdate('display:sync', {
         type: 'ROOM_REQUEST_CREATED',
-        id: roomRequest.id,
+        id: primaryRequest.id,
+        recurring: isRecurringBatch,
+        count: createdCount,
       });
 
-      return roomRequest;
+      return primaryRequest;
     } catch (error) {
       if (
         error instanceof NotFoundException ||
@@ -666,37 +687,6 @@ export class RoomRequestService {
         );
       }
 
-      // RULE 9: Validate conflict with approved requests if date/time changed OR when approving
-      if (
-        updateRoomRequestDto.status === RequestStatus.APPROVED ||
-        updateRoomRequestDto.request_date ||
-        updateRoomRequestDto.start_time ||
-        updateRoomRequestDto.end_time
-      ) {
-        await this.validateConflictWithApprovedRequests(
-          existingRequest.laboratory_id,
-          requestDate,
-          startTime,
-          endTime,
-          id,
-        );
-      }
-
-      // RULE 10: Validate conflict with schedule if date/time changed OR when approving
-      if (
-        updateRoomRequestDto.status === RequestStatus.APPROVED ||
-        updateRoomRequestDto.request_date ||
-        updateRoomRequestDto.start_time ||
-        updateRoomRequestDto.end_time
-      ) {
-        await this.validateConflictWithSchedule(
-          existingRequest.laboratory_id,
-          requestDate,
-          startTime,
-          endTime,
-        );
-      }
-
       // Validate rejection reason when rejecting
       if (updateRoomRequestDto.status === RequestStatus.REJECTED) {
         if (!updateRoomRequestDto.rejection_reason || !updateRoomRequestDto.rejection_reason.trim()) {
@@ -745,20 +735,51 @@ export class RoomRequestService {
         updateData.document_url = updateRoomRequestDto.document_url;
       }
 
-      const roomRequest = await this.prisma.roomRequest.update({
-        where: { id },
-        data: updateData,
-        include: {
-          applicant: {
-            select: { id: true, full_name: true, email: true, avatar_url: true },
+      const roomRequest = await this.prisma.$transaction(async (tx) => {
+        // Lock the laboratory row if approving or changing schedule time
+        if (
+          updateRoomRequestDto.status === RequestStatus.APPROVED ||
+          updateRoomRequestDto.request_date ||
+          updateRoomRequestDto.start_time ||
+          updateRoomRequestDto.end_time
+        ) {
+          await tx.$executeRaw`SELECT id FROM "Laboratory" WHERE id = ${existingRequest.laboratory_id}::uuid FOR UPDATE`;
+
+          // RULE 9: Validate conflict with approved requests if date/time changed OR when approving
+          await this.validateConflictWithApprovedRequests(
+            existingRequest.laboratory_id,
+            requestDate,
+            startTime,
+            endTime,
+            id,
+            tx,
+          );
+
+          // RULE 10: Validate conflict with schedule if date/time changed OR when approving
+          await this.validateConflictWithSchedule(
+            existingRequest.laboratory_id,
+            requestDate,
+            startTime,
+            endTime,
+            tx,
+          );
+        }
+
+        return await tx.roomRequest.update({
+          where: { id },
+          data: updateData,
+          include: {
+            applicant: {
+              select: { id: true, full_name: true, email: true, avatar_url: true },
+            },
+            approver: {
+              select: { id: true, full_name: true, email: true, avatar_url: true },
+            },
+            laboratory: {
+              select: { id: true, code: true, name: true },
+            },
           },
-          approver: {
-            select: { id: true, full_name: true, email: true, avatar_url: true },
-          },
-          laboratory: {
-            select: { id: true, code: true, name: true },
-          },
-        },
+        });
       });
 
       // Trigger notification to applicant and staff on status update
