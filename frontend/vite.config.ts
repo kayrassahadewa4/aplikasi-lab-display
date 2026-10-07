@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => ({
             if (id.includes('lucide-vue-next')) {
               return 'vendor-icons'
             }
-            if (id.includes('html2canvas') || id.includes('jspdf') || id.includes('xlsx')) {
+            if (id.includes('html2canvas') || id.includes('jspdf') || id.includes('exceljs') || id.includes('xlsx')) {
               return 'vendor-export'
             }
             if (id.includes('socket.io-client') || id.includes('axios')) {

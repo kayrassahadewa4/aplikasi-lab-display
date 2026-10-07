@@ -180,7 +180,7 @@ const getSummaryMetrics = () => {
   }
 }
 
-const exportExcel = () => {
+const exportExcel = async () => {
   const items = getExportItems()
   if (items.length === 0) {
     errorMessage.value = 'Tidak ada data laporan yang tersedia untuk diekspor.'
@@ -189,7 +189,7 @@ const exportExcel = () => {
   }
 
   try {
-    exportReportToExcel(items, getSummaryMetrics())
+    await exportReportToExcel(items, getSummaryMetrics())
     showExportBanner.value = true
     setTimeout(() => {
       showExportBanner.value = false

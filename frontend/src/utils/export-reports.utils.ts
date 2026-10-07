@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { formatDate, formatTime, formatDateTime } from './format.utils'
@@ -24,59 +24,113 @@ export interface ReportSummaryMetrics {
 }
 
 /**
- * 1. Generate and Download Microsoft Excel (.xlsx) Report
+ * 1. Generate and Download Microsoft Excel (.xlsx) Report using ExcelJS
  */
-export function exportReportToExcel(
+export async function exportReportToExcel(
   items: UsageReportItem[],
   metrics: ReportSummaryMetrics,
   filename = 'Laporan_Penggunaan_Laboratorium'
-) {
-  // Sheet 1: Summary Overview
-  const summaryData = [
-    ['SISTEM DISPLAY JADWAL PENGGUNAAN LABORATORIUM'],
-    ['LAPORAN EKSEKUTIF PENGGUNAAN RUANG LABORATORIUM'],
-    [],
-    ['Periode Laporan', metrics.periodLabel],
-    ['Tanggal Dibuat', formatDateTime(new Date())],
-    ['Total Sesi Penggunaan', metrics.totalSessions],
-    ['Total Jam Penggunaan', `${metrics.totalHours} Jam`],
-    ['Tingkat Utilisasi Rata-rata', metrics.utilizationRate],
-    [],
-    ['--- RINCIAN LOG SESI PENGGUNAAN RUANGAN ---'],
+): Promise<void> {
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = 'Sistem Display Lab FIK UPNVJ'
+  workbook.lastModifiedBy = 'Sistem Display Lab FIK UPNVJ'
+  workbook.created = new Date()
+  workbook.modified = new Date()
+
+  const worksheet = workbook.addWorksheet('Log Penggunaan Lab', {
+    views: [{ showGridLines: true }],
+  })
+
+  // Executive Header Titles
+  worksheet.addRow(['SISTEM DISPLAY JADWAL PENGGUNAAN LABORATORIUM'])
+  worksheet.addRow(['LAPORAN EKSEKUTIF PENGGUNAAN RUANG LABORATORIUM'])
+  worksheet.addRow([])
+
+  // Summary Metrics Rows
+  worksheet.addRow(['Periode Laporan', metrics.periodLabel])
+  worksheet.addRow(['Tanggal Dibuat', formatDateTime(new Date())])
+  worksheet.addRow(['Total Sesi Penggunaan', metrics.totalSessions])
+  worksheet.addRow(['Total Jam Penggunaan', `${metrics.totalHours} Jam`])
+  worksheet.addRow(['Tingkat Utilisasi Rata-rata', metrics.utilizationRate])
+  worksheet.addRow([])
+  worksheet.addRow(['--- RINCIAN LOG SESI PENGGUNAAN RUANGAN ---'])
+
+  // Style Header Titles
+  const titleRow1 = worksheet.getRow(1)
+  titleRow1.font = { bold: true, size: 14, color: { argb: 'FF0C5A30' } }
+  const titleRow2 = worksheet.getRow(2)
+  titleRow2.font = { bold: true, size: 12, color: { argb: 'FF1F2937' } }
+
+  // Detailed Table Header
+  const headerRow = worksheet.addRow([
+    'No',
+    'Kode Lab',
+    'Nama Laboratorium',
+    'Aktivitas / Mata Kuliah',
+    'Dosen / Penanggung Jawab',
+    'Status',
+    'Waktu Check-In',
+    'Waktu Check-Out',
+    'Durasi (Menit)',
+  ])
+
+  // Style Table Header (Brand Theme FIK UPNVJ Emerald)
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF0C5A30' },
+  }
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+
+  // Add Table Data Rows
+  items.forEach((item, idx) => {
+    const row = worksheet.addRow([
+      idx + 1,
+      item.laboratoryCode,
+      item.laboratoryName,
+      item.activityName,
+      item.instructorName,
+      item.status,
+      formatDateTime(item.checkInTime),
+      item.checkOutTime ? formatDateTime(item.checkOutTime) : 'Sedang Berlangsung',
+      item.durationMinutes || 0,
+    ])
+
+    // Alternate row zebra striping
+    if (idx % 2 === 1) {
+      row.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFF9FAFB' },
+      }
+    }
+  })
+
+  // Set Column Widths
+  worksheet.columns = [
+    { width: 6 },
+    { width: 14 },
+    { width: 30 },
+    { width: 35 },
+    { width: 28 },
+    { width: 16 },
+    { width: 24 },
+    { width: 24 },
+    { width: 16 },
   ]
 
-  // Sheet 2: Detailed Session Data Table
-  const tableData = items.map((item, idx) => ({
-    No: idx + 1,
-    'Kode Lab': item.laboratoryCode,
-    'Nama Laboratorium': item.laboratoryName,
-    'Aktivitas / Mata Kuliah': item.activityName,
-    'Dosen / Penanggung Jawab': item.instructorName,
-    Status: item.status,
-    'Waktu Check-In': formatDateTime(item.checkInTime),
-    'Waktu Check-Out': item.checkOutTime ? formatDateTime(item.checkOutTime) : 'Sedang Berlangsung',
-    'Durasi (Menit)': item.durationMinutes || 0,
-  }))
-
-  const wb = XLSX.utils.book_new()
-  const ws = XLSX.utils.aoa_to_sheet(summaryData)
-  XLSX.utils.sheet_add_json(ws, tableData, { origin: 'A10' })
-
-  // Auto-fit column widths
-  ws['!cols'] = [
-    { wch: 5 }, // No
-    { wch: 12 }, // Kode Lab
-    { wch: 28 }, // Nama Lab
-    { wch: 32 }, // Aktivitas
-    { wch: 25 }, // Dosen
-    { wch: 14 }, // Status
-    { wch: 22 }, // Check-In
-    { wch: 22 }, // Check-Out
-    { wch: 14 }, // Durasi
-  ]
-
-  XLSX.utils.book_append_sheet(wb, ws, 'Log Penggunaan Lab')
-  XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+  // Generate buffer and trigger browser download
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+  const url = window.URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `${filename}_${new Date().toISOString().slice(0, 10)}.xlsx`
+  anchor.click()
+  window.URL.revokeObjectURL(url)
 }
 
 /**
