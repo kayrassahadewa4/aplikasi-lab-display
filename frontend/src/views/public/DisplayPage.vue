@@ -836,6 +836,181 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
   })
 })
 
+// =============================================================
+// 8-LAB X 10-SLOT MATRIX SCHEDULE DEFINITIONS (80% WIDTH PANEL)
+// =============================================================
+interface AcademicTimeSlot {
+  slotNumber: number
+  label: string
+  timeRange: string
+  startMin: number
+  endMin: number
+}
+
+const ACADEMIC_TIME_SLOTS: AcademicTimeSlot[] = [
+  { slotNumber: 1, label: 'Sesi 1', timeRange: '07:30 - 08:20', startMin: 450, endMin: 500 },
+  { slotNumber: 2, label: 'Sesi 2', timeRange: '08:20 - 09:10', startMin: 500, endMin: 550 },
+  { slotNumber: 3, label: 'Sesi 3', timeRange: '09:15 - 10:05', startMin: 555, endMin: 605 },
+  { slotNumber: 4, label: 'Sesi 4', timeRange: '10:10 - 11:00', startMin: 610, endMin: 660 },
+  { slotNumber: 5, label: 'Sesi 5', timeRange: '11:05 - 11:55', startMin: 665, endMin: 715 },
+  { slotNumber: 6, label: 'Sesi 6', timeRange: '12:30 - 13:20', startMin: 750, endMin: 800 },
+  { slotNumber: 7, label: 'Sesi 7', timeRange: '13:25 - 14:15', startMin: 805, endMin: 855 },
+  { slotNumber: 8, label: 'Sesi 8', timeRange: '14:20 - 15:10', startMin: 860, endMin: 910 },
+  { slotNumber: 9, label: 'Sesi 9', timeRange: '15:20 - 16:10', startMin: 920, endMin: 970 },
+  { slotNumber: 10, label: 'Sesi 10', timeRange: '16:15 - 17:05', startMin: 975, endMin: 1025 },
+]
+
+interface MatrixCellSession {
+  id: string
+  title: string
+  subtitle: string
+  lecturer: string
+  className?: string
+  timeWindow: string
+  startMin: number
+  endMin: number
+  status: 'IN_USE' | 'UPCOMING' | 'AVAILABLE'
+  type: 'SCHEDULE' | 'REQUEST'
+}
+
+interface MatrixCell {
+  slot: AcademicTimeSlot
+  isCurrentTime: boolean
+  session: MatrixCellSession | null
+}
+
+interface MatrixLabColumn {
+  id: string
+  code: string
+  name: string
+  shortName: string
+  capacity: number
+  status: 'IN_USE' | 'AVAILABLE' | 'UPCOMING' | 'MAINTENANCE'
+  liveSession: FormattedLiveSession | null
+  cells: MatrixCell[]
+}
+
+const activeInUseSessions = computed(() => {
+  return liveLabSessions.value.filter((s) => s.status === 'IN_USE')
+})
+
+const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
+  const currentMinutes = getCurrentJakartaMinutes()
+  const schedules = displayData.value?.schedules || []
+  const requests = displayData.value?.room_requests || []
+  const usages = displayData.value?.room_usage || []
+  const labs = displayData.value?.laboratories || []
+
+  const standardLabs = [
+    { code: 'LAB-01', shortName: 'Lab RPL', defaultName: 'Lab Rekayasa Perangkat Lunak' },
+    { code: 'LAB-02', shortName: 'Lab Cyber', defaultName: 'Lab Jaringan & Cyber Security' },
+    { code: 'LAB-03', shortName: 'Lab Multimedia', defaultName: 'Lab Multimedia & Game Dev' },
+    { code: 'LAB-04', shortName: 'Lab AI & Data', defaultName: 'Lab Kecerdasan Buatan & Data' },
+    { code: 'LAB-05', shortName: 'Lab Database', defaultName: 'Lab Sistem Informasi & Database' },
+    { code: 'LAB-06', shortName: 'Lab Cloud IoT', defaultName: 'Lab Komputasi Awan & IoT' },
+    { code: 'LAB-07', shortName: 'Lab Algoritma', defaultName: 'Lab Algoritma & Pemrograman' },
+    { code: 'LAB-08', shortName: 'Lab Robotika', defaultName: 'Lab Hardware & Robotika' },
+  ]
+
+  return Array.from({ length: 8 }, (_, colIdx) => {
+    const std = standardLabs[colIdx] || { code: 'LAB-0' + (colIdx + 1), shortName: 'Lab 0' + (colIdx + 1), defaultName: 'Laboratorium 0' + (colIdx + 1) }
+    const apiLab = labs.find((l) => l.code === std.code) || labs[colIdx]
+    const labId = apiLab?.id || ('virtual-' + std.code)
+    const labCode = apiLab?.code || std.code
+    const labName = apiLab?.name || std.defaultName
+    const labShortName = std.shortName
+    const labCapacity = apiLab?.maximum_capacity || 40
+
+    const liveSession = liveLabSessions.value.find((s) => s.labCode === labCode || s.labId === labId) || null
+    const colStatus = liveSession?.status || 'AVAILABLE'
+
+    const labSessions: MatrixCellSession[] = []
+
+    schedules.forEach((s) => {
+      if (s.status === 'CANCELLED') return
+      if (s.laboratory?.id === labId || s.laboratory?.code === labCode) {
+        const startMin = parseTimeToMinutes(s.start_time)
+        const endMin = getEffectiveEndMinutes(s.start_time, s.end_time)
+        const isOngoing = currentMinutes >= startMin && currentMinutes < endMin
+        const isUpcoming = currentMinutes < startMin
+
+        const hasActiveUsage = usages.some(
+          (u) =>
+            u.schedule?.course_name === s.course_name &&
+            (u.schedule?.laboratory.id === labId || u.schedule?.laboratory.code === labCode) &&
+            (u.status === 'CHECKED_IN' || u.status === 'IN_USE'),
+        )
+
+        labSessions.push({
+          id: s.id,
+          title: s.course_name,
+          subtitle: s.class_name ? ('Kelas: ' + s.class_name) : '',
+          lecturer: s.lecturer_name || 'Dosen Pengajar',
+          className: s.class_name || undefined,
+          timeWindow: extractTimeString(s.start_time) + ' - ' + extractTimeString(s.end_time),
+          startMin,
+          endMin,
+          status: isOngoing || hasActiveUsage ? 'IN_USE' : isUpcoming ? 'UPCOMING' : 'AVAILABLE',
+          type: 'SCHEDULE',
+        })
+      }
+    })
+
+    requests.forEach((r) => {
+      if (r.laboratory?.id === labId || r.laboratory?.code === labCode) {
+        const startMin = parseTimeToMinutes(r.start_time)
+        const endMin = getEffectiveEndMinutes(r.start_time, r.end_time)
+        const isOngoing = currentMinutes >= startMin && currentMinutes < endMin
+        const isUpcoming = currentMinutes < startMin
+
+        const hasActiveUsage = usages.some(
+          (u) =>
+            u.request?.activity_name === r.activity_name &&
+            (u.request?.laboratory.id === labId || u.request?.laboratory.code === labCode) &&
+            (u.status === 'CHECKED_IN' || u.status === 'IN_USE'),
+        )
+
+        labSessions.push({
+          id: r.id,
+          title: r.activity_name,
+          subtitle: r.applicant?.full_name ? ('Pemohon: ' + r.applicant.full_name) : '',
+          lecturer: r.applicant?.full_name || 'Dosen / Pemohon',
+          className: 'Kegiatan Khusus',
+          timeWindow: extractTimeString(r.start_time) + ' - ' + extractTimeString(r.end_time),
+          startMin,
+          endMin,
+          status: isOngoing || hasActiveUsage ? 'IN_USE' : isUpcoming ? 'UPCOMING' : 'AVAILABLE',
+          type: 'REQUEST',
+        })
+      }
+    })
+
+    const cells: MatrixCell[] = ACADEMIC_TIME_SLOTS.map((slot) => {
+      const isCurrentTime = currentMinutes >= slot.startMin && currentMinutes < slot.endMin
+      const matched = labSessions.find(
+        (sess) => sess.startMin < slot.endMin && sess.endMin > slot.startMin,
+      ) || null
+
+      return {
+        slot,
+        isCurrentTime,
+        session: matched,
+      }
+    })
+
+    return {
+      id: labId,
+      code: labCode,
+      name: labName,
+      shortName: labShortName,
+      capacity: labCapacity,
+      status: colStatus,
+      liveSession,
+      cells,
+    }
+  })
+})
+
 // Fullscreen toggle
 const toggleFullscreen = () => {
   if (!document.fullscreenElement) {
@@ -1114,68 +1289,87 @@ onUnmounted(() => {
     </header>
 
     <!-- 2. MAIN 2-COLUMN DISPLAY BODY -->
-    <main class="grid grid-cols-1 lg:grid-cols-12 gap-4 my-2.5 flex-1 overflow-hidden relative z-10 min-h-0">
-      <!-- LEFT: LIVE OCCUPANCY MATRIX (8 COLS) -->
-      <div class="lg:col-span-8 flex flex-col justify-between gap-2 overflow-hidden h-full">
-        <!-- Section Bar -->
-        <div class="flex items-center justify-between px-1 shrink-0">
-          <div class="flex items-center gap-2.5">
+    <main class="flex flex-col lg:flex-row gap-3.5 my-2.5 flex-1 overflow-hidden relative z-10 min-h-0">
+      <!-- ========================================================================= -->
+      <!-- 1. LEFT PANEL: 80% SCREEN WIDTH - 8-COLUMN JADWAL PERKULIAHAN MATRIX      -->
+      <!-- ========================================================================= -->
+      <section
+        :class="[
+          'w-full lg:w-[80%] rounded-2xl border-2 flex flex-col justify-between overflow-hidden h-full shadow-lg transition-colors duration-300 relative',
+          isDarkMode
+            ? 'bg-[#091f15] border-emerald-600/70 shadow-[0_0_30px_rgba(74,222,128,0.12)]'
+            : 'bg-white/95 border-emerald-300/80 shadow-md'
+        ]"
+      >
+        <!-- Top Accent Gradient Bar -->
+        <div
+          :class="[
+            'absolute top-0 left-0 right-0 h-1.5 z-20',
+            isDarkMode
+              ? 'bg-gradient-to-r from-emerald-500 via-teal-300 to-green-400 shadow-[0_0_12px_rgba(74,222,128,0.6)]'
+              : 'bg-gradient-to-r from-[#07371d] via-[#0c5a30] to-emerald-500'
+          ]"
+        />
+
+        <!-- Section Top Header Bar -->
+        <div
+          :class="[
+            'px-4 py-2.5 border-b flex items-center justify-between shrink-0 transition-colors duration-300',
+            isDarkMode ? 'border-emerald-700/60 bg-[#06170f]' : 'border-emerald-100 bg-emerald-50/70'
+          ]"
+        >
+          <div class="flex items-center gap-3">
             <div
               :class="[
-                'w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm',
+                'w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm shrink-0',
                 isDarkMode
-                  ? 'bg-[#122b1f] border-2 border-emerald-500 text-[#4ade80] shadow-[0_0_12px_rgba(74,222,128,0.3)]'
+                  ? 'bg-emerald-500/20 text-[#4ade80] border-2 border-emerald-400 shadow-[0_0_14px_rgba(74,222,128,0.35)]'
                   : 'bg-gradient-to-br from-[#0c5a30] to-[#07371d] text-white shadow-md'
               ]"
             >
-              <Radio :size="15" class="animate-pulse" />
+              <Calendar :size="18" />
             </div>
             <div>
-              <h2
-                :class="[
-                  'text-xs sm:text-sm font-bold tracking-wide uppercase flex items-center gap-2',
-                  isDarkMode ? 'text-white' : 'text-[#0c5a30]'
-                ]"
-              >
-                Status & Okupansi Laboratorium FIK
-              </h2>
-              <p :class="['text-[10.5px] sm:text-[11px] font-medium', isDarkMode ? 'text-[#86efac]' : 'text-emerald-700']">
-                Pantauan real-time ketersediaan ruang, unit PC & sesi praktikum
+              <div class="flex items-center gap-2">
+                <h2
+                  :class="[
+                    'text-sm sm:text-base font-extrabold tracking-tight uppercase flex items-center gap-2',
+                    isDarkMode ? 'text-white' : 'text-[#0c5a30]'
+                  ]"
+                >
+                  Matriks Jadwal Perkuliahan & Praktikum Hari Ini
+                </h2>
+                <span
+                  class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-600 text-white shadow-2xs tracking-wider"
+                >
+                  8 RUANG LAB
+                </span>
+              </div>
+              <p :class="['text-[11px] font-medium', isDarkMode ? 'text-emerald-300/80' : 'text-emerald-800']">
+                Pantauan alokasi 10 sesi jam perkuliahan reguler dan penggunaan laboratorium real-time
               </p>
             </div>
           </div>
+
+          <!-- Right Status Chips -->
           <div class="flex items-center gap-2">
-            <button
-              @click="openOverallEquipmentModal"
-              type="button"
-              :class="[
-                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-all duration-300 flex items-center gap-1.5 shadow-sm tracking-wide cursor-pointer hover:scale-105 active:scale-95',
-                isDarkMode
-                  ? 'text-amber-300 bg-amber-500/20 border-amber-400/60 shadow-[0_0_10px_rgba(251,191,36,0.25)] hover:bg-amber-500/30'
-                  : 'text-emerald-950 bg-amber-100 border-amber-300 hover:bg-amber-200'
-              ]"
-              title="Klik untuk inspeksi kesiapan seluruh peralatan lab"
-            >
-              <Wrench :size="12" class="text-amber-400" />
-              <span>{{ overallEquipmentStats.healthRate }}% ALAT SIAP ({{ overallEquipmentStats.good }}/{{ overallEquipmentStats.total }})</span>
-            </button>
             <span
               :class="[
-                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 shadow-sm tracking-wide',
+                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 shadow-2xs tracking-wide',
                 isDarkMode
-                  ? 'text-[#4ade80] bg-emerald-500/20 border-emerald-400/60 shadow-[0_0_10px_rgba(74,222,128,0.2)]'
-                  : 'text-white bg-emerald-600 border-emerald-500'
+                  ? 'text-[#4ade80] bg-emerald-500/20 border-emerald-400/60'
+                  : 'text-white bg-emerald-700 border-emerald-600'
               ]"
             >
-              <span class="w-2 h-2 rounded-full bg-emerald-200 animate-ping"></span>
-              <span>{{ inUseLabsCount }} LAB AKTIF</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+              <span>{{ inUseLabsCount }} SEDANG AKTIF</span>
             </span>
             <span
               :class="[
-                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1 shadow-sm tracking-wide',
+                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
                 isDarkMode
                   ? 'text-[#5eead4] bg-teal-500/20 border-teal-400/60'
-                  : 'text-white bg-teal-600 border-teal-500'
+                  : 'text-teal-900 bg-teal-100 border-teal-300'
               ]"
             >
               <Check :size="12" />
@@ -1185,1058 +1379,480 @@ onUnmounted(() => {
               :class="[
                 'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 tracking-wide',
                 isDarkMode
-                  ? 'text-[#86efac] bg-[#122b1f] border-emerald-700/70'
-                  : 'text-[#0c5a30] bg-white border-emerald-300 shadow-xs'
+                  ? 'text-[#a7f3d0] bg-[#122b1f] border-emerald-700/70'
+                  : 'text-[#0c5a30] bg-white border-emerald-300'
               ]"
             >
-              TOTAL {{ totalLabsCount }} RUANG
+              TOTAL {{ totalTodaySchedulesCount }} SESI HARI INI
             </span>
           </div>
         </div>
 
-        <!-- Grid of Rooms with Sleek Scrollbar -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 flex-1 overflow-y-auto pr-1.5 custom-scrollbar min-h-0 pb-0.5">
-          <div
-            v-for="session in liveLabSessions"
-            :key="session.id"
-            :class="[
-              'rounded-2xl border-2 shadow-sm transition-all duration-300 flex flex-col justify-between relative overflow-hidden',
-              isDarkMode
-                ? session.status === 'IN_USE'
-                  ? 'bg-gradient-to-b from-[#133525] via-[#0d241a] to-[#081710] border-emerald-400 ring-4 ring-emerald-400/30 shadow-[0_0_35px_rgba(74,222,128,0.28)]'
-                  : session.status === 'AVAILABLE'
-                    ? 'bg-[#0d1f17] border-emerald-700/60 hover:border-teal-400/80 shadow-md'
-                    : session.status === 'UPCOMING'
-                      ? 'bg-[#0d1c24] border-sky-600/60 shadow-md'
-                      : 'bg-amber-950/40 border-amber-600/60 shadow-md'
-                : session.status === 'IN_USE'
-                  ? 'bg-gradient-to-b from-emerald-50 via-white to-emerald-100/60 border-emerald-600 ring-4 ring-emerald-500/25 shadow-xl'
-                  : session.status === 'AVAILABLE'
-                    ? 'bg-gradient-to-b from-white via-teal-50/20 to-teal-50/40 border-teal-300 hover:border-teal-500 shadow-md hover:shadow-lg'
-                    : session.status === 'UPCOMING'
-                      ? 'bg-white border-sky-300 hover:border-sky-400 shadow-sm'
-                      : 'bg-white border-amber-300 shadow-sm',
-            ]"
-          >
-            <!-- Active Lab Alert Banner (Full-Width Top Header Strip for IN_USE) -->
+        <!-- 8-COLUMN X 10-SLOT MATRIX TABLE CONTAINER -->
+        <div class="flex-1 overflow-auto custom-scrollbar p-2.5 min-h-0 flex flex-col">
+          <div class="min-w-[900px] flex-1 flex flex-col border rounded-xl overflow-hidden shadow-xs" :class="isDarkMode ? 'border-emerald-800/80 bg-[#06160e]' : 'border-emerald-200 bg-white'">
+            <!-- 1. TABLE HEADER: 8 LAB COLUMNS (+ 1 TIME COLUMN) -->
             <div
-              v-if="session.status === 'IN_USE'"
               :class="[
-                'px-4 py-2 flex items-center justify-between border-b transition-colors duration-300 shrink-0',
+                'grid grid-cols-9 sticky top-0 z-20 border-b shadow-sm text-center text-xs font-bold transition-colors duration-300',
                 isDarkMode
-                  ? 'bg-gradient-to-r from-emerald-600 via-[#0c5a30] to-emerald-700 text-white border-emerald-400/60 shadow-inner'
-                  : 'bg-gradient-to-r from-[#07371d] via-[#0c5a30] to-[#07371d] text-white border-emerald-700 shadow-sm'
+                  ? 'bg-[#0c281a] border-emerald-700/80 text-white'
+                  : 'bg-gradient-to-r from-[#07371d] via-[#0c5a30] to-[#07371d] border-emerald-700 text-white'
               ]"
             >
-              <div class="flex items-center gap-2.5">
-                <span class="relative flex h-3 w-3">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-90"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
-                </span>
-                <span class="text-xs font-bold tracking-wider uppercase flex items-center gap-1.5 drop-shadow-xs">
-                  <Radio :size="13" class="animate-pulse text-amber-300" />
-                  <span>PRAKTIKUM SEDANG BERLANGSUNG</span>
-                </span>
+              <!-- Time Column Header -->
+              <div class="py-2.5 px-2 border-r border-emerald-700/60 flex flex-col items-center justify-center bg-black/15">
+                <div class="flex items-center gap-1 opacity-90 text-[11px] uppercase tracking-wider">
+                  <Clock :size="12" />
+                  <span>WAKTU</span>
+                </div>
+                <span class="text-[9.5px] opacity-75 font-mono">WIB</span>
               </div>
-              <div class="flex items-center gap-1.5 font-mono text-[11px] font-bold bg-black/40 px-2.5 py-0.5 rounded-lg border border-emerald-400/40 text-emerald-200 shadow-xs">
-                <Clock :size="12" class="text-amber-300" />
-                <span>{{ session.timeWindow }}</span>
+
+              <!-- 8 Lab Columns Headers -->
+              <div
+                v-for="(col, cIdx) in matrixLabColumns"
+                :key="col.id"
+                :class="[
+                  'py-2 px-1.5 flex flex-col items-center justify-center transition-colors relative',
+                  cIdx < 7 ? 'border-r border-emerald-600/40' : '',
+                  col.status === 'IN_USE'
+                    ? isDarkMode
+                      ? 'bg-emerald-500/20'
+                      : 'bg-emerald-800/60'
+                    : ''
+                ]"
+              >
+                <!-- Room Code & Name -->
+                <div class="flex items-center gap-1">
+                  <span class="font-mono text-[11px] font-black px-1.5 py-0.5 rounded bg-black/30 border border-white/20">
+                    {{ col.code }}
+                  </span>
+                  <span class="text-xs font-bold truncate max-w-[85px]" :title="col.name">
+                    {{ col.shortName }}
+                  </span>
+                </div>
+
+                <!-- Status Pill -->
+                <div class="mt-1 flex items-center gap-1 text-[9.5px] font-semibold">
+                  <span
+                    v-if="col.status === 'IN_USE'"
+                    class="inline-flex items-center gap-1 text-amber-300 font-bold bg-amber-950/70 px-1.5 py-0.2 rounded border border-amber-400/60"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                    <span>AKTIF</span>
+                  </span>
+                  <span
+                    v-else-if="col.status === 'AVAILABLE'"
+                    class="inline-flex items-center gap-0.5 text-teal-200 bg-teal-950/70 px-1.5 py-0.2 rounded border border-teal-500/40"
+                  >
+                    <Check :size="9" />
+                    <span>TERSEDIA</span>
+                  </span>
+                  <span
+                    v-else
+                    class="text-gray-300 opacity-75"
+                  >
+                    {{ col.status }}
+                  </span>
+                  <span class="text-[9px] opacity-70">({{ col.capacity }} PC)</span>
+                </div>
               </div>
             </div>
 
-            <!-- Top Status Accent Gradient Bar (Only for non-IN_USE cards) -->
-            <div
-              v-else
-              :class="[
-                'absolute top-0 left-0 right-0 h-1.5',
-                session.status === 'AVAILABLE'
-                  ? isDarkMode
-                    ? 'bg-gradient-to-r from-teal-500 via-emerald-400 to-teal-400 shadow-[0_0_8px_rgba(45,212,191,0.4)]'
-                    : 'bg-gradient-to-r from-teal-600 via-emerald-500 to-teal-400'
-                  : session.status === 'UPCOMING'
-                    ? 'bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500'
-                    : 'bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400'
-              ]"
-            />
-
-            <!-- Inner Card Wrapper -->
-            <div class="p-4 flex-1 flex flex-col justify-between">
-              <!-- Card Header -->
+            <!-- 2. TABLE BODY: 10 TIME ROWS -->
+            <div class="flex-1 flex flex-col divide-y" :class="isDarkMode ? 'divide-emerald-900/60' : 'divide-gray-200'">
               <div
+                v-for="slot in ACADEMIC_TIME_SLOTS"
+                :key="slot.slotNumber"
                 :class="[
-                  'flex items-start justify-between gap-3 border-b pb-3 transition-colors duration-300',
-                  isDarkMode ? 'border-emerald-700/60' : 'border-emerald-100'
+                  'grid grid-cols-9 flex-1 transition-colors min-h-[52px]',
+                  isDarkMode
+                    ? 'hover:bg-emerald-950/20'
+                    : 'hover:bg-emerald-50/40'
                 ]"
               >
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2">
-                    <span
-                      :class="[
-                        'px-2.5 py-1 rounded-lg font-mono text-xs font-bold shrink-0 transition-colors duration-300',
-                        session.status === 'IN_USE'
-                          ? isDarkMode
-                            ? 'bg-emerald-500/30 text-[#4ade80] border-2 border-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.3)]'
-                            : 'bg-gradient-to-r from-[#0c5a30] to-emerald-700 text-white border-2 border-emerald-600 shadow-xs'
-                          : isDarkMode
-                            ? 'bg-emerald-500/25 text-[#4ade80] border border-emerald-400/70 shadow-xs'
-                            : 'bg-gradient-to-r from-[#0c5a30] to-[#07371d] text-white shadow-xs'
-                      ]"
-                    >
-                      {{ session.labCode }}
-                    </span>
-                    <h3
-                      :class="[
-                        'font-bold text-sm sm:text-base truncate tracking-normal',
-                        isDarkMode ? 'text-white drop-shadow-xs' : 'text-gray-900'
-                      ]"
-                    >
-                      {{ session.labName }}
-                    </h3>
-                  </div>
-                  <div
-                    :class="[
-                      'flex items-center gap-1.5 text-[11px] mt-1 font-medium truncate',
-                      isDarkMode ? 'text-[#86efac]' : 'text-emerald-800'
-                    ]"
-                  >
-                    <MapPin :size="12" :class="isDarkMode ? 'text-[#4ade80]' : 'text-[#0c5a30]'" class="shrink-0" />
-                    <span class="truncate">{{ session.location }}</span>
-                  </div>
+                <!-- Time Legend Cell -->
+                <div
+                  :class="[
+                    'p-1.5 border-r flex flex-col justify-center items-center text-center font-mono shrink-0 transition-colors',
+                    isDarkMode
+                      ? 'border-emerald-800/80 bg-[#071910] text-emerald-200'
+                      : 'border-emerald-200 bg-gray-50 text-emerald-900'
+                  ]"
+                >
+                  <span class="text-[10px] font-extrabold uppercase px-1 py-0.2 rounded" :class="isDarkMode ? 'bg-emerald-900/50 text-[#4ade80]' : 'bg-emerald-100 text-[#0c5a30]'">
+                    {{ slot.label }}
+                  </span>
+                  <span class="text-[10px] font-bold mt-0.5 tracking-tight">
+                    {{ slot.timeRange }}
+                  </span>
                 </div>
 
-                <!-- Status Badge -->
-                <span
-                  v-if="session.status === 'IN_USE'"
+                <!-- 8 Lab Cells for this Slot -->
+                <div
+                  v-for="(col, cIdx) in matrixLabColumns"
+                  :key="col.id + '-' + slot.slotNumber"
                   :class="[
-                    'px-3 py-1.5 rounded-xl text-xs font-bold border-2 shrink-0 flex items-center gap-2 transition-all shadow-md tracking-wide',
-                    isDarkMode
-                      ? 'bg-emerald-400 text-gray-950 border-emerald-200 shadow-[0_0_18px_rgba(74,222,128,0.5)]'
-                      : 'bg-emerald-600 text-white border-emerald-500 shadow-md ring-2 ring-emerald-400/40'
+                    'p-1 transition-all flex flex-col justify-center relative overflow-hidden',
+                    cIdx < 7 ? (isDarkMode ? 'border-r border-emerald-900/60' : 'border-r border-gray-200') : '',
+                    col.cells[slot.slotNumber - 1]?.session?.status === 'IN_USE'
+                      ? isDarkMode
+                        ? 'bg-gradient-to-r from-amber-950/50 to-emerald-950/40 border-l-2 border-l-amber-400'
+                        : 'bg-gradient-to-r from-amber-50/90 to-emerald-50/60 border-l-2 border-l-amber-500'
+                      : col.cells[slot.slotNumber - 1]?.session
+                        ? isDarkMode
+                          ? 'bg-[#0a2015] border-l-2 border-l-teal-500'
+                          : 'bg-emerald-50/40 border-l-2 border-l-teal-600'
+                        : ''
                   ]"
                 >
-                  <span class="relative flex h-2.5 w-2.5">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-                  </span>
-                  <span>SEDANG AKTIF</span>
-                </span>
-                <span
-                  v-else
-                  :class="[
-                    'px-3 py-1 rounded-full text-[10.5px] font-bold border-2 shrink-0 flex items-center gap-1.5 transition-colors duration-300 shadow-sm tracking-wide',
-                    isDarkMode
-                      ? session.status === 'AVAILABLE'
-                        ? 'bg-teal-500/25 border-teal-400 text-[#5eead4] shadow-[0_0_12px_rgba(45,212,191,0.25)]'
-                        : session.status === 'UPCOMING'
-                          ? 'bg-sky-500/25 border-sky-400 text-[#7dd3fc] shadow-[0_0_12px_rgba(56,189,248,0.25)]'
-                          : 'bg-amber-500/25 border-amber-400 text-[#fcd34d] shadow-[0_0_12px_rgba(251,191,36,0.25)]'
-                      : session.status === 'AVAILABLE'
-                        ? 'bg-teal-700 border-teal-600 text-white'
-                        : session.status === 'UPCOMING'
-                          ? 'bg-sky-600 border-sky-500 text-white'
-                          : 'bg-amber-600 border-amber-500 text-white',
-                  ]"
-                >
-                  <span
-                    v-if="session.status === 'AVAILABLE'"
-                    class="w-2 h-2 rounded-full bg-teal-200 shrink-0"
-                  ></span>
-                  <span
-                    v-else-if="session.status === 'UPCOMING'"
-                    class="w-2 h-2 rounded-full bg-sky-200 shrink-0"
-                  ></span>
-                  <span
-                    v-else
-                    class="w-2 h-2 rounded-full bg-amber-200 shrink-0"
-                  ></span>
-                  <span>{{
-                    session.status === 'AVAILABLE'
-                      ? 'TERSEDIA'
-                      : session.status === 'UPCOMING'
-                        ? 'SESI BERIKUTNYA'
-                        : 'PEMELIHARAAN'
-                  }}</span>
-                </span>
-              </div>
-
-              <!-- Card Body: Current Session Info -->
-              <div class="py-3 space-y-2.5">
-                <!-- STATE: IN_USE -->
-                <div v-if="session.status === 'IN_USE'" class="space-y-3">
-                  <div
-                    :class="[
-                      'p-3.5 rounded-xl border-2 space-y-2.5 transition-all',
-                      isDarkMode
-                        ? 'bg-gradient-to-r from-[#0c281a] via-[#091f14] to-[#07160f] border-emerald-500/80 border-l-4 border-l-emerald-400 shadow-[0_0_16px_rgba(74,222,128,0.15)]'
-                        : 'bg-white border-emerald-300 border-l-4 border-l-emerald-600 shadow-sm'
-                    ]"
-                  >
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="flex items-center gap-2.5 min-w-0">
-                        <div
-                          :class="[
-                            'w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border-2 transition-colors',
-                            isDarkMode
-                              ? 'bg-emerald-500/25 border-emerald-400 text-[#4ade80] shadow-xs'
-                              : 'bg-emerald-100 border-emerald-300 text-emerald-800'
-                          ]"
-                        >
-                          <BookOpen :size="14" />
+                  <!-- IF HAS SESSION -->
+                  <template v-if="col.cells[slot.slotNumber - 1]?.session">
+                    <div class="h-full flex flex-col justify-between p-1 rounded-lg border text-left"
+                      :class="[
+                        col.cells[slot.slotNumber - 1]?.session?.status === 'IN_USE'
+                          ? isDarkMode
+                            ? 'bg-[#0f2c1c] border-amber-400/80 shadow-xs'
+                            : 'bg-white border-amber-400 shadow-xs'
+                          : isDarkMode
+                            ? 'bg-[#081b12] border-emerald-700/60 shadow-2xs'
+                            : 'bg-white border-emerald-200 shadow-2xs'
+                      ]"
+                    >
+                      <div class="space-y-0.5">
+                        <div class="flex items-center justify-between gap-1">
+                          <span
+                            :class="[
+                              'text-[8px] font-extrabold uppercase px-1 py-0.2 rounded shrink-0',
+                              col.cells[slot.slotNumber - 1]?.session?.status === 'IN_USE'
+                                ? 'bg-amber-500 text-slate-950 font-black animate-pulse'
+                                : 'bg-emerald-700 text-white'
+                            ]"
+                          >
+                            {{ col.cells[slot.slotNumber - 1]?.session?.status === 'IN_USE' ? 'AKTIF' : 'KULIAH' }}
+                          </span>
+                          <span class="text-[8.5px] font-mono font-semibold opacity-75 truncate">
+                            {{ col.cells[slot.slotNumber - 1]?.session?.timeWindow }}
+                          </span>
                         </div>
                         <h4
                           :class="[
-                            'text-xs sm:text-[13.5px] font-bold truncate tracking-normal',
-                            isDarkMode ? 'text-white drop-shadow-xs' : 'text-gray-900'
+                            'text-[10.5px] font-bold line-clamp-1 leading-tight tracking-tight',
+                            isDarkMode ? 'text-white' : 'text-gray-900'
                           ]"
+                          :title="col.cells[slot.slotNumber - 1]?.session?.title"
                         >
-                          {{ session.courseName }}
+                          {{ col.cells[slot.slotNumber - 1]?.session?.title }}
                         </h4>
                       </div>
-                      <span
-                        :class="[
-                          'text-xs font-bold font-mono px-2.5 py-0.5 rounded-lg border-2 shrink-0 transition-colors duration-300',
-                          isDarkMode
-                            ? 'bg-[#0a1811] text-[#4ade80] border-emerald-400/80 shadow-xs'
-                            : 'bg-emerald-50 text-[#0c5a30] border-emerald-400 font-bold shadow-2xs'
-                        ]"
-                      >
-                        {{ session.timeWindow }}
-                      </span>
-                    </div>
 
-                    <!-- Lecturer Row -->
-                    <div
-                      :class="[
-                        'flex items-center gap-1.5 text-[11.5px] font-medium truncate pt-0.5',
-                        isDarkMode ? 'text-[#a7f3d0]' : 'text-gray-700'
-                      ]"
-                    >
-                      <GraduationCap :size="14" :class="isDarkMode ? 'text-[#4ade80]' : 'text-[#0c5a30]'" class="shrink-0" />
-                      <span class="truncate">Dosen: <strong :class="isDarkMode ? 'text-white font-bold' : 'text-gray-900 font-bold'">{{ session.instructor }}</strong> <span class="opacity-80">({{ session.courseCode }})</span></span>
-                    </div>
-                  </div>
-
-                  <!-- Live Dynamic Glowing Progress Meter -->
-                  <div class="space-y-1.5 pt-0.5">
-                    <div class="flex items-center justify-between text-[11px] font-medium">
-                      <span class="flex items-center gap-1.5" :class="isDarkMode ? 'text-[#a7f3d0]' : 'text-gray-700'">
-                        <Monitor :size="13" :class="isDarkMode ? 'text-[#4ade80]' : 'text-[#0c5a30]'" />
-                        <span>Okupansi PC: <strong :class="['font-bold', isDarkMode ? 'text-white' : 'text-gray-900']">{{ session.occupancy }} / {{ session.capacity }} Unit</strong></span>
-                      </span>
-                      <span
-                        :class="[
-                          'font-mono text-[10.5px] font-bold px-2 py-0.5 rounded-md border',
-                          isDarkMode
-                            ? 'bg-emerald-500/20 text-[#4ade80] border-emerald-500/50'
-                            : 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                        ]"
+                      <div class="pt-0.5 border-t mt-0.5 flex items-center justify-between gap-1 text-[9px]"
+                        :class="isDarkMode ? 'border-emerald-800 text-emerald-300' : 'border-gray-100 text-gray-600'"
                       >
-                        {{ session.progressPercentage }}% BERJALAN
-                      </span>
-                    </div>
-
-                    <div
-                      :class="[
-                        'w-full rounded-full h-3.5 p-0.5 overflow-hidden border-2 transition-colors duration-300',
-                        isDarkMode ? 'bg-[#06110a] border-emerald-700/80 shadow-inner' : 'bg-emerald-100/80 border-emerald-300 shadow-inner'
-                      ]"
-                    >
-                      <div
-                        class="bg-gradient-to-r from-[#0c5a30] via-emerald-500 to-teal-300 h-full rounded-full transition-all duration-700 relative shadow-[0_0_14px_rgba(74,222,128,0.8)]"
-                        :style="{ width: `${session.progressPercentage}%` }"
-                      >
-                        <!-- Glow Leading Edge Indicator -->
-                        <div class="absolute right-0 top-0 bottom-0 w-2.5 rounded-full bg-white shadow-[0_0_10px_#ffffff] animate-pulse"></div>
+                        <span class="truncate font-medium" :title="col.cells[slot.slotNumber - 1]?.session?.lecturer">
+                          {{ col.cells[slot.slotNumber - 1]?.session?.lecturer }}
+                        </span>
+                        <span v-if="col.cells[slot.slotNumber - 1]?.session?.className" class="font-mono text-[8px] opacity-80 shrink-0 font-bold">
+                          {{ col.cells[slot.slotNumber - 1]?.session?.className }}
+                        </span>
                       </div>
                     </div>
+                  </template>
 
-                    <!-- Dynamic Countdown Pill with Urgency Alert -->
-                    <div class="flex items-center justify-end pt-0.5">
+                  <!-- IF EMPTY / AVAILABLE -->
+                  <template v-else>
+                    <div class="h-full flex items-center justify-center py-1 text-center">
                       <span
-                        v-if="session.isExpired"
-                        class="px-3 py-1 rounded-xl text-xs font-bold border-2 flex items-center gap-1.5 bg-amber-500 text-slate-950 border-amber-600 shadow-md animate-pulse font-sans"
-                      >
-                        <AlertTriangle :size="13" class="shrink-0 text-slate-950" />
-                        <span>Menunggu Check-Out</span>
-                      </span>
-                      <span
-                        v-else
                         :class="[
-                          'px-2.5 py-1 rounded-lg font-mono text-xs font-bold border-2 flex items-center gap-1.5 transition-all shadow-xs',
-                          session.remainingMinutes <= 15
-                            ? isDarkMode
-                              ? 'bg-amber-500/30 text-amber-300 border-amber-400 shadow-[0_0_14px_rgba(245,158,11,0.4)] animate-pulse'
-                              : 'bg-amber-500 text-slate-950 border-amber-600 shadow-sm animate-pulse font-bold'
-                            : isDarkMode
-                              ? 'bg-emerald-500/25 text-[#4ade80] border-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.25)]'
-                              : 'bg-emerald-100 text-[#0c5a30] border-emerald-300 font-bold'
+                          'text-[9.5px] font-medium tracking-wide flex items-center gap-1',
+                          isDarkMode ? 'text-emerald-700/60' : 'text-emerald-900/35'
                         ]"
                       >
-                        <Timer :size="13" />
-                        <span>~{{ session.remainingMinutes }} mnt tersisa</span>
-                        <span
-                          v-if="session.remainingMinutes <= 15"
-                          class="text-[9.5px] font-sans font-bold uppercase tracking-wide ml-1 flex items-center gap-1 text-amber-950 bg-amber-300 px-1.5 py-0.5 rounded shadow-2xs"
-                        >
-                          <Zap :size="11" class="shrink-0 fill-current" />
-                          <span>SEGERA SELESAI</span>
-                        </span>
+                        <Check :size="10" class="opacity-50" />
+                        <span>Tersedia</span>
                       </span>
                     </div>
-
-                    <!-- Real-time Equipment Readiness Strip -->
-                    <button
-                      @click="openEquipmentModal(session)"
-                      type="button"
-                      :class="[
-                        'w-full py-1.5 px-2.5 rounded-lg border flex items-center justify-between text-[11px] font-semibold transition-all cursor-pointer hover:opacity-90',
-                        isDarkMode
-                          ? 'bg-emerald-950/50 border-emerald-500/40 text-emerald-200 hover:border-emerald-400'
-                          : 'bg-emerald-50 border-emerald-200 text-emerald-900 hover:border-emerald-400'
-                      ]"
-                    >
-                      <span class="flex items-center gap-1.5 truncate">
-                        <Wrench :size="12" class="text-emerald-400 shrink-0" />
-                        <span class="truncate">Fasilitas: <strong>{{ session.equipmentSummary.goodUnits }} / {{ session.equipmentSummary.totalUnits }} Unit Siap</strong></span>
-                      </span>
-                      <span
-                        :class="[
-                          'text-[9.5px] font-bold px-1.5 py-0.5 rounded shrink-0 flex items-center gap-1',
-                          session.equipmentSummary.healthPercentage >= 90
-                            ? 'bg-emerald-500/20 text-emerald-300'
-                            : 'bg-amber-500/20 text-amber-300'
-                        ]"
-                      >
-                        <span>{{ session.equipmentSummary.healthPercentage }}% Siap</span>
-                        <span>&bull; Cek Alat &rarr;</span>
-                      </span>
-                    </button>
-                  </div>
+                  </template>
                 </div>
-
-              <!-- STATE: UPCOMING -->
-              <div
-                v-else-if="session.status === 'UPCOMING'"
-                :class="[
-                  'p-3 rounded-xl space-y-1.5 text-xs border-2 transition-colors duration-300',
-                  isDarkMode
-                    ? 'bg-sky-950/60 border-sky-700/70 text-sky-200'
-                    : 'bg-sky-50/90 border-sky-300'
-                ]"
-              >
-                <div class="flex items-center justify-between gap-2">
-                  <span
-                    :class="[
-                      'text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border',
-                      isDarkMode ? 'text-sky-200 bg-sky-900 border-sky-600' : 'text-white bg-sky-700 border-sky-600'
-                    ]"
-                  >
-                    Sesi Berikutnya
-                  </span>
-                  <span :class="['font-mono font-bold text-xs', isDarkMode ? 'text-sky-200' : 'text-sky-900']">
-                    {{ session.timeWindow }}
-                  </span>
-                </div>
-                <h4 :class="['font-bold text-xs truncate', isDarkMode ? 'text-white' : 'text-gray-900']">
-                  {{ session.courseName }}
-                </h4>
-                <p :class="['text-[11px] font-semibold truncate', isDarkMode ? 'text-sky-300' : 'text-gray-600']">
-                  Dosen: <span :class="['font-bold', isDarkMode ? 'text-white' : 'text-gray-900']">{{ session.instructor }}</span>
-                </p>
-
-                <!-- Equipment Readiness Trigger for UPCOMING -->
-                <button
-                  @click="openEquipmentModal(session)"
-                  type="button"
-                  :class="[
-                    'w-full py-1 px-2 rounded-lg border text-[10.5px] font-semibold flex items-center justify-between transition-all cursor-pointer mt-1.5',
-                    isDarkMode
-                      ? 'bg-sky-900/40 border-sky-600/50 text-sky-200 hover:border-sky-400'
-                      : 'bg-white border-sky-200 text-sky-900 hover:border-sky-400'
-                  ]"
-                >
-                  <span class="flex items-center gap-1.5 truncate">
-                    <Wrench :size="11" class="text-sky-400 shrink-0" />
-                    <span>Inventaris Alat: <strong>{{ session.equipmentSummary.goodUnits }}/{{ session.equipmentSummary.totalUnits }} Siap</strong></span>
-                  </span>
-                  <span class="text-[9.5px] font-bold underline">Lihat &rarr;</span>
-                </button>
-              </div>
-
-              <!-- STATE: MAINTENANCE -->
-              <div
-                v-else-if="session.status === 'MAINTENANCE'"
-                :class="[
-                  'p-3 rounded-xl text-center space-y-1 border-2 transition-colors duration-300',
-                  isDarkMode ? 'bg-amber-950/60 border-amber-700/70 text-amber-200' : 'text-gray-600 border-amber-300 bg-amber-50'
-                ]"
-              >
-                <AlertTriangle :size="20" class="mx-auto text-amber-500" />
-                <p :class="['text-xs font-bold', isDarkMode ? 'text-amber-300' : 'text-amber-900']">
-                  Dalam Jadwal Pemeliharaan
-                </p>
-                <p class="text-[11px] font-medium">Pemeriksaan teknis sedang dilakukan oleh Staf Laboran.</p>
-              </div>
-
-              <!-- STATE: AVAILABLE (Substantial 3-Tile Feature Showcase with Live Data) -->
-              <div v-else class="space-y-2 py-0.5">
-                <div :class="['flex items-center gap-1.5 text-xs font-bold', isDarkMode ? 'text-[#4ade80]' : 'text-teal-800']">
-                  <CheckCircle2 :size="15" class="shrink-0" />
-                  <span>Laboratorium Terbuka & Siap Digunakan</span>
-                </div>
-                <!-- 3 Dynamic Feature Micro-Tiles -->
-                <div class="grid grid-cols-3 gap-2 text-[10.5px]">
-                  <div
-                    :class="[
-                      'flex flex-col items-center justify-center text-center p-2 rounded-xl border-2 font-bold transition-colors duration-300 shadow-2xs',
-                      isDarkMode
-                        ? 'bg-[#132c1f] border-emerald-600/60 text-[#a7f3d0]'
-                        : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
-                    ]"
-                  >
-                    <Monitor :size="15" :class="isDarkMode ? 'text-[#4ade80]' : 'text-emerald-700'" class="mb-1" />
-                    <span class="font-bold text-[11px] leading-tight">{{ getLabPcQuantity(session) }} PC Aktif</span>
-                    <span class="text-[9px] opacity-75">Siap Praktikum</span>
-                  </div>
-                  <div
-                    :class="[
-                      'flex flex-col items-center justify-center text-center p-2 rounded-xl border-2 font-bold transition-colors duration-300 shadow-2xs',
-                      isDarkMode
-                        ? 'bg-[#132c1f] border-emerald-600/60 text-[#a7f3d0]'
-                        : 'bg-teal-50/80 border-teal-200 text-teal-950'
-                    ]"
-                  >
-                    <Wifi :size="15" :class="isDarkMode ? 'text-[#4ade80]' : 'text-teal-700'" class="mb-1" />
-                    <span class="font-bold text-[11px] leading-tight">Gigabit LAN</span>
-                    <span class="text-[9px] opacity-75">Koneksi Kampus</span>
-                  </div>
-                  <div
-                    :class="[
-                      'flex flex-col items-center justify-center text-center p-2 rounded-xl border-2 font-bold transition-colors duration-300 shadow-2xs',
-                      isDarkMode
-                        ? 'bg-[#132c1f] border-emerald-600/60 text-[#a7f3d0]'
-                        : 'bg-sky-50/80 border-sky-200 text-sky-950'
-                    ]"
-                  >
-                    <Sparkles :size="15" :class="isDarkMode ? 'text-[#4ade80]' : 'text-sky-700'" class="mb-1" />
-                    <span class="font-bold text-[11px] leading-tight">{{ session.equipmentSummary.goodUnits }} Alat Siap</span>
-                    <span class="text-[9px] opacity-75">Kondisi Prima</span>
-                  </div>
-                </div>
-
-                <!-- Interactive Equipment Checker Button -->
-                <button
-                  @click="openEquipmentModal(session)"
-                  type="button"
-                  :class="[
-                    'w-full py-1.5 px-2.5 rounded-xl border-2 flex items-center justify-between text-[10.5px] font-bold transition-all cursor-pointer shadow-2xs hover:scale-[1.01] active:scale-[0.99]',
-                    isDarkMode
-                      ? 'bg-emerald-950/60 border-emerald-600/50 text-[#4ade80] hover:border-emerald-400 hover:bg-emerald-900/40'
-                      : 'bg-emerald-50 border-emerald-300 text-emerald-900 hover:bg-emerald-100 hover:border-emerald-400'
-                  ]"
-                >
-                  <span class="flex items-center gap-1.5">
-                    <Wrench :size="12" class="text-emerald-500 shrink-0" />
-                    <span>Status Alat: {{ session.equipmentSummary.goodUnits }}/{{ session.equipmentSummary.totalUnits }} Tersedia</span>
-                  </span>
-                  <span
-                    :class="[
-                      'px-2 py-0.5 rounded-md text-[9.5px] font-mono font-bold tracking-wide uppercase',
-                      session.equipmentSummary.healthPercentage === 100
-                        ? 'bg-emerald-500/20 text-emerald-300'
-                        : 'bg-amber-500/20 text-amber-300'
-                    ]"
-                  >
-                    {{ session.equipmentSummary.healthPercentage }}% Kesiapan • Rincian &rarr;
-                  </span>
-                </button>
-              </div>
-            </div>
-
-              <!-- Card Footer -->
-              <div
-                :class="[
-                  'pt-2.5 border-t flex items-center justify-between text-xs font-bold transition-colors duration-300',
-                  isDarkMode ? 'border-emerald-700/60 text-[#86efac]' : 'border-emerald-100 text-gray-600'
-                ]"
-              >
-                <span class="flex items-center gap-1.5" :class="isDarkMode ? 'text-[#a7f3d0]' : 'text-gray-700'">
-                  <Users :size="13" :class="isDarkMode ? 'text-[#4ade80]' : 'text-[#0c5a30]'" />
-                  <span>Kapasitas: <strong :class="isDarkMode ? 'text-white font-bold' : 'text-gray-900 font-bold'">{{ session.capacity }} Kursi</strong></span>
-                </span>
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1 text-[10px] font-bold tracking-wide uppercase',
-                    isDarkMode ? 'text-[#4ade80]' : 'text-[#0c5a30]'
-                  ]"
-                >
-                  <ShieldCheck :size="13" :class="isDarkMode ? 'text-[#4ade80]' : 'text-emerald-700'" />
-                  <span>Live Sync Aktif</span>
-                </span>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- RIGHT: TIMETABLE STREAM & SUMMARY (4 COLS) -->
-      <div class="lg:col-span-4 flex flex-col justify-between gap-2.5 overflow-hidden h-full">
-        <!-- Status Summary Ribbon (2 Vibrant Hero Tiles) -->
-        <div class="grid grid-cols-2 gap-2.5 shrink-0">
-          <!-- Active Labs Tile -->
+      <!-- ========================================================================= -->
+      <!-- 2. RIGHT PANEL: 20% SCREEN WIDTH - SIDEBAR INFORMASI & SEDANG AKTIF       -->
+      <!-- ========================================================================= -->
+      <aside class="w-full lg:w-[20%] flex flex-col justify-between gap-3 overflow-hidden h-full">
+        <!-- 2.1 RINGKASAN OKUPANSI LAB TILES -->
+        <div class="grid grid-cols-2 gap-2 shrink-0">
+          <!-- Sedang Dipakai Tile -->
           <div
             :class="[
-              'p-3.5 rounded-2xl border-2 flex items-center gap-3 transition-all duration-300 shadow-md',
+              'p-2.5 rounded-xl border-2 flex items-center gap-2.5 transition-all shadow-sm',
               isDarkMode
-                ? 'bg-[#0d1f17] border-emerald-500/60 shadow-[0_0_20px_rgba(74,222,128,0.15)]'
-                : 'bg-gradient-to-br from-[#0c5a30] via-emerald-700 to-teal-800 text-white border-emerald-500 shadow-md'
+                ? 'bg-[#0d2217] border-emerald-500/70 shadow-[0_0_16px_rgba(74,222,128,0.15)]'
+                : 'bg-gradient-to-br from-[#0c5a30] via-emerald-800 to-[#07371d] text-white border-emerald-600 shadow-md'
             ]"
           >
             <div
               :class="[
-                'w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border-2 transition-colors duration-300 shadow-sm',
+                'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors shadow-2xs',
                 isDarkMode
-                  ? 'bg-emerald-500/25 border-emerald-400 text-[#4ade80] shadow-[0_0_14px_rgba(74,222,128,0.3)]'
+                  ? 'bg-emerald-500/25 border-emerald-400 text-[#4ade80]'
                   : 'bg-white/20 border-white/30 text-white'
               ]"
             >
-              <Activity :size="22" class="animate-pulse" />
+              <Activity :size="18" class="animate-pulse" />
             </div>
-            <div>
+            <div class="min-w-0">
               <span
                 :class="[
-                  'text-[10.5px] font-bold uppercase tracking-wider block',
-                  isDarkMode ? 'text-[#86efac]' : 'text-emerald-100'
+                  'text-[9px] font-bold uppercase tracking-wider block truncate',
+                  isDarkMode ? 'text-emerald-300' : 'text-emerald-100'
                 ]"
               >
-                Sedang Dipakai
+                Lab Aktif
               </span>
               <span
                 :class="[
-                  'text-3xl font-extrabold leading-none',
-                  isDarkMode
-                    ? 'text-[#4ade80] drop-shadow-[0_0_10px_rgba(74,222,128,0.5)]'
-                    : 'text-white'
+                  'text-xl font-black leading-none',
+                  isDarkMode ? 'text-[#4ade80]' : 'text-white'
                 ]"
               >
                 {{ inUseLabsCount }}
-                <span :class="['text-xs font-bold', isDarkMode ? 'text-[#a7f3d0]' : 'text-emerald-200']">Lab</span>
+                <span class="text-[10px] font-bold opacity-80">/ {{ totalLabsCount }}</span>
               </span>
             </div>
           </div>
 
-          <!-- Available Labs Tile -->
-          <div
+          <!-- Kesiapan Alat Tile -->
+          <button
+            @click="openOverallEquipmentModal"
+            type="button"
             :class="[
-              'p-3.5 rounded-2xl border-2 flex items-center gap-3 transition-all duration-300 shadow-md',
+              'p-2.5 rounded-xl border-2 flex items-center gap-2.5 transition-all shadow-sm cursor-pointer hover:scale-102 active:scale-98 text-left',
               isDarkMode
-                ? 'bg-[#0d1f17] border-teal-500/60 shadow-[0_0_20px_rgba(45,212,191,0.15)]'
+                ? 'bg-[#0d1f1c] border-teal-500/60 shadow-[0_0_16px_rgba(45,212,191,0.15)]'
                 : 'bg-gradient-to-br from-teal-700 via-teal-800 to-[#07371d] text-white border-teal-500 shadow-md'
             ]"
+            title="Klik untuk inspeksi inventaris peralatan lab"
           >
             <div
               :class="[
-                'w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border-2 transition-colors duration-300 shadow-sm',
+                'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors shadow-2xs',
                 isDarkMode
-                  ? 'bg-teal-500/25 border-teal-400 text-[#2dd4bf] shadow-[0_0_14px_rgba(45,212,191,0.3)]'
+                  ? 'bg-teal-500/25 border-teal-400 text-[#2dd4bf]'
                   : 'bg-white/20 border-white/30 text-white'
               ]"
             >
-              <CheckCircle2 :size="22" />
+              <Wrench :size="18" />
             </div>
-            <div>
+            <div class="min-w-0">
               <span
                 :class="[
-                  'text-[10.5px] font-bold uppercase tracking-wider block',
-                  isDarkMode ? 'text-[#5eead4]' : 'text-teal-100'
+                  'text-[9px] font-bold uppercase tracking-wider block truncate',
+                  isDarkMode ? 'text-teal-300' : 'text-teal-100'
                 ]"
               >
-                Tersedia
+                Alat Siap
               </span>
               <span
                 :class="[
-                  'text-3xl font-extrabold leading-none',
-                  isDarkMode
-                    ? 'text-[#2dd4bf] drop-shadow-[0_0_10px_rgba(45,212,191,0.5)]'
-                    : 'text-white'
+                  'text-xl font-black leading-none',
+                  isDarkMode ? 'text-[#2dd4bf]' : 'text-white'
                 ]"
               >
-                {{ availableLabsCount }}
-                <span :class="['text-xs font-bold', isDarkMode ? 'text-[#5eead4]' : 'text-teal-200']">Lab</span>
+                {{ overallEquipmentStats.healthRate }}%
               </span>
             </div>
-          </div>
+          </button>
         </div>
 
-        <!-- Today's Class Schedule Stream Container -->
+        <!-- 2.2 WIDGET: PRAKTIKUM SEDANG BERLANGSUNG (NOW PLAYING) -->
         <div
           :class="[
-            'p-4 rounded-2xl border-2 flex-1 flex flex-col justify-between overflow-hidden relative min-h-0 transition-colors duration-300 shadow-md',
+            'p-3 rounded-2xl border-2 flex flex-col overflow-hidden relative transition-colors duration-300 shadow-md shrink-0 max-h-[220px]',
             isDarkMode
-              ? 'bg-[#0d1f17] border-emerald-600/50 shadow-xl'
-              : 'bg-white/95 border-emerald-200/90 shadow-md'
+              ? 'bg-[#0c2017] border-emerald-600/60 shadow-md'
+              : 'bg-white border-emerald-200/90 shadow-md'
           ]"
         >
-          <!-- Top Accent Gradient Bar -->
+          <!-- Accent Strip -->
           <div
             :class="[
               'absolute top-0 left-0 right-0 h-1',
               isDarkMode
-                ? 'bg-gradient-to-r from-emerald-500 via-green-300 to-teal-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]'
-                : 'bg-gradient-to-r from-[#0c5a30] via-emerald-400 to-teal-400'
+                ? 'bg-gradient-to-r from-amber-400 to-emerald-400'
+                : 'bg-gradient-to-r from-amber-500 to-[#0c5a30]'
             ]"
           />
 
-          <!-- Header -->
-          <div
-            :class="[
-              'flex items-center justify-between border-b pb-3 mb-2.5 shrink-0 transition-colors duration-300',
-              isDarkMode ? 'border-emerald-700/60' : 'border-emerald-100'
-            ]"
-          >
-            <h3
-              :class="[
-                'text-xs font-bold uppercase tracking-wide flex items-center gap-2',
-                isDarkMode ? 'text-white' : 'text-[#0c5a30]'
-              ]"
-            >
-              <div
-                :class="[
-                  'w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-300 shadow-xs',
-                  isDarkMode
-                    ? 'bg-emerald-500/25 text-[#4ade80] border-2 border-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.3)]'
-                    : 'bg-gradient-to-br from-[#0c5a30] to-[#07371d] text-white'
-                ]"
-              >
-                <Calendar :size="14" />
-              </div>
-              <span>Jadwal Perkuliahan Hari Ini</span>
-            </h3>
-            <span
-              :class="[
-                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 shadow-xs tracking-wide',
-                isDarkMode
-                  ? 'text-[#4ade80] bg-emerald-500/25 border-emerald-400/70 shadow-[0_0_10px_rgba(74,222,128,0.25)]'
-                  : 'text-white bg-gradient-to-r from-[#0c5a30] to-emerald-700 border-emerald-600'
-              ]"
-            >
-              {{ todayTimetableStream.length }} SESI
+          <!-- Widget Header -->
+          <div class="flex items-center justify-between pb-2 mb-2 border-b shrink-0" :class="isDarkMode ? 'border-emerald-800/80' : 'border-emerald-100'">
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></div>
+              <h3 :class="['text-xs font-black uppercase tracking-wide', isDarkMode ? 'text-white' : 'text-[#0c5a30]']">
+                Sedang Berlangsung
+              </h3>
+            </div>
+            <span class="text-[9.5px] font-bold font-mono px-2 py-0.2 rounded-full" :class="isDarkMode ? 'bg-amber-500/20 text-amber-300 border border-amber-400/50' : 'bg-amber-100 text-amber-900 border border-amber-300'">
+              {{ activeInUseSessions.length }} SESI
             </span>
           </div>
 
-          <!-- Stream List with Sleek Scrollbar -->
-          <div class="space-y-2.5 overflow-y-auto flex-1 pr-1 custom-scrollbar min-h-0">
-            <div
-              v-for="item in todayTimetableStream"
-              :key="item.id"
-              :class="[
-                'rounded-xl border-2 transition-all text-xs overflow-hidden shadow-xs relative group',
-                item.isOngoing
-                  ? isDarkMode
-                    ? 'border-amber-500/80 bg-gradient-to-r from-amber-950/70 via-[#191910] to-[#0d1f17] shadow-[0_0_16px_rgba(245,158,11,0.2)]'
-                    : 'border-amber-400 bg-gradient-to-r from-amber-50/90 via-orange-50/40 to-white shadow-md'
-                  : isDarkMode
-                    ? item.type === 'REQUEST'
-                      ? 'border-sky-700/60 bg-gradient-to-r from-sky-950/80 to-[#0d1f17] hover:border-sky-500'
-                      : 'border-emerald-700/60 bg-gradient-to-r from-emerald-950/80 to-[#0d1f17] hover:border-emerald-500'
-                    : item.type === 'REQUEST'
-                      ? 'border-sky-200 bg-gradient-to-r from-sky-50 to-white hover:border-sky-300 hover:shadow-xs'
-                      : 'border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-white hover:border-emerald-300 hover:shadow-xs'
-              ]"
-            >
-              <!-- Left Accent Bar -->
-              <div class="flex">
-                <div
-                  :class="[
-                    'w-1.5 shrink-0 rounded-l-lg',
-                    item.isOngoing
-                      ? 'bg-gradient-to-b from-amber-400 via-orange-500 to-amber-600 shadow-[2px_0_12px_rgba(245,158,11,0.4)]'
-                      : item.type === 'REQUEST'
-                        ? 'bg-gradient-to-b from-sky-400 via-blue-500 to-sky-600'
-                        : 'bg-gradient-to-b from-emerald-500 via-green-600 to-teal-500'
-                  ]"
-                />
-
-                <!-- Card Content -->
-                <div class="flex-1 p-3 space-y-1.5">
-                  <!-- Row 1: Time + Live Pill + Room Badge -->
-                  <div class="flex items-center justify-between gap-2">
-                    <div class="flex items-center gap-1.5">
-                      <Clock
-                        :size="13"
-                        :class="[
-                          item.isOngoing
-                            ? 'text-amber-500 animate-pulse'
-                            : isDarkMode
-                              ? item.type === 'REQUEST' ? 'text-sky-400' : 'text-[#4ade80]'
-                              : item.type === 'REQUEST' ? 'text-sky-600' : 'text-emerald-700'
-                        ]"
-                      />
-                      <span
-                        :class="[
-                          'font-bold font-mono text-[13px] tracking-normal',
-                          item.isOngoing
-                            ? isDarkMode
-                              ? 'text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]'
-                              : 'text-amber-900'
-                            : isDarkMode
-                              ? item.type === 'REQUEST'
-                                ? 'text-sky-300 drop-shadow-[0_0_8px_rgba(56,189,248,0.4)]'
-                                : 'text-[#4ade80] drop-shadow-[0_0_8px_rgba(74,222,128,0.4)]'
-                              : item.type === 'REQUEST' ? 'text-sky-800' : 'text-[#0c5a30]'
-                        ]"
-                      >
-                        {{ item.startTime }} – {{ item.endTime }} WIB
-                      </span>
-                    </div>
-
-                    <div class="flex items-center gap-1.5 shrink-0">
-                      <!-- Live Ongoing Pill -->
-                      <span
-                        v-if="item.isOngoing"
-                        :class="[
-                          'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[9.5px] font-bold uppercase tracking-wider border shrink-0',
-                          isDarkMode
-                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-[0_0_8px_rgba(245,158,11,0.25)]'
-                            : 'bg-amber-500 text-slate-950 border-amber-600 shadow-xs animate-pulse font-bold'
-                        ]"
-                      >
-                        <Radio :size="10" class="animate-pulse" />
-                        Live
-                      </span>
-
-                      <!-- Room Code Badge -->
-                      <span
-                        :class="[
-                          'px-2.5 py-0.5 rounded-lg font-mono text-[10.5px] font-bold border-2 shrink-0 transition-colors',
-                          item.isOngoing
-                            ? isDarkMode
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-400/70 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
-                              : 'bg-amber-100 text-amber-950 border-amber-300 shadow-xs'
-                            : item.type === 'REQUEST'
-                              ? isDarkMode
-                                ? 'bg-sky-500/20 text-sky-300 border-sky-500/70'
-                                : 'bg-sky-100 text-sky-900 border-sky-300 shadow-xs'
-                              : isDarkMode
-                                ? 'bg-emerald-500/20 text-[#4ade80] border-emerald-400/70'
-                                : 'bg-emerald-100 text-[#0c5a30] border-emerald-300 shadow-xs'
-                        ]"
-                      >
-                        {{ item.roomCode }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Row 2: Course Name -->
-                  <div class="flex items-start gap-1.5">
-                    <GraduationCap
-                      :size="14"
-                      :class="[
-                        'shrink-0 mt-0.5',
-                        item.isOngoing
-                          ? 'text-amber-500'
-                          : isDarkMode
-                            ? item.type === 'REQUEST' ? 'text-sky-400' : 'text-[#4ade80]'
-                            : item.type === 'REQUEST' ? 'text-sky-700' : 'text-emerald-700'
-                      ]"
-                    />
-                    <h4
-                      :class="[
-                        'font-bold text-[13px] leading-snug line-clamp-2',
-                        isDarkMode ? 'text-white' : 'text-gray-900'
-                      ]"
-                    >
-                      {{ item.title }}
-                    </h4>
-                  </div>
-
-                  <!-- Row 3: Lecturer + Type Badge -->
-                  <div class="flex items-center justify-between gap-2">
-                    <p
-                      :class="[
-                        'text-[11px] font-medium truncate flex items-center gap-1',
-                        isDarkMode ? 'text-[#a7f3d0]' : 'text-gray-700'
-                      ]"
-                    >
-                      <Users
-                        :size="11"
-                        :class="[
-                          item.isOngoing
-                            ? 'text-amber-500'
-                            : isDarkMode
-                              ? item.type === 'REQUEST' ? 'text-sky-400' : 'text-emerald-400'
-                              : item.type === 'REQUEST' ? 'text-sky-600' : 'text-emerald-700'
-                        ]"
-                        class="shrink-0"
-                      />
-                      <span>{{ item.subtitle }}</span>
-                    </p>
-                    <div class="flex items-center gap-1 shrink-0">
-                      <span
-                        v-if="item.isOngoing"
-                        :class="[
-                          'text-[9.5px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border shrink-0',
-                          isDarkMode
-                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/50'
-                            : 'bg-amber-100 text-amber-900 border-amber-300'
-                        ]"
-                      >
-                        Berlangsung
-                      </span>
-                      <span
-                        v-if="item.type === 'REQUEST'"
-                        :class="[
-                          'text-[9.5px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border shrink-0',
-                          isDarkMode
-                            ? 'bg-sky-500/15 text-sky-300 border-sky-500/50'
-                            : 'bg-sky-100 text-sky-800 border-sky-300'
-                        ]"
-                      >
-                        Peminjaman
-                      </span>
-                      <span
-                        v-else
-                        :class="[
-                          'text-[9.5px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border shrink-0',
-                          isDarkMode
-                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/50'
-                            : 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                        ]"
-                      >
-                        Terjadwal
-                      </span>
-                    </div>
-                  </div>
+          <!-- Active Sessions Scrollable List -->
+          <div class="overflow-y-auto custom-scrollbar space-y-2 flex-1 pr-0.5">
+            <template v-if="activeInUseSessions.length > 0">
+              <div
+                v-for="sess in activeInUseSessions"
+                :key="sess.id"
+                :class="[
+                  'p-2.5 rounded-xl border transition-all text-xs space-y-1.5',
+                  isDarkMode
+                    ? 'bg-[#071910] border-emerald-600/70 hover:border-emerald-400'
+                    : 'bg-emerald-50/70 border-emerald-200 hover:border-emerald-400'
+                ]"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold font-mono" :class="isDarkMode ? 'bg-emerald-500/30 text-emerald-300 border border-emerald-400/50' : 'bg-emerald-700 text-white'">
+                    {{ sess.labCode }}
+                  </span>
+                  <span class="text-[9.5px] font-mono font-bold" :class="isDarkMode ? 'text-amber-300' : 'text-amber-700'">
+                    {{ sess.timeWindow }}
+                  </span>
+                </div>
+                <h4 :class="['font-bold text-[11px] line-clamp-1 leading-snug', isDarkMode ? 'text-white' : 'text-gray-900']" :title="sess.courseName">
+                  {{ sess.courseName }}
+                </h4>
+                <div class="flex items-center justify-between text-[9.5px] opacity-80 pt-0.5">
+                  <span class="truncate">{{ sess.instructor }}</span>
+                  <span class="font-bold text-emerald-400">{{ sess.remainingMinutes }} mnt tersisa</span>
                 </div>
               </div>
-            </div>
-
-            <!-- Clean Dignified Empty State for Schedule Stream -->
-            <div
-              v-if="todayTimetableStream.length === 0"
-              class="py-8 px-4 text-center space-y-3 flex-1 flex flex-col items-center justify-center h-full"
-            >
-              <div
-                :class="[
-                  'w-12 h-12 rounded-2xl border-2 flex items-center justify-center shadow-xs transition-colors',
-                  isDarkMode
-                    ? 'bg-[#122b1f] border-emerald-400 text-[#4ade80] shadow-[0_0_14px_rgba(74,222,128,0.3)]'
-                    : 'bg-emerald-50 border-emerald-300 text-[#0c5a30] shadow-sm'
-                ]"
-              >
-                <CheckCircle2 :size="24" />
-              </div>
-              <div class="space-y-1">
-                <h4 :class="['text-xs sm:text-sm font-bold', isDarkMode ? 'text-white' : 'text-[#0c5a30]']">
-                  {{ totalTodaySchedulesCount > 0 ? 'Semua Sesi Hari Ini Selesai' : 'Tidak Ada Jadwal Sesi Hari Ini' }}
-                </h4>
-                <p :class="['text-[11.5px] font-normal leading-relaxed max-w-xs mx-auto', isDarkMode ? 'text-emerald-200/90' : 'text-gray-600']">
-                  {{
-                    totalTodaySchedulesCount > 0
-                      ? 'Seluruh jadwal perkuliahan dan peminjaman laboratorium untuk hari ini telah rampung dilaksanakan.'
-                      : 'Seluruh ruangan laboratorium terbuka untuk kegiatan riset dan belajar mandiri mahasiswa.'
-                  }}
+            </template>
+            <template v-else>
+              <div class="py-4 text-center space-y-1">
+                <CheckCircle2 :size="24" class="mx-auto text-emerald-500 opacity-60" />
+                <p :class="['text-xs font-semibold', isDarkMode ? 'text-emerald-300' : 'text-emerald-800']">
+                  Tidak Ada Sesi Aktif
                 </p>
+                <p class="text-[10px] opacity-70">Seluruh ruang lab saat ini tersedia untuk reservasi atau praktikum mandiri.</p>
               </div>
-              <div
-                :class="[
-                  'inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10.5px] font-semibold shadow-2xs mt-1',
-                  isDarkMode
-                    ? 'bg-[#132c1f] border-emerald-600/60 text-[#a7f3d0]'
-                    : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                ]"
-              >
-                <Calendar :size="12" :class="isDarkMode ? 'text-[#4ade80]' : 'text-[#0c5a30]'" />
-                <span>{{ totalTodaySchedulesCount > 0 ? 'Sesi Hari Ini Selesai • Buka Kembali Besok Pagi 07:00 WIB' : 'Jam Operasional: 07:00 – 21:00 WIB' }}</span>
-              </div>
-            </div>
+            </template>
           </div>
         </div>
 
-        <!-- 3. SEPARATE DEDICATED WIDGET: PUSAT INFORMASI & LAYANAN LAB (Single Card Showcase - Tidak Menumpuk) -->
+        <!-- 2.3 WIDGET: INFORMASI & LAYANAN LAB SLIDESHOW (AUTOPLAY CAROUSEL) -->
         <div
           :class="[
-            'p-3.5 rounded-2xl border-2 flex flex-col justify-between overflow-hidden relative shrink-0 transition-all duration-300 shadow-md',
+            'p-3.5 rounded-2xl border-2 flex-1 flex flex-col justify-between overflow-hidden relative transition-colors duration-300 shadow-md',
             isDarkMode
-              ? 'bg-[#0d1f17] border-emerald-600/50 shadow-xl'
-              : 'bg-white/95 border-emerald-200/90 shadow-md'
+              ? 'bg-[#0c2017] border-emerald-600/60 shadow-md'
+              : 'bg-white border-emerald-200/90 shadow-md'
           ]"
-          style="min-height: 200px; height: 215px;"
         >
-          <!-- Top Accent Gradient Bar -->
+          <!-- Accent Line -->
           <div
             :class="[
               'absolute top-0 left-0 right-0 h-1',
               isDarkMode
-                ? 'bg-gradient-to-r from-teal-500 via-emerald-400 to-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]'
-                : 'bg-gradient-to-r from-[#0c5a30] via-teal-500 to-emerald-400'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                : 'bg-gradient-to-r from-[#0c5a30] to-teal-500'
             ]"
           />
 
-          <!-- Widget Header & Tab Switchers (Eliminates Vertical Stacking!) -->
-          <div
-            :class="[
-              'flex items-center justify-between border-b pb-2 shrink-0 transition-colors',
-              isDarkMode ? 'border-emerald-700/60' : 'border-emerald-100'
-            ]"
-          >
-            <div class="flex items-center gap-2">
-              <div
-                :class="[
-                  'w-6 h-6 rounded-lg flex items-center justify-center transition-colors shadow-2xs',
-                  isDarkMode
-                    ? 'bg-teal-500/25 text-[#5eead4] border border-teal-400/60'
-                    : 'bg-gradient-to-br from-[#0c5a30] to-[#07371d] text-white'
-                ]"
-              >
-                <Info :size="13" />
+          <!-- Slide Header with Icon -->
+          <div>
+            <div class="flex items-center justify-between gap-1 pb-2 mb-2 border-b" :class="isDarkMode ? 'border-emerald-800/80' : 'border-emerald-100'">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <div
+                  :class="[
+                    'w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border',
+                    currentInfoSlide.iconBg
+                  ]"
+                >
+                  <component :is="currentInfoSlide.icon" :size="13" :class="currentInfoSlide.iconColor" />
+                </div>
+                <span :class="['text-[11px] font-bold uppercase truncate', isDarkMode ? 'text-white' : 'text-[#0c5a30]']">
+                  {{ currentInfoSlide.tab }}
+                </span>
               </div>
               <span
                 :class="[
-                  'text-xs font-bold uppercase tracking-wider',
-                  isDarkMode ? 'text-white' : 'text-[#0c5a30]'
+                  'text-[9px] font-bold px-2 py-0.2 rounded-full shrink-0 tracking-wide',
+                  currentInfoSlide.badgeClass
                 ]"
               >
-                Informasi & Layanan Lab
+                {{ currentInfoSlide.badge }}
               </span>
             </div>
 
-            <!-- Slide Tab Navigation Buttons -->
-            <div class="flex items-center gap-1">
-              <button
-                v-for="(slide, index) in infoSlides"
-                :key="slide.id"
-                @click="setInfoSlide(index)"
-                :class="[
-                  'px-2.5 py-1 rounded-lg text-[10.5px] font-semibold transition-all flex items-center gap-1 cursor-pointer tracking-wide',
-                  activeInfoSlide === index
-                    ? isDarkMode
-                      ? 'bg-emerald-500/30 text-[#4ade80] border border-emerald-400/80 shadow-[0_0_8px_rgba(74,222,128,0.3)]'
-                      : 'bg-[#0c5a30] text-white shadow-xs'
-                    : isDarkMode
-                      ? 'text-emerald-300/70 hover:text-white bg-transparent'
-                      : 'text-gray-600 hover:text-[#0c5a30] hover:bg-emerald-50'
-                ]"
-                :title="slide.title"
-              >
-                <span v-if="activeInfoSlide === index" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                <span>{{ slide.tab }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Active Slide Showcase Card (Single Card, Never Stacks!) -->
-          <transition name="fade" mode="out-in">
-            <div :key="activeInfoSlide" class="py-2 px-1 flex-1 flex flex-col justify-between min-h-0">
-              <!-- Top Row: Icon + Title + Badge -->
-              <div class="flex items-start justify-between gap-2.5">
-                <div class="flex items-start gap-2.5 min-w-0">
-                  <div
-                    :class="[
-                      'w-9 h-9 rounded-xl border-2 flex items-center justify-center shrink-0 shadow-xs transition-colors',
-                      currentInfoSlide.iconBg
-                    ]"
-                  >
-                    <component :is="currentInfoSlide.icon" :size="18" :class="currentInfoSlide.iconColor" />
-                  </div>
-                  <div class="min-w-0">
-                    <h5
-                      :class="[
-                        'text-xs sm:text-[13px] font-bold truncate leading-snug',
-                        isDarkMode ? 'text-white' : 'text-gray-900'
-                      ]"
-                    >
-                      {{ currentInfoSlide.title }}
-                    </h5>
-                    <p
-                      :class="[
-                        'text-[11px] mt-0.5 leading-relaxed line-clamp-2 font-normal',
-                        isDarkMode ? 'text-emerald-100/80' : 'text-gray-600'
-                      ]"
-                    >
-                      {{ currentInfoSlide.description }}
-                    </p>
-                  </div>
-                </div>
-
-                <span
+            <!-- Slide Content -->
+            <transition name="fade" mode="out-in">
+              <div :key="currentInfoSlide.id" class="space-y-1.5 py-1">
+                <h4 :class="['text-xs font-bold leading-snug', isDarkMode ? 'text-emerald-100' : 'text-gray-900']">
+                  {{ currentInfoSlide.title }}
+                </h4>
+                <p :class="['text-[10.5px] leading-relaxed', isDarkMode ? 'text-emerald-200/80' : 'text-gray-600']">
+                  {{ currentInfoSlide.description }}
+                </p>
+                <div
                   :class="[
-                    'text-[10px] font-mono font-bold px-2 py-0.5 rounded-md shrink-0 shadow-xs uppercase tracking-wide',
-                    currentInfoSlide.badgeClass
+                    'p-2 rounded-xl text-[10px] font-medium border mt-2',
+                    isDarkMode
+                      ? 'bg-[#071910] border-emerald-700/60 text-emerald-200'
+                      : 'bg-emerald-50 border-emerald-200 text-[#0c5a30]'
                   ]"
                 >
-                  {{ currentInfoSlide.badge }}
-                </span>
+                  <strong class="font-bold">Info:</strong> {{ currentInfoSlide.highlight }}
+                </div>
               </div>
+            </transition>
+          </div>
 
-              <!-- Highlight Pill Box -->
-              <div
-                :class="[
-                  'px-2.5 py-1.5 rounded-xl border flex items-center gap-2 text-[10.5px] font-medium mt-1.5 transition-colors',
-                  isDarkMode
-                    ? 'bg-[#0a1811] border-emerald-800/80 text-[#86efac]'
-                    : 'bg-emerald-50/80 border-emerald-200/80 text-emerald-950'
-                ]"
-              >
-                <Sparkles :size="12" class="text-amber-500 shrink-0" />
-                <span class="truncate">{{ currentInfoSlide.highlight }}</span>
-              </div>
-            </div>
-          </transition>
-
-          <!-- Widget Footer: Slide Indicators & Controls -->
-          <div
-            :class="[
-              'pt-2 border-t flex items-center justify-between text-[10px] font-semibold shrink-0 transition-colors',
-              isDarkMode ? 'border-emerald-700/60 text-emerald-300' : 'border-emerald-100 text-gray-500'
-            ]"
-          >
-            <!-- Progress / Auto-Rotate Dots -->
-            <div class="flex items-center gap-1.5">
+          <!-- Slide Bottom Navigation Controls -->
+          <div class="flex items-center justify-between pt-2 border-t mt-2" :class="isDarkMode ? 'border-emerald-800/80' : 'border-emerald-100'">
+            <!-- Dots -->
+            <div class="flex items-center gap-1">
               <button
                 v-for="(_, idx) in infoSlides"
                 :key="idx"
                 @click="setInfoSlide(idx)"
                 :class="[
-                  'h-1.5 rounded-full transition-all duration-500 cursor-pointer',
+                  'h-1.5 rounded-full transition-all duration-300 cursor-pointer',
                   activeInfoSlide === idx
-                    ? 'w-6 bg-emerald-600 dark:bg-emerald-400'
-                    : 'w-1.5 bg-gray-300 dark:bg-emerald-900 hover:bg-emerald-400'
+                    ? 'w-4 bg-emerald-500'
+                    : 'w-1.5 bg-gray-300 dark:bg-emerald-900'
                 ]"
                 :aria-label="'Slide ' + (idx + 1)"
               />
-              <span class="text-[9.5px] font-mono ml-1.5 opacity-80">
-                ROTASI OTOMATIS
-              </span>
             </div>
 
-            <!-- Arrows to switch slides manually -->
-            <div class="flex items-center gap-1">
-              <span class="text-[9.5px] font-mono mr-1 opacity-75">
-                {{ activeInfoSlide + 1 }} / {{ infoSlides.length }}
-              </span>
+            <!-- Arrow Buttons -->
+            <div class="flex items-center gap-1 text-[9.5px]">
+              <span class="font-mono opacity-70 mr-1">{{ activeInfoSlide + 1 }}/{{ infoSlides.length }}</span>
               <button
                 @click="prevInfoSlide"
-                class="p-1 rounded-md border hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors cursor-pointer"
+                class="p-1 rounded border hover:bg-emerald-500/20 transition-colors cursor-pointer"
                 :class="isDarkMode ? 'border-emerald-800 text-emerald-300' : 'border-gray-200 text-gray-700'"
-                title="Slide Sebelumnya"
-                aria-label="Previous Slide"
+                title="Sebelumnya"
               >
-                <ChevronLeft :size="12" />
+                <ChevronLeft :size="11" />
               </button>
               <button
                 @click="nextInfoSlide"
-                class="p-1 rounded-md border hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors cursor-pointer"
+                class="p-1 rounded border hover:bg-emerald-500/20 transition-colors cursor-pointer"
                 :class="isDarkMode ? 'border-emerald-800 text-emerald-300' : 'border-gray-200 text-gray-700'"
-                title="Slide Berikutnya"
-                aria-label="Next Slide"
+                title="Berikutnya"
               >
-                <ChevronRight :size="12" />
+                <ChevronRight :size="11" />
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </aside>
     </main>
 
     <!-- 3. FOOTER ANNOUNCEMENT MARQUEE -->
