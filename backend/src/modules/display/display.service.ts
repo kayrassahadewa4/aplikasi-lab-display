@@ -82,23 +82,28 @@ export class DisplayService {
     return laboratories;
   }
 
-  async findTodaySchedules(): Promise<DisplayScheduleDto[]> {
-    const today = new Date();
-    // Get Jakarta WIB day of week (0=Sunday, 1=Monday... 6=Saturday)
-    const jakartaDateStr = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Asia/Jakarta',
-      weekday: 'short',
-    }).format(today);
-    const dayMap: Record<string, number> = {
-      Sun: 0,
-      Mon: 1,
-      Tue: 2,
-      Wed: 3,
-      Thu: 4,
-      Fri: 5,
-      Sat: 6,
-    };
-    const dayOfWeek = dayMap[jakartaDateStr] ?? today.getDay();
+  async findTodaySchedules(targetDayOfWeek?: number): Promise<DisplayScheduleDto[]> {
+    let dayOfWeek: number;
+    if (targetDayOfWeek !== undefined && targetDayOfWeek >= 0 && targetDayOfWeek <= 6) {
+      dayOfWeek = targetDayOfWeek;
+    } else {
+      const today = new Date();
+      // Get Jakarta WIB day of week (0=Sunday, 1=Monday... 6=Saturday)
+      const jakartaDateStr = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Jakarta',
+        weekday: 'short',
+      }).format(today);
+      const dayMap: Record<string, number> = {
+        Sun: 0,
+        Mon: 1,
+        Tue: 2,
+        Wed: 3,
+        Thu: 4,
+        Fri: 5,
+        Sat: 6,
+      };
+      dayOfWeek = dayMap[jakartaDateStr] ?? today.getDay();
+    }
 
     const schedules = await this.prisma.schedule.findMany({
       where: {
@@ -133,11 +138,10 @@ export class DisplayService {
   }
 
   /**
-   * Find approved room requests for today (Jakarta WIB timezone-aware)
+   * Find approved room requests for a target date (Jakarta WIB timezone-aware)
    */
-  async findApprovedRequestsToday(): Promise<DisplayRoomRequestDto[]> {
-    // Use Jakarta WIB timezone to determine "today", consistent with findTodaySchedules()
-    const now = new Date();
+  async findApprovedRequestsToday(targetDate?: Date): Promise<DisplayRoomRequestDto[]> {
+    const queryDate = targetDate || new Date();
     const jakartaFormatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Jakarta',
       year: 'numeric',
@@ -145,20 +149,20 @@ export class DisplayService {
       day: '2-digit',
     });
     // en-CA format gives YYYY-MM-DD
-    const jakartaDateStr = jakartaFormatter.format(now); // e.g. "2026-09-07"
+    const jakartaDateStr = jakartaFormatter.format(queryDate);
     const [year, month, day] = jakartaDateStr.split('-').map(Number);
 
     // Construct WIB day boundaries as UTC timestamps
     // WIB = UTC+7, so WIB 00:00:00 = UTC previous day 17:00:00
-    const todayStartWIB = new Date(Date.UTC(year, month - 1, day, -7, 0, 0, 0));
-    const todayEndWIB = new Date(Date.UTC(year, month - 1, day, -7 + 23, 59, 59, 999));
+    const dayStartWIB = new Date(Date.UTC(year, month - 1, day, -7, 0, 0, 0));
+    const dayEndWIB = new Date(Date.UTC(year, month - 1, day, -7 + 23, 59, 59, 999));
 
     const requests = await this.prisma.roomRequest.findMany({
       where: {
         status: RequestStatus.APPROVED,
         request_date: {
-          gte: todayStartWIB,
-          lte: todayEndWIB,
+          gte: dayStartWIB,
+          lte: dayEndWIB,
         },
       },
       select: {
@@ -413,20 +417,61 @@ export class DisplayService {
   }
 
   /**
-   * Aggregate all display data in one response
+   * Aggregate all display data in one response with optional date/day query
    */
-  async aggregateDisplayData(): Promise<AggregatedDisplayDto> {
-    // 1. Force stop and checkout any expired room usages and free up laboratories
-    await this.forceCheckoutExpiredUsages();
+  async aggregateDisplayData(
+    targetDateStr?: string,
+    targetDayOfWeek?: number,
+  ): Promise<AggregatedDisplayDto> {
+    const now = new Date();
 
-    // 2. Execute all queries in parallel for performance
+    let targetDate = now;
+    if (targetDateStr) {
+      const parts = targetDateStr.split('-').map(Number);
+      if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+        targetDate = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 12, 0, 0));
+      }
+    }
+
+    let dayOfWeek: number;
+    if (targetDayOfWeek !== undefined && targetDayOfWeek >= 0 && targetDayOfWeek <= 6) {
+      dayOfWeek = targetDayOfWeek;
+    } else {
+      const jakartaDateStr = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Jakarta',
+        weekday: 'short',
+      }).format(targetDate);
+      const dayMap: Record<string, number> = {
+        Sun: 0,
+        Mon: 1,
+        Tue: 2,
+        Wed: 3,
+        Thu: 4,
+        Fri: 5,
+        Sat: 6,
+      };
+      dayOfWeek = dayMap[jakartaDateStr] ?? targetDate.getDay();
+    }
+
+    const jakartaFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const isToday = jakartaFormatter.format(now) === jakartaFormatter.format(targetDate);
+
+    if (isToday) {
+      await this.forceCheckoutExpiredUsages();
+    }
+
     const [announcements, laboratories, schedules, roomRequests, roomUsage] =
       await Promise.all([
         this.findActiveAnnouncements(),
         this.findLaboratoryStatus(),
-        this.findTodaySchedules(),
-        this.findApprovedRequestsToday(),
-        this.findCurrentUsage(),
+        this.findTodaySchedules(dayOfWeek),
+        this.findApprovedRequestsToday(targetDate),
+        isToday ? this.findCurrentUsage() : Promise.resolve([]),
       ]);
 
     return {

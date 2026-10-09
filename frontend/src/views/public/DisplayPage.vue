@@ -32,6 +32,9 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  RotateCcw,
   Wrench,
   Tv,
   Wind,
@@ -168,13 +171,154 @@ const staticHourFormatter = new Intl.DateTimeFormat('en-GB', {
   hour12: false,
 })
 
+// Date navigation state
+const selectedDate = ref<Date>(new Date())
+const autoResetSeconds = ref(60)
+let autoResetInterval: number | null = null
+
+// Formatter for Jakarta YMD (YYYY-MM-DD)
+const getJakartaYMD = (d: Date): string => {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Jakarta',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d)
+  } catch {
+    const year = d.getFullYear()
+    const month = (d.getMonth() + 1).toString().padStart(2, '0')
+    const day = d.getDate().toString().padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+}
+
+const isViewingToday = computed(() => {
+  return getJakartaYMD(selectedDate.value) === getJakartaYMD(now.value)
+})
+
+const tomorrowDate = computed(() => {
+  const d = new Date(now.value)
+  d.setDate(d.getDate() + 1)
+  return d
+})
+
+const dayAfterTomorrowDate = computed(() => {
+  const d = new Date(now.value)
+  d.setDate(d.getDate() + 2)
+  return d
+})
+
+const isViewingTomorrow = computed(() => {
+  return getJakartaYMD(selectedDate.value) === getJakartaYMD(tomorrowDate.value)
+})
+
+const isViewingDayAfter = computed(() => {
+  return getJakartaYMD(selectedDate.value) === getJakartaYMD(dayAfterTomorrowDate.value)
+})
+
+const formattedSelectedDate = computed(() => {
+  return staticDateFormatter.format(selectedDate.value)
+})
+
+const daysOfWeekList = [
+  { day: 1, name: 'Senin', short: 'Sen' },
+  { day: 2, name: 'Selasa', short: 'Sel' },
+  { day: 3, name: 'Rabu', short: 'Rab' },
+  { day: 4, name: 'Kamis', short: 'Kam' },
+  { day: 5, name: 'Jumat', short: 'Jum' },
+  { day: 6, name: 'Sabtu', short: 'Sab' },
+]
+
+const currentSelectedDayOfWeek = computed(() => {
+  return selectedDate.value.getDay()
+})
+
+const getMondayOfWeek = (date: Date): Date => {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+  d.setDate(diff)
+  return d
+}
+
+const resetAutoResetTimer = () => {
+  autoResetSeconds.value = 60
+  if (autoResetInterval) {
+    clearInterval(autoResetInterval)
+  }
+  autoResetInterval = window.setInterval(() => {
+    if (isViewingToday.value) {
+      if (autoResetInterval) clearInterval(autoResetInterval)
+      return
+    }
+    if (autoResetSeconds.value > 1) {
+      autoResetSeconds.value--
+    } else {
+      goToToday()
+    }
+  }, 1000)
+}
+
+const selectDayOfWeek = (targetDay: number) => {
+  const monday = getMondayOfWeek(selectedDate.value)
+  const newDate = new Date(monday)
+  newDate.setDate(monday.getDate() + (targetDay - 1))
+  selectedDate.value = newDate
+  resetAutoResetTimer()
+  fetchDisplayData()
+}
+
+const prevWeek = () => {
+  const d = new Date(selectedDate.value)
+  d.setDate(d.getDate() - 7)
+  selectedDate.value = d
+  resetAutoResetTimer()
+  fetchDisplayData()
+}
+
+const nextWeek = () => {
+  const d = new Date(selectedDate.value)
+  d.setDate(d.getDate() + 7)
+  selectedDate.value = d
+  resetAutoResetTimer()
+  fetchDisplayData()
+}
+
+const goToToday = () => {
+  selectedDate.value = new Date(now.value)
+  if (autoResetInterval) {
+    clearInterval(autoResetInterval)
+    autoResetInterval = null
+  }
+  autoResetSeconds.value = 60
+  fetchDisplayData()
+}
+
+const goToTomorrow = () => {
+  selectedDate.value = new Date(tomorrowDate.value)
+  resetAutoResetTimer()
+  fetchDisplayData()
+}
+
+const goToDayAfterTomorrow = () => {
+  selectedDate.value = new Date(dayAfterTomorrowDate.value)
+  resetAutoResetTimer()
+  fetchDisplayData()
+}
+
 // Fetch display data with mutex guard against overlapping requests
 let isFetching = false
 const fetchDisplayData = async () => {
   if (isFetching) return
   isFetching = true
   try {
-    const data = await displayService.getDisplayData()
+    const ymd = getJakartaYMD(selectedDate.value)
+    const dayOfWeek = selectedDate.value.getDay()
+    const data = await displayService.getDisplayData({
+      date: ymd,
+      day_of_week: dayOfWeek,
+    })
     displayData.value = data
   } catch (err) {
     console.error('Failed to fetch display data:', err)
@@ -427,6 +571,58 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
         remainingMinutes: 0,
         isExpired: false,
         status: 'MAINTENANCE',
+        capacity: lab.maximum_capacity,
+        occupancy: 0,
+        equipmentSummary,
+      }
+    }
+
+    // When inspecting another day, there are no live check-in sessions running right now
+    if (!isViewingToday.value) {
+      const firstSchedule = schedules?.find(
+        (s: DisplayScheduleDto) => s.laboratory?.id === lab.id && s.status !== 'CANCELLED',
+      )
+      const firstRequest = room_requests?.find((r: DisplayRoomRequestDto) => r.laboratory?.id === lab.id)
+      if (firstSchedule || firstRequest) {
+        const startTimeStr = extractTimeString(firstSchedule?.start_time || firstRequest?.start_time)
+        const endTimeStr = extractTimeString(firstSchedule?.end_time || firstRequest?.end_time)
+        return {
+          id: lab.id,
+          labId: lab.id,
+          labName: lab.name,
+          labCode: lab.code,
+          location: lab.location,
+          courseName: firstSchedule?.course_name || firstRequest?.activity_name || 'Jadwal Terdaftar',
+          courseCode: firstSchedule?.class_name || firstRequest?.course_name || 'TERJADWAL',
+          instructor: firstSchedule?.lecturer_name || firstRequest?.applicant?.full_name || 'Dosen Pengajar',
+          timeWindow: `${startTimeStr} – ${endTimeStr} WIB`,
+          startTime: startTimeStr,
+          endTime: endTimeStr,
+          progressPercentage: 0,
+          remainingMinutes: 0,
+          isExpired: false,
+          status: 'UPCOMING',
+          capacity: lab.maximum_capacity,
+          occupancy: 0,
+          equipmentSummary,
+        }
+      }
+      return {
+        id: lab.id,
+        labId: lab.id,
+        labName: lab.name,
+        labCode: lab.code,
+        location: lab.location,
+        courseName: 'Terbuka untuk Reservasi & Belajar',
+        courseCode: 'TERSEDIA',
+        instructor: 'Tersedia untuk Reservasi',
+        timeWindow: 'Tersedia untuk reservasi',
+        startTime: '08:00',
+        endTime: '17:00',
+        progressPercentage: 0,
+        remainingMinutes: 0,
+        isExpired: false,
+        status: 'AVAILABLE',
         capacity: lab.maximum_capacity,
         occupancy: 0,
         equipmentSummary,
@@ -757,8 +953,8 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
       const startTimeStr = extractTimeString(s.start_time)
       const endTimeStr = extractTimeString(s.end_time)
 
-      // Strict expiration: If current time has reached or passed end time, omit from timetable completely
-      if (currentMinutes >= endMin) {
+      // Strict expiration: If viewing today and current time has reached or passed end time, omit from timetable completely
+      if (isViewingToday.value && currentMinutes >= endMin) {
         return
       }
 
@@ -770,8 +966,8 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
           (u.status === 'CHECKED_IN' || u.status === 'IN_USE'),
       )
 
-      const isOngoing = currentMinutes >= startMin && currentMinutes < endMin
-      const isUpcoming = currentMinutes < startMin
+      const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
+      const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
 
       stream.push({
         id: s.id,
@@ -799,8 +995,8 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
       const startTimeStr = extractTimeString(r.start_time)
       const endTimeStr = extractTimeString(r.end_time)
 
-      // Strict expiration: If current time has reached or passed end time, omit from timetable completely
-      if (currentMinutes >= endMin) {
+      // Strict expiration: If viewing today and current time has reached or passed end time, omit from timetable completely
+      if (isViewingToday.value && currentMinutes >= endMin) {
         return
       }
 
@@ -812,8 +1008,8 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
           (u.status === 'CHECKED_IN' || u.status === 'IN_USE'),
       )
 
-      const isOngoing = currentMinutes >= startMin && currentMinutes < endMin
-      const isUpcoming = currentMinutes < startMin
+      const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
+      const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
 
       stream.push({
         id: r.id,
@@ -975,8 +1171,8 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
       if (s.laboratory?.id === labId || s.laboratory?.code === labCode) {
         const startMin = parseTimeToMinutes(s.start_time)
         const endMin = getEffectiveEndMinutes(s.start_time, s.end_time)
-        const isOngoing = currentMinutes >= startMin && currentMinutes < endMin
-        const isUpcoming = currentMinutes < startMin
+        const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
+        const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
 
         const hasActiveUsage = usages.some(
           (u) =>
@@ -1004,8 +1200,8 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
       if (r.laboratory?.id === labId || r.laboratory?.code === labCode) {
         const startMin = parseTimeToMinutes(r.start_time)
         const endMin = getEffectiveEndMinutes(r.start_time, r.end_time)
-        const isOngoing = currentMinutes >= startMin && currentMinutes < endMin
-        const isUpcoming = currentMinutes < startMin
+        const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
+        const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
 
         const hasActiveUsage = usages.some(
           (u) =>
@@ -1036,8 +1232,8 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
         const slotEnd = ACADEMIC_TIME_SLOTS[demo.endSlot - 1] ?? ACADEMIC_TIME_SLOTS[ACADEMIC_TIME_SLOTS.length - 1]
         const startMin = slotStart?.startMin ?? 450
         const endMin = slotEnd?.endMin ?? 1025
-        const isOngoing = currentMinutes >= startMin && currentMinutes < endMin
-        const isUpcoming = currentMinutes < startMin
+        const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
+        const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
         const startStr = slotStart ? (slotStart.timeRange.split(' - ')[0] || '07:30') : '07:30'
         const endStr = slotEnd ? (slotEnd.timeRange.split(' - ')[1] || '17:05') : '17:05'
 
@@ -1057,10 +1253,12 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
     }
 
     const hasLiveOrOngoingSession = labSessions.some((s) => s.status === 'IN_USE')
-    const colStatus = liveSession?.status || (hasLiveOrOngoingSession ? 'IN_USE' : 'AVAILABLE')
+    const colStatus = isViewingToday.value
+      ? (liveSession?.status || (hasLiveOrOngoingSession ? 'IN_USE' : 'AVAILABLE'))
+      : 'AVAILABLE'
 
     const cells: MatrixCell[] = ACADEMIC_TIME_SLOTS.map((slot) => {
-      const isCurrentTime = currentMinutes >= slot.startMin && currentMinutes < slot.endMin
+      const isCurrentTime = isViewingToday.value && (currentMinutes >= slot.startMin && currentMinutes < slot.endMin)
       const matched = labSessions.find(
         (sess) => sess.startMin < slot.endMin && sess.endMin > slot.startMin,
       ) || null
@@ -1086,47 +1284,119 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
 })
 
 const activeInUseSessions = computed<FormattedLiveSession[]>(() => {
-  const active = liveLabSessions.value.filter((s) => s.status === 'IN_USE')
-  if (active.length > 0) return active
+  if (isViewingToday.value) {
+    const active = liveLabSessions.value.filter((s) => s.status === 'IN_USE')
+    if (active.length > 0) return active
 
-  // Fallback if live session status isn't marked or during demo: derive from matrix ongoing cells
-  const ongoingFromMatrix: FormattedLiveSession[] = []
+    // Fallback if live session status isn't marked or during demo: derive from matrix ongoing cells
+    const ongoingFromMatrix: FormattedLiveSession[] = []
+    matrixLabColumns.value.forEach((col) => {
+      const activeCell = col.cells.find((c) => c.session?.status === 'IN_USE')
+      if (activeCell && activeCell.session) {
+        const timeParts = activeCell.slot.timeRange.split(' - ')
+        ongoingFromMatrix.push({
+          id: activeCell.session.id,
+          labId: col.id,
+          labName: col.name,
+          labCode: col.code,
+          location: 'Lantai 2',
+          courseName: activeCell.session.title,
+          courseCode: activeCell.session.className || 'REG-01',
+          instructor: activeCell.session.lecturer,
+          timeWindow: activeCell.session.timeWindow,
+          startTime: timeParts[0] || '08:00',
+          endTime: timeParts[1] || '17:00',
+          progressPercentage: 50,
+          remainingMinutes: 30,
+          isExpired: false,
+          status: 'IN_USE',
+          capacity: col.capacity,
+          occupancy: Math.round(col.capacity * 0.85),
+          equipmentSummary: {
+            totalUnits: col.capacity,
+            goodUnits: col.capacity,
+            damagedUnits: 0,
+            maintenanceUnits: 0,
+            healthPercentage: 100,
+            hasIssue: false,
+            items: [],
+          },
+        })
+      }
+    })
+    return ongoingFromMatrix
+  }
+
+  // When viewing another day (tomorrow, day after, next week):
+  // Collect all scheduled sessions for that selected day across all lab columns
+  const daySessions: FormattedLiveSession[] = []
+  const seenSessionIds = new Set<string>()
+
   matrixLabColumns.value.forEach((col) => {
-    const activeCell = col.cells.find((c) => c.session?.status === 'IN_USE')
-    if (activeCell && activeCell.session) {
-      const timeParts = activeCell.slot.timeRange.split(' - ')
-      ongoingFromMatrix.push({
-        id: activeCell.session.id,
-        labId: col.id,
-        labName: col.name,
-        labCode: col.code,
-        location: 'Lantai 2',
-        courseName: activeCell.session.title,
-        courseCode: activeCell.session.className || 'REG-01',
-        instructor: activeCell.session.lecturer,
-        timeWindow: activeCell.session.timeWindow,
-        startTime: timeParts[0] || '08:00',
-        endTime: timeParts[1] || '17:00',
-        progressPercentage: 50,
-        remainingMinutes: 30,
-        isExpired: false,
-        status: 'IN_USE',
-        capacity: col.capacity,
-        occupancy: Math.round(col.capacity * 0.85),
-        equipmentSummary: {
-          totalUnits: col.capacity,
-          goodUnits: col.capacity,
-          damagedUnits: 0,
-          maintenanceUnits: 0,
-          healthPercentage: 100,
-          hasIssue: false,
-          items: [],
-        },
-      })
-    }
+    col.cells.forEach((cell) => {
+      if (cell.session && !seenSessionIds.has(cell.session.id)) {
+        seenSessionIds.add(cell.session.id)
+        const timeParts = cell.slot.timeRange.split(' - ')
+        daySessions.push({
+          id: cell.session.id,
+          labId: col.id,
+          labName: col.name,
+          labCode: col.code,
+          location: 'Lantai 2',
+          courseName: cell.session.title,
+          courseCode: cell.session.className || 'REG-01',
+          instructor: cell.session.lecturer,
+          timeWindow: cell.session.timeWindow,
+          startTime: timeParts[0] || '08:00',
+          endTime: timeParts[1] || '17:00',
+          progressPercentage: 0,
+          remainingMinutes: 0,
+          isExpired: false,
+          status: 'UPCOMING',
+          capacity: col.capacity,
+          occupancy: 0,
+          equipmentSummary: {
+            totalUnits: col.capacity,
+            goodUnits: col.capacity,
+            damagedUnits: 0,
+            maintenanceUnits: 0,
+            healthPercentage: 100,
+            hasIssue: false,
+            items: [],
+          },
+        })
+      }
+    })
   })
-  return ongoingFromMatrix
+
+  return daySessions
 })
+
+// Auto-scroll and manual navigation for active/scheduled sessions list
+const activeListRef = ref<HTMLElement | null>(null)
+let activeScrollTimer: number | null = null
+const pauseActiveScroll = ref(false)
+
+const scrollActiveList = (direction: 'up' | 'down') => {
+  if (!activeListRef.value) return
+  const delta = direction === 'up' ? -90 : 90
+  activeListRef.value.scrollBy({ top: delta, behavior: 'smooth' })
+}
+
+const startActiveAutoScroll = () => {
+  if (activeScrollTimer) clearInterval(activeScrollTimer)
+  activeScrollTimer = window.setInterval(() => {
+    if (pauseActiveScroll.value || !activeListRef.value) return
+    const el = activeListRef.value
+    if (el.scrollHeight > el.clientHeight + 15) {
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+        el.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        el.scrollBy({ top: 85, behavior: 'smooth' })
+      }
+    }
+  }, 4000)
+}
 
 // Fullscreen toggle
 const toggleFullscreen = () => {
@@ -1240,6 +1510,9 @@ onMounted(() => {
   // Start auto-rotation for Info & Service Showcase widget
   resetInfoSlideTimer()
 
+  // Start auto-scrolling for active/scheduled sessions list
+  startActiveAutoScroll()
+
   // 24/7 TV Display Hygiene: Schedule soft reload at 03:00 AM WIB (when lab is idle) to purge browser RAM
   kioskHygieneTimer = window.setInterval(() => {
     try {
@@ -1256,6 +1529,8 @@ onUnmounted(() => {
   if (pollTimer) clearInterval(pollTimer)
   if (infoSlideTimer) clearInterval(infoSlideTimer)
   if (kioskHygieneTimer) clearInterval(kioskHygieneTimer)
+  if (activeScrollTimer) clearInterval(activeScrollTimer)
+  if (autoResetInterval) clearInterval(autoResetInterval)
   if (socket) socket.disconnect()
   document.removeEventListener('fullscreenchange', handleFullscreenChange)
 })
@@ -1431,7 +1706,7 @@ onUnmounted(() => {
         <!-- Section Top Header Bar -->
         <div
           :class="[
-            'px-4 py-2.5 border-b flex items-center justify-between shrink-0 transition-colors duration-300',
+            'px-4 py-2 border-b flex items-center justify-between shrink-0 transition-colors duration-300',
             isDarkMode ? 'border-emerald-700/60 bg-[#06170f]' : 'border-emerald-100 bg-emerald-50/70'
           ]"
         >
@@ -1454,7 +1729,10 @@ onUnmounted(() => {
                     isDarkMode ? 'text-white' : 'text-[#0c5a30]'
                   ]"
                 >
-                  Matriks Jadwal Perkuliahan & Praktikum Hari Ini
+                  Matriks Jadwal Perkuliahan & Praktikum
+                  <span class="text-amber-400 font-extrabold">
+                    {{ isViewingToday ? 'Hari Ini' : (isViewingTomorrow ? 'Besok' : (isViewingDayAfter ? 'Lusa' : '')) }}
+                  </span>
                 </h2>
                 <span
                   class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-600 text-white shadow-2xs tracking-wider"
@@ -1463,44 +1741,192 @@ onUnmounted(() => {
                 </span>
               </div>
               <p :class="['text-[11px] font-medium', isDarkMode ? 'text-emerald-300/80' : 'text-emerald-800']">
-                Pantauan alokasi 10 sesi jam perkuliahan reguler dan penggunaan laboratorium real-time
+                Pantauan alokasi 10 sesi jam perkuliahan reguler dan penggunaan laboratorium
               </p>
             </div>
           </div>
 
           <!-- Right Status Chips -->
           <div class="flex items-center gap-2">
-            <span
+            <template v-if="isViewingToday">
+              <span
+                :class="[
+                  'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 shadow-2xs tracking-wide',
+                  isDarkMode
+                    ? 'text-[#4ade80] bg-emerald-500/20 border-emerald-400/60'
+                    : 'text-white bg-emerald-700 border-emerald-600'
+                ]"
+              >
+                <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
+                <span>{{ inUseLabsCount }} SEDANG AKTIF</span>
+              </span>
+              <span
+                :class="[
+                  'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
+                  isDarkMode
+                    ? 'text-[#5eead4] bg-teal-500/20 border-teal-400/60'
+                    : 'text-teal-900 bg-teal-100 border-teal-300'
+                ]"
+              >
+                <Check :size="12" />
+                <span>{{ availableLabsCount }} TERSEDIA</span>
+              </span>
+              <span
+                :class="[
+                  'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 tracking-wide',
+                  isDarkMode
+                    ? 'text-[#a7f3d0] bg-[#122b1f] border-emerald-700/70'
+                    : 'text-[#0c5a30] bg-white border-emerald-300'
+                ]"
+              >
+                TOTAL {{ totalTodaySchedulesCount }} SESI
+              </span>
+            </template>
+            <template v-else>
+              <span
+                :class="[
+                  'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
+                  isDarkMode
+                    ? 'text-amber-300 bg-amber-500/20 border-amber-400/60'
+                    : 'text-amber-950 bg-amber-100 border-amber-300'
+                ]"
+              >
+                <Clock :size="12" />
+                <span>TOTAL {{ totalTodaySchedulesCount }} SESI TERJADWAL</span>
+              </span>
+              <!-- Auto-reset timer button -->
+              <button
+                @click="goToToday"
+                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-extrabold transition-all cursor-pointer bg-amber-500 text-gray-950 border border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] hover:scale-105 active:scale-95"
+                title="Kembali ke pantauan hari ini secara langsung"
+              >
+                <RotateCcw :size="12" />
+                <span>Kembali ke Live ({{ autoResetSeconds }}s)</span>
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <!-- DAY & WEEK SCHEDULE NAVIGATION BAR -->
+        <div
+          :class="[
+            'px-3.5 py-1.5 border-b flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 transition-colors duration-300',
+            isDarkMode ? 'border-emerald-800/70 bg-[#05140c]' : 'border-emerald-100 bg-white'
+          ]"
+        >
+          <!-- Left: Quick Date Presets -->
+          <div class="flex items-center gap-1.5">
+            <span :class="['text-[10px] font-bold uppercase tracking-wider mr-1', isDarkMode ? 'text-emerald-400/70' : 'text-gray-500']">PILIH JADWAL:</span>
+            <button
+              @click="goToToday"
               :class="[
-                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 shadow-2xs tracking-wide',
-                isDarkMode
-                  ? 'text-[#4ade80] bg-emerald-500/20 border-emerald-400/60'
-                  : 'text-white bg-emerald-700 border-emerald-600'
+                'px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs',
+                isViewingToday
+                  ? isDarkMode
+                    ? 'bg-emerald-500 text-gray-950 shadow-[0_0_12px_rgba(74,222,128,0.5)] font-extrabold'
+                    : 'bg-[#0c5a30] text-white shadow-xs font-extrabold'
+                  : isDarkMode
+                    ? 'bg-white/5 text-emerald-200 hover:bg-white/10 border border-emerald-700/50'
+                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
               ]"
             >
-              <span class="w-2 h-2 rounded-full bg-emerald-300 animate-ping"></span>
-              <span>{{ inUseLabsCount }} SEDANG AKTIF</span>
-            </span>
-            <span
+              <span v-if="isViewingToday" class="w-2 h-2 rounded-full bg-emerald-300 animate-pulse"></span>
+              <span>Hari Ini (Live)</span>
+            </button>
+            <button
+              @click="goToTomorrow"
               :class="[
-                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
-                isDarkMode
-                  ? 'text-[#5eead4] bg-teal-500/20 border-teal-400/60'
-                  : 'text-teal-900 bg-teal-100 border-teal-300'
+                'px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer shadow-xs',
+                isViewingTomorrow
+                  ? isDarkMode
+                    ? 'bg-amber-400 text-gray-950 shadow-[0_0_12px_rgba(251,191,36,0.5)] font-extrabold'
+                    : 'bg-amber-500 text-white shadow-xs font-extrabold'
+                  : isDarkMode
+                    ? 'bg-white/5 text-emerald-200 hover:bg-white/10 border border-emerald-700/50'
+                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
               ]"
             >
-              <Check :size="12" />
-              <span>{{ availableLabsCount }} TERSEDIA</span>
-            </span>
-            <span
+              Besok
+            </button>
+            <button
+              @click="goToDayAfterTomorrow"
               :class="[
-                'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 tracking-wide',
-                isDarkMode
-                  ? 'text-[#a7f3d0] bg-[#122b1f] border-emerald-700/70'
-                  : 'text-[#0c5a30] bg-white border-emerald-300'
+                'px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer shadow-xs',
+                isViewingDayAfter
+                  ? isDarkMode
+                    ? 'bg-amber-400 text-gray-950 shadow-[0_0_12px_rgba(251,191,36,0.5)] font-extrabold'
+                    : 'bg-amber-500 text-white shadow-xs font-extrabold'
+                  : isDarkMode
+                    ? 'bg-white/5 text-emerald-200 hover:bg-white/10 border border-emerald-700/50'
+                    : 'bg-emerald-50 text-emerald-900 hover:bg-emerald-100 border border-emerald-200'
               ]"
             >
-              TOTAL {{ totalTodaySchedulesCount }} SESI HARI INI
+              Lusa
+            </button>
+          </div>
+
+          <!-- Center: Day-of-Week Tabs (Senin - Sabtu) -->
+          <div class="flex items-center gap-1">
+            <button
+              v-for="d in daysOfWeekList"
+              :key="d.day"
+              @click="selectDayOfWeek(d.day)"
+              :class="[
+                'px-2.5 py-0.5 rounded-md font-bold text-[11px] transition-all cursor-pointer',
+                currentSelectedDayOfWeek === d.day
+                  ? isDarkMode
+                    ? 'bg-emerald-600 text-white shadow-xs font-extrabold'
+                    : 'bg-emerald-700 text-white shadow-xs font-extrabold'
+                  : isDarkMode
+                    ? 'text-emerald-300 hover:bg-emerald-500/15'
+                    : 'text-emerald-900 hover:bg-emerald-100/70'
+              ]"
+            >
+              {{ d.name }}
+            </button>
+          </div>
+
+          <!-- Right: Week Navigation & Date Display Badge -->
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1">
+              <button
+                @click="prevWeek"
+                :class="[
+                  'py-0.5 px-2 rounded-md transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold border shadow-xs',
+                  isDarkMode
+                    ? 'bg-white/5 hover:bg-white/10 text-emerald-200 border-emerald-800'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-200'
+                ]"
+                title="Lihat minggu sebelumnya"
+              >
+                <ChevronLeft :size="13" />
+                <span class="hidden sm:inline">Minggu Lalu</span>
+              </button>
+              <button
+                @click="nextWeek"
+                :class="[
+                  'py-0.5 px-2 rounded-md transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold border shadow-xs',
+                  isDarkMode
+                    ? 'bg-white/5 hover:bg-white/10 text-emerald-200 border-emerald-800'
+                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-200'
+                ]"
+                title="Lihat minggu depan"
+              >
+                <span class="hidden sm:inline">Minggu Depan</span>
+                <ChevronRight :size="13" />
+              </button>
+            </div>
+
+            <span
+              :class="[
+                'px-2.5 py-0.5 rounded-md font-mono text-[11px] font-bold border shadow-xs flex items-center gap-1.5',
+                isDarkMode
+                  ? 'bg-black/35 border-emerald-700/60 text-amber-300'
+                  : 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
+              ]"
+            >
+              <Calendar :size="11" />
+              <span>{{ formattedSelectedDate }}</span>
             </span>
           </div>
         </div>
@@ -1811,22 +2237,56 @@ onUnmounted(() => {
             <div class="flex items-center gap-1.5">
               <div class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></div>
               <h3 :class="['text-xs font-black uppercase tracking-wide', isDarkMode ? 'text-white' : 'text-[#0c5a30]']">
-                Sedang Berlangsung
+                {{ isViewingToday ? 'Sedang Berlangsung' : 'Jadwal Terdaftar' }}
               </h3>
             </div>
-            <span class="text-[9.5px] font-bold font-mono px-2 py-0.2 rounded-full" :class="isDarkMode ? 'bg-amber-500/20 text-amber-300 border border-amber-400/50' : 'bg-amber-100 text-amber-900 border border-amber-300'">
-              {{ activeInUseSessions.length }} SESI
-            </span>
+            <div class="flex items-center gap-1">
+              <span class="text-[9.5px] font-bold font-mono px-2 py-0.2 rounded-full" :class="isDarkMode ? 'bg-amber-500/20 text-amber-300 border border-amber-400/50' : 'bg-amber-100 text-amber-900 border border-amber-300'">
+                {{ activeInUseSessions.length }} SESI
+              </span>
+              <!-- Manual scroll buttons -->
+              <button
+                @click="scrollActiveList('up')"
+                :class="[
+                  'p-0.5 rounded transition-all cursor-pointer border active:scale-90',
+                  isDarkMode
+                    ? 'hover:bg-emerald-500/20 text-emerald-300 border-emerald-700/60'
+                    : 'hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                ]"
+                title="Gulir ke atas"
+                aria-label="Scroll Up"
+              >
+                <ChevronUp :size="13" />
+              </button>
+              <button
+                @click="scrollActiveList('down')"
+                :class="[
+                  'p-0.5 rounded transition-all cursor-pointer border active:scale-90',
+                  isDarkMode
+                    ? 'hover:bg-emerald-500/20 text-emerald-300 border-emerald-700/60'
+                    : 'hover:bg-emerald-100 text-emerald-800 border-emerald-300'
+                ]"
+                title="Gulir ke bawah"
+                aria-label="Scroll Down"
+              >
+                <ChevronDown :size="13" />
+              </button>
+            </div>
           </div>
 
-          <!-- Active Sessions Scrollable List -->
-          <div class="overflow-y-auto custom-scrollbar space-y-2 flex-1 pr-0.5">
+          <!-- Active Sessions Scrollable List with Auto-Scroll & Manual Touch/Wheel -->
+          <div
+            ref="activeListRef"
+            @mouseenter="pauseActiveScroll = true"
+            @mouseleave="pauseActiveScroll = false"
+            class="overflow-y-auto custom-scrollbar space-y-2 flex-1 pr-1 scroll-smooth"
+          >
             <template v-if="activeInUseSessions.length > 0">
               <div
                 v-for="sess in activeInUseSessions"
                 :key="sess.id"
                 :class="[
-                  'p-2.5 rounded-xl border transition-all text-xs space-y-1.5',
+                  'p-2.5 rounded-xl border transition-all text-xs space-y-1.5 shadow-xs',
                   isDarkMode
                     ? 'bg-[#071910] border-emerald-600/70 hover:border-emerald-400'
                     : 'bg-emerald-50/70 border-emerald-200 hover:border-emerald-400'
@@ -1844,8 +2304,9 @@ onUnmounted(() => {
                   {{ sess.courseName }}
                 </h4>
                 <div class="flex items-center justify-between text-[9.5px] opacity-80 pt-0.5">
-                  <span class="truncate">{{ sess.instructor }}</span>
-                  <span class="font-bold text-emerald-400">{{ sess.remainingMinutes }} mnt tersisa</span>
+                  <span class="truncate max-w-[130px]">{{ sess.instructor }}</span>
+                  <span v-if="isViewingToday" class="font-bold text-emerald-400">{{ sess.remainingMinutes }} mnt tersisa</span>
+                  <span v-else class="font-bold text-emerald-400 font-mono">{{ sess.courseCode }}</span>
                 </div>
               </div>
             </template>
@@ -1853,9 +2314,11 @@ onUnmounted(() => {
               <div class="py-4 text-center space-y-1">
                 <CheckCircle2 :size="24" class="mx-auto text-emerald-500 opacity-60" />
                 <p :class="['text-xs font-semibold', isDarkMode ? 'text-emerald-300' : 'text-emerald-800']">
-                  Tidak Ada Sesi Aktif
+                  {{ isViewingToday ? 'Tidak Ada Sesi Aktif' : 'Tidak Ada Sesi Terjadwal' }}
                 </p>
-                <p class="text-[10px] opacity-70">Seluruh ruang lab saat ini tersedia untuk reservasi atau praktikum mandiri.</p>
+                <p class="text-[10px] opacity-70">
+                  {{ isViewingToday ? 'Seluruh ruang lab saat ini tersedia untuk reservasi atau praktikum mandiri.' : 'Tidak ada kegiatan perkuliahan terjadwal pada hari ini.' }}
+                </p>
               </div>
             </template>
           </div>
@@ -2380,17 +2843,19 @@ onUnmounted(() => {
 
 /* Sleek custom scrollbar for TV Display */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
+  height: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(12, 90, 48, 0.25);
+  background: rgba(12, 90, 48, 0.4);
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(12, 90, 48, 0.45);
+  background: rgba(12, 90, 48, 0.7);
 }
 
 .dark-display {
@@ -2399,11 +2864,14 @@ onUnmounted(() => {
   text-rendering: optimizeLegibility;
 }
 
+.dark-display .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
 .dark-display .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(74, 222, 128, 0.45);
+  background: rgba(74, 222, 128, 0.5);
 }
 .dark-display .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(74, 222, 128, 0.75);
+  background: rgba(74, 222, 128, 0.85);
 }
 
 @keyframes spin-slow {

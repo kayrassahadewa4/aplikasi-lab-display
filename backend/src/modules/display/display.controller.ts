@@ -1,5 +1,5 @@
-import { Controller, Get, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, HttpStatus, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { DisplayService } from './display.service.js';
 import {
   DisplayAnnouncementDto,
@@ -19,13 +19,19 @@ export class DisplayController {
   @ApiOperation({
     summary: 'Get aggregated display data for laboratory screen',
   })
+  @ApiQuery({ name: 'date', required: false, type: String, description: 'Target date (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'day_of_week', required: false, type: Number, description: 'Target day of week (0-6)' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Aggregated display data retrieved successfully',
     type: AggregatedDisplayDto,
   })
-  async getAggregatedDisplay(): Promise<AggregatedDisplayDto> {
-    return this.displayService.aggregateDisplayData();
+  async getAggregatedDisplay(
+    @Query('date') date?: string,
+    @Query('day_of_week') dayOfWeek?: string,
+  ): Promise<AggregatedDisplayDto> {
+    const parsedDay = dayOfWeek !== undefined && dayOfWeek !== '' ? parseInt(dayOfWeek, 10) : undefined;
+    return this.displayService.aggregateDisplayData(date, parsedDay);
   }
 
   @Get('laboratories')

@@ -116,21 +116,21 @@ export const displayService = {
    * Fetch aggregated display data for public board
    * Endpoint: GET /display
    */
-  async getAggregatedDisplay(): Promise<AggregatedDisplayDto> {
+  async getAggregatedDisplay(params?: { date?: string; day_of_week?: number }): Promise<AggregatedDisplayDto> {
     const response = await apiClient.get<{
       success: boolean
       statusCode: number
       message: string
       data: AggregatedDisplayDto
-    }>('/display')
+    }>('/display', { params })
     return response.data.data
   },
 
   /**
    * Alias for getAggregatedDisplay
    */
-  async getDisplayData(): Promise<AggregatedDisplayDto> {
-    return this.getAggregatedDisplay()
+  async getDisplayData(params?: { date?: string; day_of_week?: number }): Promise<AggregatedDisplayDto> {
+    return this.getAggregatedDisplay(params)
   },
 
   /**
