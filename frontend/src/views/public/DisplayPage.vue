@@ -1107,73 +1107,73 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
       code: 'LAB-01',
       shortName: 'RPL',
       defaultName: 'Lab Rekayasa Perangkat Lunak',
-      color: 'blue',
-      badgeClass: 'bg-blue-500/25 text-blue-300 border-blue-400/60',
-      activeBorderClass: 'border-l-blue-500',
-      tagClass: 'bg-blue-600 text-white',
+      color: 'indigo',
+      badgeClass: 'bg-indigo-500/25 text-indigo-200 border-indigo-400/50',
+      activeBorderClass: 'border-l-indigo-500',
+      tagClass: 'bg-indigo-600 text-white',
     },
     {
       code: 'LAB-02',
       shortName: 'Cyber Net',
       defaultName: 'Lab Jaringan & Cyber Security',
-      color: 'purple',
-      badgeClass: 'bg-purple-500/25 text-purple-300 border-purple-400/60',
-      activeBorderClass: 'border-l-purple-500',
-      tagClass: 'bg-purple-600 text-white',
+      color: 'blue',
+      badgeClass: 'bg-blue-500/25 text-blue-200 border-blue-400/50',
+      activeBorderClass: 'border-l-blue-500',
+      tagClass: 'bg-blue-600 text-white',
     },
     {
       code: 'LAB-03',
       shortName: 'Multimedia',
       defaultName: 'Lab Multimedia & Game Dev',
-      color: 'rose',
-      badgeClass: 'bg-rose-500/25 text-rose-300 border-rose-400/60',
-      activeBorderClass: 'border-l-rose-500',
-      tagClass: 'bg-rose-600 text-white',
+      color: 'indigo',
+      badgeClass: 'bg-indigo-500/25 text-indigo-200 border-indigo-400/50',
+      activeBorderClass: 'border-l-indigo-500',
+      tagClass: 'bg-indigo-600 text-white',
     },
     {
       code: 'LAB-04',
       shortName: 'AI & Data',
       defaultName: 'Lab Kecerdasan Buatan & Data',
-      color: 'indigo',
-      badgeClass: 'bg-indigo-500/25 text-indigo-300 border-indigo-400/60',
-      activeBorderClass: 'border-l-indigo-500',
-      tagClass: 'bg-indigo-600 text-white',
+      color: 'blue',
+      badgeClass: 'bg-blue-500/25 text-blue-200 border-blue-400/50',
+      activeBorderClass: 'border-l-blue-500',
+      tagClass: 'bg-blue-600 text-white',
     },
     {
       code: 'LAB-05',
       shortName: 'Database',
       defaultName: 'Lab Sistem Informasi & Database',
-      color: 'cyan',
-      badgeClass: 'bg-cyan-500/25 text-cyan-300 border-cyan-400/60',
-      activeBorderClass: 'border-l-cyan-500',
-      tagClass: 'bg-cyan-600 text-white',
+      color: 'indigo',
+      badgeClass: 'bg-indigo-500/25 text-indigo-200 border-indigo-400/50',
+      activeBorderClass: 'border-l-indigo-500',
+      tagClass: 'bg-indigo-600 text-white',
     },
     {
       code: 'LAB-06',
       shortName: 'Cloud IoT',
       defaultName: 'Lab Komputasi Awan & IoT',
-      color: 'sky',
-      badgeClass: 'bg-sky-500/25 text-sky-300 border-sky-400/60',
-      activeBorderClass: 'border-l-sky-500',
-      tagClass: 'bg-sky-600 text-white',
+      color: 'blue',
+      badgeClass: 'bg-blue-500/25 text-blue-200 border-blue-400/50',
+      activeBorderClass: 'border-l-blue-500',
+      tagClass: 'bg-blue-600 text-white',
     },
     {
       code: 'LAB-07',
       shortName: 'Algoritma',
       defaultName: 'Lab Algoritma & Pemrograman',
-      color: 'emerald',
-      badgeClass: 'bg-emerald-500/25 text-emerald-300 border-emerald-400/60',
-      activeBorderClass: 'border-l-emerald-500',
-      tagClass: 'bg-emerald-600 text-white',
+      color: 'indigo',
+      badgeClass: 'bg-indigo-500/25 text-indigo-200 border-indigo-400/50',
+      activeBorderClass: 'border-l-indigo-500',
+      tagClass: 'bg-indigo-600 text-white',
     },
     {
       code: 'LAB-08',
       shortName: 'Robotika',
       defaultName: 'Lab Hardware & Robotika',
-      color: 'red',
-      badgeClass: 'bg-red-500/25 text-red-300 border-red-400/60',
-      activeBorderClass: 'border-l-red-500',
-      tagClass: 'bg-red-600 text-white',
+      color: 'blue',
+      badgeClass: 'bg-blue-500/25 text-blue-200 border-blue-400/50',
+      activeBorderClass: 'border-l-blue-500',
+      tagClass: 'bg-blue-600 text-white',
     },
   ]
 
@@ -1226,10 +1226,10 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
       code: 'LAB-0' + (colIdx + 1),
       shortName: 'Lab 0' + (colIdx + 1),
       defaultName: 'Laboratorium 0' + (colIdx + 1),
-      color: 'blue',
-      badgeClass: 'bg-blue-500/25 text-blue-300 border-blue-400/60',
-      activeBorderClass: 'border-l-blue-500',
-      tagClass: 'bg-blue-600 text-white',
+      color: colIdx % 2 === 0 ? 'indigo' : 'blue',
+      badgeClass: colIdx % 2 === 0 ? 'bg-indigo-500/25 text-indigo-200 border-indigo-400/50' : 'bg-blue-500/25 text-blue-200 border-blue-400/50',
+      activeBorderClass: colIdx % 2 === 0 ? 'border-l-indigo-500' : 'border-l-blue-500',
+      tagClass: colIdx % 2 === 0 ? 'bg-indigo-600 text-white' : 'bg-blue-600 text-white',
     }
     const std = standardLabs[colIdx] || fallbackStd
     const apiLab = labs.find((l) => l.code === std.code) || labs[colIdx]
@@ -1624,24 +1624,24 @@ onUnmounted(() => {
       isDarkMode ? 'dark-display bg-[#060a14] text-slate-100' : 'bg-gradient-to-br from-[#f1f5f9] via-[#f8fafc] to-[#e2e8f0] text-slate-900'
     ]"
   >
-    <!-- Background Ambient Lighting Grid (Purple, Blue, Rose/Red Accents) -->
+    <!-- Background Ambient Lighting Grid (Deep Indigo & Royal Blue Harmony) -->
     <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
       <div
         :class="[
-          'absolute -top-40 -left-40 w-[550px] h-[550px] rounded-full blur-[110px] transition-all duration-1000 animate-pulse-slow',
-          isDarkMode ? 'bg-purple-600/[0.14]' : 'bg-purple-500/[0.08]'
+          'absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[130px] transition-all duration-1000 animate-pulse-slow',
+          isDarkMode ? 'bg-indigo-600/[0.12]' : 'bg-indigo-500/[0.06]'
         ]"
       ></div>
       <div
         :class="[
-          'absolute top-1/3 -right-40 w-[650px] h-[650px] rounded-full blur-[130px] transition-all duration-1000 animate-pulse-slow',
-          isDarkMode ? 'bg-blue-600/[0.14]' : 'bg-blue-500/[0.08]'
+          'absolute top-1/4 -right-40 w-[600px] h-[600px] rounded-full blur-[130px] transition-all duration-1000 animate-pulse-slow',
+          isDarkMode ? 'bg-blue-600/[0.12]' : 'bg-blue-500/[0.06]'
         ]"
       ></div>
       <div
         :class="[
-          'absolute -bottom-40 left-1/3 w-[600px] h-[600px] rounded-full blur-[110px] transition-all duration-1000 animate-pulse-slow',
-          isDarkMode ? 'bg-rose-600/[0.12]' : 'bg-rose-500/[0.07]'
+          'absolute -bottom-40 left-1/3 w-[600px] h-[600px] rounded-full blur-[130px] transition-all duration-1000 animate-pulse-slow',
+          isDarkMode ? 'bg-purple-600/[0.08]' : 'bg-purple-500/[0.04]'
         ]"
       ></div>
       <div
@@ -1663,9 +1663,9 @@ onUnmounted(() => {
           : 'bg-gradient-to-r from-[#0f172a] via-[#1e293b] to-[#0f172a] border-blue-400/70 shadow-[0_8px_30px_rgba(15,23,42,0.3)] text-white'
       ]"
     >
-      <!-- Multi-Color Institutional Accent Top Sheen (Blue -> Purple -> Red) -->
+      <!-- Institutional Accent Top Sheen (Blue -> Indigo -> Purple) -->
       <div
-        class="absolute top-0 left-0 right-0 h-[3.5px] bg-gradient-to-r from-blue-500 via-purple-500 to-rose-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+        class="absolute top-0 left-0 right-0 h-[3.5px] bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 shadow-[0_0_15px_rgba(99,102,241,0.4)]"
       />
 
       <!-- Left Branding -->
@@ -1769,9 +1769,9 @@ onUnmounted(() => {
             : 'bg-white/95 border-slate-200/90 shadow-md'
         ]"
       >
-        <!-- Top Accent Gradient Bar (Blue -> Purple -> Rose) -->
+        <!-- Top Accent Gradient Bar (Blue -> Indigo -> Purple) -->
         <div
-          class="absolute top-0 left-0 right-0 h-1.5 z-20 bg-gradient-to-r from-blue-600 via-purple-600 to-rose-500"
+          class="absolute top-0 left-0 right-0 h-1.5 z-20 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600"
         />
 
         <!-- Section Top Header Bar -->
@@ -1812,40 +1812,40 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Right Status Chips: Red (Live Active), Blue (Available), Purple (Total) -->
+          <!-- Right Status Chips: Red (Live Active), Sky (Available), Indigo (Total) -->
           <div class="flex items-center gap-2">
             <template v-if="isViewingToday">
               <!-- Merah / Rose: Sedang Aktif -->
               <span
                 :class="[
-                  'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 shadow-2xs tracking-wide',
+                  'text-[10.5px] font-bold px-3 py-1 rounded-full border transition-colors duration-300 flex items-center gap-1.5 shadow-2xs tracking-wide',
                   isDarkMode
-                    ? 'text-rose-300 bg-rose-500/20 border-rose-400/60'
+                    ? 'text-rose-300 bg-rose-500/15 border-rose-500/30'
                     : 'text-white bg-rose-600 border-rose-500'
                 ]"
               >
-                <span class="w-2 h-2 rounded-full bg-rose-300 animate-ping"></span>
+                <span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
                 <span>{{ inUseLabsCount }} SEDANG AKTIF</span>
               </span>
               <!-- Biru / Sky: Tersedia -->
               <span
                 :class="[
-                  'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
+                  'text-[10.5px] font-bold px-3 py-1 rounded-full border transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
                   isDarkMode
-                    ? 'text-sky-300 bg-sky-500/20 border-sky-400/60'
+                    ? 'text-sky-300 bg-sky-500/15 border-sky-500/30'
                     : 'text-sky-900 bg-sky-100 border-sky-300'
                 ]"
               >
                 <Check :size="12" />
                 <span>{{ availableLabsCount }} TERSEDIA</span>
               </span>
-              <!-- Ungu / Purple: Total Sesi -->
+              <!-- Indigo: Total Sesi -->
               <span
                 :class="[
-                  'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 tracking-wide',
+                  'text-[10.5px] font-bold px-3 py-1 rounded-full border transition-colors duration-300 tracking-wide',
                   isDarkMode
-                    ? 'text-purple-300 bg-purple-500/20 border-purple-400/60'
-                    : 'text-purple-900 bg-purple-100 border-purple-300'
+                    ? 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30'
+                    : 'text-indigo-900 bg-indigo-100 border-indigo-300'
                 ]"
               >
                 TOTAL {{ totalTodaySchedulesCount }} SESI
@@ -1854,10 +1854,10 @@ onUnmounted(() => {
             <template v-else>
               <span
                 :class="[
-                  'text-[10.5px] font-bold px-3 py-1 rounded-full border-2 transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
+                  'text-[10.5px] font-bold px-3 py-1 rounded-full border transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
                   isDarkMode
-                    ? 'text-purple-300 bg-purple-500/20 border-purple-400/60'
-                    : 'text-purple-950 bg-purple-100 border-purple-300'
+                    ? 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30'
+                    : 'text-indigo-950 bg-indigo-100 border-indigo-300'
                 ]"
               >
                 <Clock :size="12" />
@@ -1866,7 +1866,7 @@ onUnmounted(() => {
               <!-- Auto-reset timer button -->
               <button
                 @click="goToToday"
-                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-extrabold transition-all cursor-pointer bg-purple-600 text-white border border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)] hover:scale-105 active:scale-95"
+                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-extrabold transition-all cursor-pointer bg-indigo-600 text-white border border-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.5)] hover:scale-105 active:scale-95"
                 title="Kembali ke pantauan hari ini secara langsung"
               >
                 <RotateCcw :size="12" />
@@ -1876,17 +1876,17 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- DAY & WEEK SCHEDULE NAVIGATION BAR (Multi-Color Accents) -->
+        <!-- DAY & WEEK SCHEDULE NAVIGATION BAR (Cohesive Indigo / Blue) -->
         <div
           :class="[
             'px-3.5 py-1.5 border-b flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 transition-colors duration-300',
             isDarkMode ? 'border-slate-800 bg-[#080d19]' : 'border-slate-200 bg-slate-50/90'
           ]"
         >
-          <!-- Left: Quick Date Presets: Blue (Hari Ini), Purple (Besok), Rose (Lusa) -->
+          <!-- Left: Quick Date Presets -->
           <div class="flex items-center gap-1.5">
             <span :class="['text-[10px] font-bold uppercase tracking-wider mr-1', isDarkMode ? 'text-slate-400' : 'text-slate-500']">PILIH JADWAL:</span>
-            <!-- Hari Ini: Biru -->
+            <!-- Hari Ini -->
             <button
               @click="goToToday"
               :class="[
@@ -1901,13 +1901,13 @@ onUnmounted(() => {
               <span v-if="isViewingToday" class="w-2 h-2 rounded-full bg-cyan-300 animate-pulse"></span>
               <span>Hari Ini (Live)</span>
             </button>
-            <!-- Besok: Ungu -->
+            <!-- Besok -->
             <button
               @click="goToTomorrow"
               :class="[
                 'px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer shadow-xs',
                 isViewingTomorrow
-                  ? 'bg-purple-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.5)] font-extrabold'
+                  ? 'bg-indigo-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.5)] font-extrabold'
                   : isDarkMode
                     ? 'bg-white/5 text-slate-300 hover:bg-white/10 border border-slate-700'
                     : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -1915,13 +1915,13 @@ onUnmounted(() => {
             >
               Besok
             </button>
-            <!-- Lusa: Merah / Rose -->
+            <!-- Lusa -->
             <button
               @click="goToDayAfterTomorrow"
               :class="[
                 'px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer shadow-xs',
                 isViewingDayAfter
-                  ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(244,63,94,0.5)] font-extrabold'
+                  ? 'bg-indigo-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.5)] font-extrabold'
                   : isDarkMode
                     ? 'bg-white/5 text-slate-300 hover:bg-white/10 border border-slate-700'
                     : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
@@ -1931,7 +1931,7 @@ onUnmounted(() => {
             </button>
           </div>
 
-          <!-- Center: Day-of-Week Tabs (Senin - Sabtu) with Purple Accent -->
+          <!-- Center: Day-of-Week Tabs (Senin - Sabtu) with Indigo Accent -->
           <div class="flex items-center gap-1">
             <button
               v-for="d in daysOfWeekList"
@@ -1940,10 +1940,10 @@ onUnmounted(() => {
               :class="[
                 'px-2.5 py-0.5 rounded-md font-bold text-[11px] transition-all cursor-pointer',
                 currentSelectedDayOfWeek === d.day
-                  ? 'bg-purple-600 text-white shadow-xs font-extrabold'
+                  ? 'bg-indigo-600 text-white shadow-xs font-extrabold'
                   : isDarkMode
-                    ? 'text-slate-300 hover:bg-purple-500/15'
-                    : 'text-slate-700 hover:bg-purple-100/60'
+                    ? 'text-slate-300 hover:bg-indigo-500/15'
+                    : 'text-slate-700 hover:bg-indigo-100/60'
               ]"
             >
               {{ d.name }}
@@ -2194,21 +2194,21 @@ onUnmounted(() => {
       <aside class="w-full lg:w-[20%] flex flex-col justify-between gap-3 overflow-hidden h-full">
         <!-- 2.1 RINGKASAN OKUPANSI LAB TILES -->
         <div class="grid grid-cols-2 gap-2 shrink-0">
-          <!-- Sedang Dipakai Tile (Rose / Red Accent for Live Activity) -->
+          <!-- Sedang Dipakai Tile -->
           <div
             :class="[
               'p-2.5 rounded-xl border-2 flex items-center gap-2.5 transition-all shadow-sm',
               isDarkMode
-                ? 'bg-[#18090f] border-rose-500/70 shadow-[0_0_16px_rgba(244,63,94,0.15)]'
-                : 'bg-gradient-to-br from-rose-600 via-rose-700 to-rose-900 text-white border-rose-500 shadow-md'
+                ? 'bg-[#0f172a] border-slate-700/80 shadow-[0_4px_16px_rgba(0,0,0,0.3)]'
+                : 'bg-white border-slate-200/90 text-slate-900 shadow-sm'
             ]"
           >
             <div
               :class="[
                 'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors shadow-2xs',
                 isDarkMode
-                  ? 'bg-rose-500/25 border-rose-400 text-[#fb7185]'
-                  : 'bg-white/20 border-white/30 text-white'
+                  ? 'bg-rose-500/15 border-rose-500/30 text-rose-400'
+                  : 'bg-rose-50 border-rose-200 text-rose-600'
               ]"
             >
               <Activity :size="18" class="animate-pulse" />
@@ -2217,7 +2217,7 @@ onUnmounted(() => {
               <span
                 :class="[
                   'text-[9px] font-bold uppercase tracking-wider block truncate',
-                  isDarkMode ? 'text-rose-300' : 'text-rose-100'
+                  isDarkMode ? 'text-slate-400' : 'text-slate-500'
                 ]"
               >
                 Lab Aktif
@@ -2225,24 +2225,24 @@ onUnmounted(() => {
               <span
                 :class="[
                   'text-xl font-black leading-none',
-                  isDarkMode ? 'text-[#fb7185]' : 'text-white'
+                  isDarkMode ? 'text-white drop-shadow-[0_0_8px_rgba(244,63,94,0.3)]' : 'text-slate-900'
                 ]"
               >
                 {{ inUseLabsCount }}
-                <span class="text-[10px] font-bold opacity-80">/ {{ totalLabsCount }}</span>
+                <span class="text-[10px] font-bold opacity-60">/ {{ totalLabsCount }}</span>
               </span>
             </div>
           </div>
 
-          <!-- Kesiapan Alat Tile (Blue / Sky Accent for Equipment & Facilities) -->
+          <!-- Kesiapan Alat Tile -->
           <button
             @click="openOverallEquipmentModal"
             type="button"
             :class="[
               'p-2.5 rounded-xl border-2 flex items-center gap-2.5 transition-all shadow-sm cursor-pointer hover:scale-102 active:scale-98 text-left',
               isDarkMode
-                ? 'bg-[#091322] border-blue-500/60 shadow-[0_0_16px_rgba(59,130,246,0.15)]'
-                : 'bg-gradient-to-br from-blue-600 via-indigo-700 to-blue-900 text-white border-blue-500 shadow-md'
+                ? 'bg-[#0f172a] border-slate-700/80 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:border-slate-600'
+                : 'bg-white border-slate-200/90 text-slate-900 shadow-sm hover:border-slate-300'
             ]"
             title="Klik untuk inspeksi inventaris peralatan lab"
           >
@@ -2250,8 +2250,8 @@ onUnmounted(() => {
               :class="[
                 'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors shadow-2xs',
                 isDarkMode
-                  ? 'bg-blue-500/25 border-blue-400 text-[#60a5fa]'
-                  : 'bg-white/20 border-white/30 text-white'
+                  ? 'bg-blue-500/15 border-blue-500/30 text-blue-400'
+                  : 'bg-blue-50 border-blue-200 text-blue-600'
               ]"
             >
               <Wrench :size="18" />
@@ -2260,7 +2260,7 @@ onUnmounted(() => {
               <span
                 :class="[
                   'text-[9px] font-bold uppercase tracking-wider block truncate',
-                  isDarkMode ? 'text-blue-300' : 'text-blue-100'
+                  isDarkMode ? 'text-slate-400' : 'text-slate-500'
                 ]"
               >
                 Alat Siap
@@ -2268,7 +2268,7 @@ onUnmounted(() => {
               <span
                 :class="[
                   'text-xl font-black leading-none',
-                  isDarkMode ? 'text-[#60a5fa]' : 'text-white'
+                  isDarkMode ? 'text-white drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]' : 'text-slate-900'
                 ]"
               >
                 {{ overallEquipmentStats.healthRate }}%
@@ -2286,13 +2286,13 @@ onUnmounted(() => {
               : 'bg-white border-slate-200/90 shadow-md'
           ]"
         >
-          <!-- Accent Strip: Rose to Purple to Blue -->
+          <!-- Accent Strip: Rose to Purple to Indigo -->
           <div
             :class="[
               'absolute top-0 left-0 right-0 h-1',
               isDarkMode
-                ? 'bg-gradient-to-r from-rose-500 via-purple-500 to-blue-500'
-                : 'bg-gradient-to-r from-rose-600 via-purple-600 to-blue-600'
+                ? 'bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500'
+                : 'bg-gradient-to-r from-rose-500 via-purple-500 to-indigo-500'
             ]"
           />
 
@@ -2305,7 +2305,7 @@ onUnmounted(() => {
               </h3>
             </div>
             <div class="flex items-center gap-1">
-              <span class="text-[9.5px] font-bold font-mono px-2 py-0.2 rounded-full" :class="isDarkMode ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-rose-100 text-rose-800 border border-rose-300'">
+              <span class="text-[9.5px] font-bold font-mono px-2 py-0.2 rounded-full" :class="isDarkMode ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' : 'bg-rose-100 text-rose-800 border border-rose-300'">
                 {{ activeInUseSessions.length }} SESI
               </span>
               <!-- Manual scroll buttons -->
@@ -2314,8 +2314,8 @@ onUnmounted(() => {
                 :class="[
                   'p-0.5 rounded transition-all cursor-pointer border active:scale-90',
                   isDarkMode
-                    ? 'hover:bg-purple-500/20 text-purple-300 border-slate-700'
-                    : 'hover:bg-purple-100 text-purple-800 border-purple-200'
+                    ? 'hover:bg-indigo-500/20 text-indigo-300 border-slate-700'
+                    : 'hover:bg-indigo-100 text-indigo-800 border-indigo-200'
                 ]"
                 title="Gulir ke atas"
                 aria-label="Scroll Up"
@@ -2327,8 +2327,8 @@ onUnmounted(() => {
                 :class="[
                   'p-0.5 rounded transition-all cursor-pointer border active:scale-90',
                   isDarkMode
-                    ? 'hover:bg-purple-500/20 text-purple-300 border-slate-700'
-                    : 'hover:bg-purple-100 text-purple-800 border-purple-200'
+                    ? 'hover:bg-indigo-500/20 text-indigo-300 border-slate-700'
+                    : 'hover:bg-indigo-100 text-indigo-800 border-indigo-200'
                 ]"
                 title="Gulir ke bawah"
                 aria-label="Scroll Down"
@@ -2397,13 +2397,13 @@ onUnmounted(() => {
               : 'bg-white border-slate-200/90 shadow-md'
           ]"
         >
-          <!-- Accent Line: Purple to Indigo to Blue -->
+          <!-- Accent Line: Blue to Indigo to Purple -->
           <div
             :class="[
               'absolute top-0 left-0 right-0 h-1',
               isDarkMode
-                ? 'bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500'
-                : 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600'
+                ? 'bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600'
+                : 'bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600'
             ]"
           />
 
@@ -2467,7 +2467,7 @@ onUnmounted(() => {
                 :class="[
                   'h-1.5 rounded-full transition-all duration-300 cursor-pointer',
                   activeInfoSlide === idx
-                    ? 'w-4 bg-purple-500'
+                    ? 'w-4 bg-indigo-500'
                     : 'w-1.5 bg-gray-300 dark:bg-slate-700'
                 ]"
                 :aria-label="'Slide ' + (idx + 1)"
@@ -2479,16 +2479,16 @@ onUnmounted(() => {
               <span class="font-mono opacity-70 mr-1">{{ activeInfoSlide + 1 }}/{{ infoSlides.length }}</span>
               <button
                 @click="prevInfoSlide"
-                class="p-1 rounded border hover:bg-purple-500/20 transition-colors cursor-pointer"
-                :class="isDarkMode ? 'border-slate-700 text-purple-300' : 'border-gray-200 text-gray-700'"
+                class="p-1 rounded border hover:bg-indigo-500/20 transition-colors cursor-pointer"
+                :class="isDarkMode ? 'border-slate-700 text-indigo-300' : 'border-gray-200 text-gray-700'"
                 title="Sebelumnya"
               >
                 <ChevronLeft :size="11" />
               </button>
               <button
                 @click="nextInfoSlide"
-                class="p-1 rounded border hover:bg-purple-500/20 transition-colors cursor-pointer"
-                :class="isDarkMode ? 'border-slate-700 text-purple-300' : 'border-gray-200 text-gray-700'"
+                class="p-1 rounded border hover:bg-indigo-500/20 transition-colors cursor-pointer"
+                :class="isDarkMode ? 'border-slate-700 text-indigo-300' : 'border-gray-200 text-gray-700'"
                 title="Berikutnya"
               >
                 <ChevronRight :size="11" />
@@ -2513,12 +2513,12 @@ onUnmounted(() => {
         :class="[
           'absolute top-0 left-0 right-0 h-1',
           isDarkMode
-            ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-rose-500'
-            : 'bg-gradient-to-r from-blue-400 via-purple-400 to-rose-400'
+            ? 'bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600'
+            : 'bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500'
         ]"
       />
       <div
-        class="flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-bold shrink-0 border transition-colors duration-300 shadow-md bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white border-purple-400/40 tracking-wide"
+        class="flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-bold shrink-0 border transition-colors duration-300 shadow-md bg-gradient-to-r from-indigo-600 to-blue-600 text-white border-indigo-400/40 tracking-wide"
       >
         <Megaphone :size="14" class="text-white shrink-0 animate-bounce" />
         <span class="tracking-wide">PENGUMUMAN RESMI FIK</span>
@@ -2553,8 +2553,8 @@ onUnmounted(() => {
               :class="[
                 'h-1.5 w-full shrink-0',
                 isDarkMode
-                  ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-rose-500'
-                  : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-rose-600'
+                  ? 'bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600'
+                  : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600'
               ]"
             />
 
@@ -2571,8 +2571,8 @@ onUnmounted(() => {
                     :class="[
                       'px-2.5 py-0.5 rounded-lg font-mono text-xs font-bold border-2',
                       isDarkMode
-                        ? 'bg-purple-500/25 border-purple-400 text-purple-300'
-                        : 'bg-purple-600 border-purple-700 text-white'
+                        ? 'bg-indigo-500/25 border-indigo-400 text-indigo-300'
+                        : 'bg-indigo-600 border-indigo-700 text-white'
                     ]"
                   >
                     {{ selectedLabForEquipment.labCode }}
