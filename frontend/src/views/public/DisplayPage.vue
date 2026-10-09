@@ -84,10 +84,10 @@ const infoSlides = [
     tab: 'Peminjaman Lab',
     title: 'Peminjaman Ruang & Kuliah Pengganti',
     badge: 'Portal Dosen & Riset',
-    badgeClass: 'bg-[#02364A] text-[#75E2E0] border border-[#2CACAD]/60 font-bold',
+    badgeClass: 'bg-[#233E45] text-[#ECD39D] border border-[#3A5D66] font-bold',
     icon: FileText,
-    iconColor: 'text-[#75E2E0]',
-    iconBg: 'bg-[#02364A]/60 border-[#2CACAD]/60',
+    iconColor: 'text-[#ECD39D]',
+    iconBg: 'bg-[#233E45]/40 border-[#3A5D66]/60',
     description: 'Pengajuan peminjaman laboratorium untuk kelas pengganti, sertifikasi, workshop, atau ujian dapat diajukan secara online.',
     highlight: 'Permohonan wajib diajukan minimal H-1 sebelum kegiatan melalui sistem permohonan lab.',
   },
@@ -108,10 +108,10 @@ const infoSlides = [
     tab: 'Kesiapan Alat',
     title: 'Pemeriksaan & Pemeliharaan Peralatan Lab',
     badge: 'Inventaris Real-Time',
-    badgeClass: 'bg-[#2CACAD] text-[#02364A] border border-[#75E2E0] font-bold',
+    badgeClass: 'bg-[#808847] text-white border border-[#9CA456] font-bold',
     icon: Wrench,
-    iconColor: 'text-[#02364A] dark:text-[#75E2E0]',
-    iconBg: 'bg-[#2CACAD]/30 border-[#2CACAD]/60',
+    iconColor: 'text-[#D4DC8C]',
+    iconBg: 'bg-[#808847]/30 border-[#9CA456]/60',
     description: 'Seluruh perangkat komputer, proyektor, AC, printer, dan koneksi internet dipantau kondisinya secara berkala oleh Staf Laboran FIK.',
     highlight: 'Laporkan kendala perangkat atau fasilitas yang memerlukan perbaikan ke staf laboran yang bertugas.',
   },
@@ -1116,28 +1116,28 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
       code: 'LAB-02',
       shortName: 'Cyber Net',
       defaultName: 'Lab Jaringan & Cyber Security',
-      color: 'prussian',
-      badgeClass: 'bg-[#02364A]/80 text-[#D9F5F0] border-[#2CACAD]/60',
-      activeBorderClass: 'border-l-[#02364A]',
-      tagClass: 'bg-[#02364A] text-[#75E2E0]',
+      color: 'outerspace',
+      badgeClass: 'bg-[#233E45]/80 text-[#ECD39D] border-[#3A5D66]/70',
+      activeBorderClass: 'border-l-[#233E45]',
+      tagClass: 'bg-[#233E45] text-[#ECD39D]',
     },
     {
       code: 'LAB-03',
       shortName: 'Multimedia',
       defaultName: 'Lab Multimedia & Game Dev',
-      color: 'sea-green',
-      badgeClass: 'bg-[#2CACAD]/30 text-[#02364A] dark:text-[#D9F5F0] border-[#2CACAD]/70',
-      activeBorderClass: 'border-l-[#2CACAD]',
-      tagClass: 'bg-[#2CACAD] text-[#02364A]',
+      color: 'mustard',
+      badgeClass: 'bg-[#808847]/30 text-[#D4DC8C] border-[#808847]/60',
+      activeBorderClass: 'border-l-[#808847]',
+      tagClass: 'bg-[#808847] text-white',
     },
     {
       code: 'LAB-04',
       shortName: 'AI & Data',
       defaultName: 'Lab Kecerdasan Buatan & Data',
-      color: 'midnight',
-      badgeClass: 'bg-[#024D60]/80 text-[#75E2E0] border-[#75E2E0]/50',
-      activeBorderClass: 'border-l-[#024D60]',
-      tagClass: 'bg-[#024D60] text-[#75E2E0]',
+      color: 'outerspace',
+      badgeClass: 'bg-[#233E45]/80 text-[#ECD39D] border-[#3A5D66]/70',
+      activeBorderClass: 'border-l-[#233E45]',
+      tagClass: 'bg-[#233E45] text-[#ECD39D]',
     },
     {
       code: 'LAB-05',
@@ -1152,28 +1152,28 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
       code: 'LAB-06',
       shortName: 'Cloud IoT',
       defaultName: 'Lab Komputasi Awan & IoT',
-      color: 'prussian',
-      badgeClass: 'bg-[#02364A]/80 text-[#75E2E0] border-[#2CACAD]/50',
-      activeBorderClass: 'border-l-[#02364A]',
-      tagClass: 'bg-[#02364A] text-[#75E2E0]',
+      color: 'outerspace',
+      badgeClass: 'bg-[#233E45]/80 text-[#ECD39D] border-[#3A5D66]/70',
+      activeBorderClass: 'border-l-[#233E45]',
+      tagClass: 'bg-[#233E45] text-[#ECD39D]',
     },
     {
       code: 'LAB-07',
       shortName: 'Algoritma',
       defaultName: 'Lab Algoritma & Pemrograman',
-      color: 'sea-green',
-      badgeClass: 'bg-[#2CACAD]/30 text-[#02364A] dark:text-[#D9F5F0] border-[#2CACAD]/70',
-      activeBorderClass: 'border-l-[#2CACAD]',
-      tagClass: 'bg-[#2CACAD] text-[#02364A]',
+      color: 'mustard',
+      badgeClass: 'bg-[#808847]/30 text-[#D4DC8C] border-[#808847]/60',
+      activeBorderClass: 'border-l-[#808847]',
+      tagClass: 'bg-[#808847] text-white',
     },
     {
       code: 'LAB-08',
       shortName: 'Robotika',
       defaultName: 'Lab Hardware & Robotika',
-      color: 'midnight',
-      badgeClass: 'bg-[#024D60]/80 text-[#75E2E0] border-[#75E2E0]/50',
-      activeBorderClass: 'border-l-[#024D60]',
-      tagClass: 'bg-[#024D60] text-[#75E2E0]',
+      color: 'outerspace',
+      badgeClass: 'bg-[#233E45]/80 text-[#ECD39D] border-[#3A5D66]/70',
+      activeBorderClass: 'border-l-[#233E45]',
+      tagClass: 'bg-[#233E45] text-[#ECD39D]',
     },
   ]
 
@@ -1226,10 +1226,10 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
       code: 'LAB-0' + (colIdx + 1),
       shortName: 'Lab 0' + (colIdx + 1),
       defaultName: 'Laboratorium 0' + (colIdx + 1),
-      color: colIdx % 2 === 0 ? 'meadow' : 'prussian',
-      badgeClass: colIdx % 2 === 0 ? 'bg-[#0C6038]/30 text-[#A3E7C1] border-[#0C6038]/60' : 'bg-[#02364A]/80 text-[#75E2E0] border-[#2CACAD]/60',
-      activeBorderClass: colIdx % 2 === 0 ? 'border-l-[#0C6038]' : 'border-l-[#02364A]',
-      tagClass: colIdx % 2 === 0 ? 'bg-[#0C6038] text-white' : 'bg-[#02364A] text-[#75E2E0]',
+      color: colIdx % 2 === 0 ? 'meadow' : 'outerspace',
+      badgeClass: colIdx % 2 === 0 ? 'bg-[#0C6038]/30 text-[#A3E7C1] border-[#0C6038]/60' : 'bg-[#233E45]/80 text-[#ECD39D] border-[#3A5D66]/70',
+      activeBorderClass: colIdx % 2 === 0 ? 'border-l-[#0C6038]' : 'border-l-[#233E45]',
+      tagClass: colIdx % 2 === 0 ? 'bg-[#0C6038] text-white' : 'bg-[#233E45] text-[#ECD39D]',
     }
     const std = standardLabs[colIdx] || fallbackStd
     const apiLab = labs.find((l) => l.code === std.code) || labs[colIdx]
@@ -1621,10 +1621,10 @@ onUnmounted(() => {
   <div
     :class="[
       'min-h-screen h-screen w-screen overflow-hidden select-none flex flex-col justify-between p-3.5 sm:p-4 lg:p-4.5 font-sans relative transition-colors duration-500',
-      isDarkMode ? 'dark-display bg-[#021822] text-slate-100' : 'bg-gradient-to-br from-[#FAF7F2] via-[#F0F7F6] to-[#E5EFEF] text-[#02364A]'
+      isDarkMode ? 'dark-display bg-[#0c1417] text-slate-100' : 'bg-gradient-to-br from-[#FAF7F2] via-[#F4EFE6] to-[#EAE3D5] text-[#132227]'
     ]"
   >
-    <!-- Background Ambient Lighting Grid (Meadow Green, Prussian Blue, and Sky Blue Accents) -->
+    <!-- Background Ambient Lighting Grid (Meadow Green, Outerspace, and Peach Accents) -->
     <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
       <div
         :class="[
@@ -1635,21 +1635,21 @@ onUnmounted(() => {
       <div
         :class="[
           'absolute top-1/4 -right-40 w-[600px] h-[600px] rounded-full blur-[130px] transition-all duration-1000 animate-pulse-slow',
-          isDarkMode ? 'bg-[#024D60]/[0.35]' : 'bg-[#2CACAD]/[0.12]'
+          isDarkMode ? 'bg-[#233E45]/[0.30]' : 'bg-[#233E45]/[0.10]'
         ]"
       ></div>
       <div
         :class="[
           'absolute -bottom-40 left-1/3 w-[600px] h-[600px] rounded-full blur-[130px] transition-all duration-1000 animate-pulse-slow',
-          isDarkMode ? 'bg-[#75E2E0]/[0.12]' : 'bg-[#2CACAD]/[0.08]'
+          isDarkMode ? 'bg-[#ECD39D]/[0.09]' : 'bg-[#ECD39D]/[0.06]'
         ]"
       ></div>
       <div
         :class="[
           'absolute inset-0 [background-size:26px_26px] transition-all duration-700',
           isDarkMode
-            ? 'bg-[radial-gradient(#024D60_1px,transparent_1px)] opacity-[0.25]'
-            : 'bg-[radial-gradient(#2CACAD_1px,transparent_1px)] opacity-[0.10]'
+            ? 'bg-[radial-gradient(#2D4C39_1px,transparent_1px)] opacity-[0.20]'
+            : 'bg-[radial-gradient(#0C6038_1px,transparent_1px)] opacity-[0.07]'
         ]"
       ></div>
     </div>
@@ -1659,13 +1659,13 @@ onUnmounted(() => {
       :class="[
         'flex items-center justify-between px-5 sm:px-6 py-3.5 rounded-2xl backdrop-blur-xl shrink-0 relative overflow-hidden z-10 transition-colors duration-300 shadow-xl border-2',
         isDarkMode
-          ? 'bg-gradient-to-r from-[#022230] via-[#02364A] to-[#022230] border-[#2CACAD]/40 shadow-[0_4px_30px_rgba(2,77,96,0.25)] text-white'
-          : 'bg-gradient-to-r from-[#FFFFFF] via-[#F4FBFA] to-[#FFFFFF] border-[#BDE7E1] shadow-lg text-[#02364A]'
+          ? 'bg-gradient-to-r from-[#0d171b] via-[#132329] to-[#0d171b] border-[#2D4C39]/80 shadow-[0_4px_30px_rgba(12,96,56,0.15)] text-white'
+          : 'bg-gradient-to-r from-[#FFFFFF] via-[#FAF7F2] to-[#FFFFFF] border-[#D8CFBC] shadow-lg text-[#0c1417]'
       ]"
     >
-      <!-- Institutional & Oceanic Accent Top Sheen (Meadow Green -> Light Sea Green -> Sky Blue -> Crimson) -->
+      <!-- Institutional Accent Top Sheen (Meadow Green -> Peach -> Crimson) -->
       <div
-        class="absolute top-0 left-0 right-0 h-[3.5px] bg-gradient-to-r from-[#0C6038] via-[#2CACAD] via-[#75E2E0] to-[#6C271A] shadow-[0_0_15px_rgba(117,226,224,0.35)]"
+        class="absolute top-0 left-0 right-0 h-[3.5px] bg-gradient-to-r from-[#0C6038] via-[#ECD39D] to-[#6C271A] shadow-[0_0_15px_rgba(236,211,157,0.3)]"
       />
 
       <!-- Left Branding -->
@@ -1679,15 +1679,15 @@ onUnmounted(() => {
         </div>
         <div>
           <div class="flex items-center gap-2.5">
-            <h1 class="text-xl sm:text-2xl font-extrabold tracking-normal drop-shadow-sm" :class="isDarkMode ? 'text-white' : 'text-[#02364A]'">
-              Lab<span class="text-[#75E2E0] drop-shadow-[0_0_14px_rgba(117,226,224,0.5)] font-extrabold">Display</span>
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-normal drop-shadow-sm" :class="isDarkMode ? 'text-white' : 'text-[#0c1417]'">
+              Lab<span class="text-[#ECD39D] drop-shadow-[0_0_14px_rgba(236,211,157,0.5)] font-extrabold">Display</span>
             </h1>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-[#024D60]/60 text-[#75E2E0] border border-[#2CACAD]/60 shadow-xs">
-              <span class="w-2 h-2 rounded-full bg-[#75E2E0] animate-pulse shadow-[0_0_8px_rgba(117,226,224,0.8)]"></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-[#0C6038]/30 text-[#ECD39D] border border-[#0C6038]/70 shadow-xs">
+              <span class="w-2 h-2 rounded-full bg-[#ECD39D] animate-pulse shadow-[0_0_8px_rgba(236,211,157,0.8)]"></span>
               <span>MONITOR REAL-TIME</span>
             </span>
           </div>
-          <p class="text-[11px] font-semibold tracking-wider mt-0.5" :class="isDarkMode ? 'text-[#A5DCD5]' : 'text-[#1D606C]'">
+          <p class="text-[11px] font-semibold tracking-wider mt-0.5" :class="isDarkMode ? 'text-[#A3B8B0]' : 'text-[#4A5D54]'">
             FAKULTAS ILMU KOMPUTER • UPN "VETERAN" JAKARTA
           </p>
         </div>
@@ -1696,20 +1696,20 @@ onUnmounted(() => {
       <!-- Right: Real-time WIB Clock, Academic Session & Controls -->
       <div class="flex items-center gap-3 sm:gap-4">
         <!-- Date & Clock Box -->
-        <div class="flex items-center gap-3.5 px-4 py-1.5 rounded-xl border-2 shadow-inner" :class="isDarkMode ? 'bg-[#011b26]/90 border-[#024D60]' : 'bg-[#EBF7F5] border-[#BDE7E1]'">
-          <div class="text-right pr-3.5 hidden sm:block border-r" :class="isDarkMode ? 'border-[#024D60]' : 'border-[#BDE7E1]'">
-            <div class="flex items-center gap-1.5 text-xs font-semibold capitalize justify-end" :class="isDarkMode ? 'text-slate-200' : 'text-[#02364A]'">
-              <Calendar :size="12" class="text-[#2CACAD] shrink-0" />
+        <div class="flex items-center gap-3.5 px-4 py-1.5 rounded-xl border-2 shadow-inner" :class="isDarkMode ? 'bg-[#091012]/80 border-[#2D4C39]/80' : 'bg-[#F4EFE6] border-[#D8CFBC]'">
+          <div class="text-right pr-3.5 hidden sm:block border-r" :class="isDarkMode ? 'border-[#2D4C39]/80' : 'border-[#D8CFBC]'">
+            <div class="flex items-center gap-1.5 text-xs font-semibold capitalize justify-end" :class="isDarkMode ? 'text-slate-200' : 'text-slate-800'">
+              <Calendar :size="12" class="text-[#ECD39D] shrink-0" />
               <span>{{ formattedDate }}</span>
             </div>
-            <div class="flex items-center gap-1.5 justify-end text-[10.5px] font-bold mt-0.5 text-[#2CACAD]">
-              <span class="w-1.5 h-1.5 rounded-full bg-[#2CACAD] animate-pulse"></span>
+            <div class="flex items-center gap-1.5 justify-end text-[10.5px] font-bold mt-0.5 text-[#ECD39D]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#ECD39D] animate-pulse"></span>
               <span>{{ currentSessionPhase.label }} • {{ currentSessionPhase.period }}</span>
             </div>
           </div>
-          <div class="flex items-center justify-end gap-1.5 text-2xl sm:text-3xl font-bold font-mono tracking-normal leading-none tabular-nums drop-shadow-sm" :class="isDarkMode ? 'text-[#75E2E0]' : 'text-[#02364A]'">
+          <div class="flex items-center justify-end gap-1.5 text-2xl sm:text-3xl font-bold font-mono tracking-normal leading-none tabular-nums drop-shadow-sm" :class="isDarkMode ? 'text-[#F7D2A1]' : 'text-[#0c1417]'">
             <span>{{ formattedTime }}</span>
-            <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold font-sans tracking-wide bg-[#2CACAD] text-[#02364A] border-transparent shadow-xs font-bold">
+            <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold font-sans tracking-wide bg-[#ECD39D] text-[#0c1417] border-transparent shadow-xs">
               WIB
             </span>
           </div>
@@ -1721,14 +1721,14 @@ onUnmounted(() => {
             'flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 text-xs font-bold tracking-wide shadow-xs transition-all',
             isSocketConnected
               ? isDarkMode
-                ? 'bg-[#02364A]/80 border-[#2CACAD]/60 text-[#75E2E0]'
-                : 'bg-[#D9F5F0] border-[#2CACAD]/60 text-[#024D60]'
+                ? 'bg-[#233E45]/80 border-[#3A5D66] text-[#ECD39D]'
+                : 'bg-[#0C6038]/15 border-[#0C6038]/40 text-[#0C6038]'
               : 'bg-black/30 border-gray-600 text-gray-300'
           ]"
         >
           <span v-if="isSocketConnected" class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#75E2E0] opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-[#75E2E0]"></span>
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8CE3B2] opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-[#8CE3B2]"></span>
           </span>
           <WifiOff v-else :size="13" />
           <span class="tracking-wide">{{ isSocketConnected ? 'SINKRONISASI AKTIF' : 'MODE BERKALA' }}</span>
@@ -1740,14 +1740,14 @@ onUnmounted(() => {
           :class="[
             'p-2.5 rounded-xl border-2 transition-all shadow-xs cursor-pointer active:scale-95 flex items-center justify-center',
             isDarkMode
-              ? 'bg-[#02364A]/80 hover:bg-[#024D60] border-[#2CACAD]/50 text-[#75E2E0]'
-              : 'bg-[#D9F5F0] hover:bg-[#c2eee6] border-[#2CACAD]/50 text-[#024D60] shadow-xs'
+              ? 'bg-[#233E45]/80 hover:bg-[#233E45] border-[#3A5D66] text-[#ECD39D]'
+              : 'bg-[#F4EFE6] hover:bg-[#EAE2D5] border-[#D8CFBC] text-[#233E45] hover:border-[#233E45]/40 shadow-xs'
           ]"
           :title="isDarkMode ? 'Beralih ke Tampilan Terang' : 'Beralih ke Tampilan Gelap (Kontras Tinggi)'"
           aria-label="Toggle Dark Mode"
         >
-          <Sun v-if="isDarkMode" :size="17" class="text-[#75E2E0] animate-spin-slow" />
-          <Moon v-else :size="17" class="text-[#024D60]" />
+          <Sun v-if="isDarkMode" :size="17" class="text-[#ECD39D] animate-spin-slow" />
+          <Moon v-else :size="17" class="text-[#233E45]" />
         </button>
 
         <!-- Fullscreen Button -->
@@ -1756,14 +1756,14 @@ onUnmounted(() => {
           :class="[
             'p-2.5 rounded-xl border-2 transition-all shadow-xs cursor-pointer active:scale-95 flex items-center justify-center',
             isDarkMode
-              ? 'bg-[#02364A]/80 hover:bg-[#024D60] border-[#2CACAD]/50 text-[#75E2E0]'
-              : 'bg-[#D9F5F0] hover:bg-[#c2eee6] border-[#2CACAD]/50 text-[#024D60] shadow-xs'
+              ? 'bg-[#233E45]/80 hover:bg-[#233E45] border-[#3A5D66] text-[#ECD39D]'
+              : 'bg-[#F4EFE6] hover:bg-[#EAE2D5] border-[#D8CFBC] text-[#233E45] hover:border-[#233E45]/40 shadow-xs'
           ]"
           title="Beralih ke Layar Penuh (Mode TV)"
           aria-label="Toggle Fullscreen"
         >
-          <Minimize2 v-if="isFullscreen" :size="17" :class="isDarkMode ? 'text-[#75E2E0]' : 'text-[#024D60]'" />
-          <Maximize2 v-else :size="17" :class="isDarkMode ? 'text-[#75E2E0]' : 'text-[#024D60]'" />
+          <Minimize2 v-if="isFullscreen" :size="17" :class="isDarkMode ? 'text-[#ECD39D]' : 'text-[#233E45]'" />
+          <Maximize2 v-else :size="17" :class="isDarkMode ? 'text-[#ECD39D]' : 'text-[#233E45]'" />
         </button>
       </div>
     </header>
@@ -1777,25 +1777,25 @@ onUnmounted(() => {
         :class="[
           'w-full lg:w-[80%] rounded-2xl border-2 flex flex-col justify-between overflow-hidden h-full shadow-lg transition-colors duration-300 relative',
           isDarkMode
-            ? 'bg-[#031c26] border-[#024D60]/80 shadow-[0_0_35px_rgba(2,77,96,0.15)]'
-            : 'bg-white/95 border-[#BDE7E1] shadow-md'
+            ? 'bg-[#101c21] border-[#2D4C39]/80 shadow-[0_0_35px_rgba(12,96,56,0.1)]'
+            : 'bg-white/95 border-[#D8CFBC] shadow-md'
         ]"
       >
-        <!-- Top Accent Gradient Bar (Meadow Green -> Light Sea Green -> Sky Blue) -->
+        <!-- Top Accent Gradient Bar (Meadow Green -> Peach -> Outerspace) -->
         <div
-          class="absolute top-0 left-0 right-0 h-1.5 z-20 bg-gradient-to-r from-[#0C6038] via-[#2CACAD] to-[#75E2E0]"
+          class="absolute top-0 left-0 right-0 h-1.5 z-20 bg-gradient-to-r from-[#0C6038] via-[#ECD39D] to-[#233E45]"
         />
 
         <!-- Section Top Header Bar -->
         <div
           :class="[
             'px-4 py-2 border-b flex items-center justify-between shrink-0 transition-colors duration-300',
-            isDarkMode ? 'border-[#02364A] bg-[#021720]' : 'border-[#BDE7E1] bg-[#F4FBFA]'
+            isDarkMode ? 'border-[#1c2e35] bg-[#0d161a]' : 'border-[#E5DEC9] bg-[#FAF7F2]'
           ]"
         >
           <div class="flex items-center gap-3">
             <div
-              class="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm shrink-0 bg-gradient-to-br from-[#0C6038] via-[#024D60] to-[#2CACAD] text-[#D9F5F0]"
+              class="w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 shadow-sm shrink-0 bg-gradient-to-br from-[#0C6038] to-[#233E45] text-[#ECD39D]"
             >
               <Calendar :size="18" />
             </div>
@@ -1804,27 +1804,27 @@ onUnmounted(() => {
                 <h2
                   :class="[
                     'text-sm sm:text-base font-extrabold tracking-tight uppercase flex items-center gap-2',
-                    isDarkMode ? 'text-white' : 'text-[#02364A]'
+                    isDarkMode ? 'text-white' : 'text-[#0c1417]'
                   ]"
                 >
                   Matriks Jadwal Perkuliahan & Praktikum
-                  <span class="text-[#75E2E0] font-extrabold drop-shadow-xs">
+                  <span class="text-[#ECD39D] font-extrabold drop-shadow-xs">
                     {{ isViewingToday ? 'Hari Ini' : (isViewingTomorrow ? 'Besok' : (isViewingDayAfter ? 'Lusa' : '')) }}
                   </span>
                 </h2>
                 <span
-                  class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-[#024D60] text-[#75E2E0] border border-[#2CACAD]/60 shadow-2xs tracking-wider"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-[#0C6038] text-[#ECD39D] border border-[#0C6038]/80 shadow-2xs tracking-wider"
                 >
                   8 RUANG LAB
                 </span>
               </div>
-              <p :class="['text-[11px] font-medium', isDarkMode ? 'text-[#A5DCD5]' : 'text-[#1D606C]']">
+              <p :class="['text-[11px] font-medium', isDarkMode ? 'text-[#8EA299]' : 'text-[#4A5D54]']">
                 Pantauan alokasi 10 sesi jam perkuliahan reguler dan penggunaan laboratorium
               </p>
             </div>
           </div>
 
-          <!-- Right Status Chips: Crimson (Live Active), Meadow (Available), Prussian Blue (Total) -->
+          <!-- Right Status Chips: Crimson (Live Active), Meadow (Available), Outerspace (Total) -->
           <div class="flex items-center gap-2">
             <template v-if="isViewingToday">
               <!-- Crimson: Sedang Aktif -->
@@ -1851,13 +1851,13 @@ onUnmounted(() => {
                 <Check :size="12" />
                 <span>{{ availableLabsCount }} TERSEDIA</span>
               </span>
-              <!-- Prussian Blue: Total Sesi -->
+              <!-- Outerspace: Total Sesi -->
               <span
                 :class="[
                   'text-[10.5px] font-bold px-3 py-1 rounded-full border transition-colors duration-300 tracking-wide',
                   isDarkMode
-                    ? 'text-[#75E2E0] bg-[#02364A]/80 border-[#2CACAD]/60'
-                    : 'text-[#024D60] bg-[#D9F5F0] border-[#2CACAD]/60'
+                    ? 'text-[#ECD39D] bg-[#233E45]/80 border-[#3A5D66]/70'
+                    : 'text-[#233E45] bg-[#233E45]/15 border-[#233E45]/40'
                 ]"
               >
                 TOTAL {{ totalTodaySchedulesCount }} SESI
@@ -1868,8 +1868,8 @@ onUnmounted(() => {
                 :class="[
                   'text-[10.5px] font-bold px-3 py-1 rounded-full border transition-colors duration-300 flex items-center gap-1.5 tracking-wide',
                   isDarkMode
-                    ? 'text-[#75E2E0] bg-[#02364A]/80 border-[#2CACAD]/60'
-                    : 'text-[#024D60] bg-[#D9F5F0] border-[#2CACAD]/60'
+                    ? 'text-[#ECD39D] bg-[#233E45]/80 border-[#3A5D66]/70'
+                    : 'text-[#233E45] bg-[#233E45]/15 border-[#233E45]/40'
                 ]"
               >
                 <Clock :size="12" />
@@ -1878,7 +1878,7 @@ onUnmounted(() => {
               <!-- Auto-reset timer button -->
               <button
                 @click="goToToday"
-                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-extrabold transition-all cursor-pointer bg-[#024D60] text-[#75E2E0] border border-[#2CACAD]/60 shadow-[0_0_10px_rgba(2,77,96,0.5)] hover:bg-[#02364A] active:scale-95"
+                class="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10.5px] font-extrabold transition-all cursor-pointer bg-[#0C6038] text-[#F7D2A1] border border-[#ECD39D]/40 shadow-[0_0_10px_rgba(12,96,56,0.5)] hover:bg-[#16834F] active:scale-95"
                 title="Kembali ke pantauan hari ini secara langsung"
               >
                 <RotateCcw :size="12" />
@@ -1888,26 +1888,26 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- DAY & WEEK SCHEDULE NAVIGATION BAR (Meadow Green, Prussian Blue, and Sky Blue) -->
+        <!-- DAY & WEEK SCHEDULE NAVIGATION BAR (Meadow Green, Outerspace, and Peach) -->
         <div
           :class="[
             'px-3.5 py-1.5 border-b flex flex-wrap items-center justify-between gap-2 text-xs shrink-0 transition-colors duration-300',
-            isDarkMode ? 'border-[#02364A] bg-[#01141c]' : 'border-[#BDE7E1] bg-[#EBF7F5]'
+            isDarkMode ? 'border-[#1c2e35] bg-[#091012]' : 'border-[#E5DEC9] bg-[#F7F4EE]'
           ]"
         >
           <!-- Left: Quick Date Presets -->
           <div class="flex items-center gap-1.5">
-            <span :class="['text-[10px] font-bold uppercase tracking-wider mr-1', isDarkMode ? 'text-[#75E2E0]' : 'text-[#024D60]']">PILIH JADWAL:</span>
+            <span :class="['text-[10px] font-bold uppercase tracking-wider mr-1', isDarkMode ? 'text-[#8EA299]' : 'text-[#62766D]']">PILIH JADWAL:</span>
             <!-- Hari Ini -->
             <button
               @click="goToToday"
               :class="[
                 'px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1.5 cursor-pointer shadow-xs',
                 isViewingToday
-                  ? 'bg-[#0C6038] text-white border border-[#0C6038] shadow-[0_0_12px_rgba(12,96,56,0.4)] font-extrabold'
+                  ? 'bg-[#0C6038] text-[#F7D2A1] border border-[#ECD39D]/30 shadow-[0_0_12px_rgba(12,96,56,0.4)] font-extrabold'
                   : isDarkMode
-                    ? 'bg-white/5 text-slate-300 hover:bg-white/10 border border-[#024D60]'
-                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-[#BDE7E1]'
+                    ? 'bg-white/5 text-slate-300 hover:bg-white/10 border border-[#233E45]'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-[#D8CFBC]'
               ]"
             >
               <span v-if="isViewingToday" class="w-2 h-2 rounded-full bg-[#8CE3B2] animate-pulse"></span>
@@ -1919,10 +1919,10 @@ onUnmounted(() => {
               :class="[
                 'px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer shadow-xs',
                 isViewingTomorrow
-                  ? 'bg-[#024D60] text-[#D9F5F0] border border-[#2CACAD] font-extrabold shadow-sm'
+                  ? 'bg-[#233E45] text-[#ECD39D] border border-[#3A5D66] font-extrabold'
                   : isDarkMode
-                    ? 'bg-white/5 text-slate-300 hover:bg-white/10 border border-[#024D60]'
-                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-[#BDE7E1]'
+                    ? 'bg-white/5 text-slate-300 hover:bg-white/10 border border-[#233E45]'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-[#D8CFBC]'
               ]"
             >
               Besok
@@ -1933,17 +1933,17 @@ onUnmounted(() => {
               :class="[
                 'px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer shadow-xs',
                 isViewingDayAfter
-                  ? 'bg-[#2CACAD] text-[#02364A] border border-[#75E2E0] font-extrabold shadow-sm'
+                  ? 'bg-[#808847] text-white border border-[#9CA456] font-extrabold'
                   : isDarkMode
-                    ? 'bg-white/5 text-slate-300 hover:bg-white/10 border border-[#024D60]'
-                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-[#BDE7E1]'
+                    ? 'bg-white/5 text-slate-300 hover:bg-white/10 border border-[#233E45]'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-[#D8CFBC]'
               ]"
             >
               Lusa
             </button>
           </div>
 
-          <!-- Center: Day-of-Week Tabs (Senin - Sabtu) with Meadow Green & Blue Accent -->
+          <!-- Center: Day-of-Week Tabs (Senin - Sabtu) with Meadow Green Accent -->
           <div class="flex items-center gap-1">
             <button
               v-for="d in daysOfWeekList"
@@ -1952,10 +1952,10 @@ onUnmounted(() => {
               :class="[
                 'px-2.5 py-0.5 rounded-md font-bold text-[11px] transition-all cursor-pointer',
                 currentSelectedDayOfWeek === d.day
-                  ? 'bg-[#0C6038] text-white shadow-xs font-extrabold'
+                  ? 'bg-[#0C6038] text-[#F7D2A1] shadow-xs font-extrabold'
                   : isDarkMode
-                    ? 'text-slate-300 hover:bg-[#024D60]/40'
-                    : 'text-[#02364A] hover:bg-[#2CACAD]/20'
+                    ? 'text-slate-300 hover:bg-[#0C6038]/20'
+                    : 'text-slate-700 hover:bg-[#0C6038]/10'
               ]"
             >
               {{ d.name }}
@@ -1970,8 +1970,8 @@ onUnmounted(() => {
                 :class="[
                   'py-0.5 px-2 rounded-md transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold border shadow-xs',
                   isDarkMode
-                    ? 'bg-white/5 hover:bg-[#02364A] text-slate-200 border-[#024D60]'
-                    : 'bg-white hover:bg-[#D9F5F0] text-[#02364A] border-[#BDE7E1]'
+                    ? 'bg-white/5 hover:bg-[#233E45] text-slate-200 border-[#2D4C39]/80'
+                    : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-200'
                 ]"
                 title="Lihat minggu sebelumnya"
               >
@@ -1983,8 +1983,8 @@ onUnmounted(() => {
                 :class="[
                   'py-0.5 px-2 rounded-md transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold border shadow-xs',
                   isDarkMode
-                    ? 'bg-white/5 hover:bg-[#02364A] text-slate-200 border-[#024D60]'
-                    : 'bg-white hover:bg-[#D9F5F0] text-[#02364A] border-[#BDE7E1]'
+                    ? 'bg-white/5 hover:bg-[#233E45] text-slate-200 border-[#2D4C39]/80'
+                    : 'bg-white hover:bg-slate-100 text-slate-800 border-slate-200'
                 ]"
                 title="Lihat minggu depan"
               >
@@ -1997,8 +1997,8 @@ onUnmounted(() => {
               :class="[
                 'px-2.5 py-0.5 rounded-md font-mono text-[11px] font-bold border shadow-xs flex items-center gap-1.5',
                 isDarkMode
-                  ? 'bg-[#02364A] border-[#2CACAD]/60 text-[#75E2E0]'
-                  : 'bg-[#D9F5F0] border-[#2CACAD]/60 text-[#024D60]'
+                  ? 'bg-[#101c21] border-[#2D4C39] text-[#ECD39D]'
+                  : 'bg-[#ECD39D]/20 border-[#808847]/40 text-[#233E45]'
               ]"
             >
               <Calendar :size="11" />
@@ -2009,23 +2009,23 @@ onUnmounted(() => {
 
         <!-- 8-COLUMN X 10-SLOT MATRIX TABLE CONTAINER -->
         <div class="flex-1 overflow-auto custom-scrollbar p-2.5 min-h-0 flex flex-col">
-          <div class="min-w-[900px] flex-1 flex flex-col border rounded-xl overflow-hidden shadow-xs" :class="isDarkMode ? 'border-[#024D60]/80 bg-[#01161f]' : 'border-[#BDE7E1] bg-white'">
+          <div class="min-w-[900px] flex-1 flex flex-col border rounded-xl overflow-hidden shadow-xs" :class="isDarkMode ? 'border-[#2D4C39]/80 bg-[#091013]' : 'border-slate-200 bg-white'">
             <!-- 1. TABLE HEADER: 8 LAB COLUMNS (+ 1 TIME COLUMN) -->
             <div
               :class="[
                 'grid grid-cols-9 sticky top-0 z-20 border-b shadow-sm text-center text-xs font-bold transition-colors duration-300',
                 isDarkMode
-                  ? 'bg-gradient-to-r from-[#02364A] via-[#024D60] to-[#02364A] border-[#2CACAD]/50 text-[#D9F5F0]'
-                  : 'bg-gradient-to-r from-[#02364A] via-[#024D60] to-[#02364A] border-[#02364A] text-[#D9F5F0]'
+                  ? 'bg-gradient-to-r from-[#0d171b] via-[#14242a] to-[#0d171b] border-[#2D4C39]/80 text-[#ECD39D]'
+                  : 'bg-gradient-to-r from-[#1c2e35] via-[#233E45] to-[#1c2e35] border-[#2D4C39] text-[#ECD39D]'
               ]"
             >
               <!-- Time Column Header -->
-              <div class="py-2.5 px-2 border-r border-[#2CACAD]/40 flex flex-col items-center justify-center bg-black/30 text-[#75E2E0]">
+              <div class="py-2.5 px-2 border-r border-[#2D4C39]/60 flex flex-col items-center justify-center bg-black/30 text-[#ECD39D]">
                 <div class="flex items-center gap-1 opacity-90 text-[11px] uppercase tracking-wider">
                   <Clock :size="12" />
                   <span>WAKTU</span>
                 </div>
-                <span class="text-[9.5px] opacity-75 font-mono text-[#D9F5F0]">WIB</span>
+                <span class="text-[9.5px] opacity-75 font-mono text-[#808847]">WIB</span>
               </div>
 
               <!-- 8 Lab Columns Headers with Signature Color Badges -->
@@ -2034,7 +2034,7 @@ onUnmounted(() => {
                 :key="col.id"
                 :class="[
                   'py-2 px-1.5 flex flex-col items-center justify-center transition-colors relative',
-                  cIdx < 7 ? 'border-r border-[#2CACAD]/30' : '',
+                  cIdx < 7 ? 'border-r border-[#2D4C39]/60' : '',
                   col.status === 'IN_USE'
                     ? isDarkMode
                       ? 'bg-[#6C271A]/35'
@@ -2080,15 +2080,15 @@ onUnmounted(() => {
             </div>
 
             <!-- 2. TABLE BODY: 10 TIME ROWS -->
-            <div class="flex-1 flex flex-col divide-y" :class="isDarkMode ? 'divide-[#02364A]' : 'divide-slate-200'">
+            <div class="flex-1 flex flex-col divide-y" :class="isDarkMode ? 'divide-[#1c2e35]' : 'divide-slate-200'">
               <div
                 v-for="slot in ACADEMIC_TIME_SLOTS"
                 :key="slot.slotNumber"
                 :class="[
                   'grid grid-cols-9 flex-1 transition-colors min-h-[52px]',
                   isDarkMode
-                    ? 'hover:bg-[#024D60]/20'
-                    : 'hover:bg-[#D9F5F0]/30'
+                    ? 'hover:bg-[#14242a]/30'
+                    : 'hover:bg-slate-50'
                 ]"
               >
                 <!-- Time Legend Cell -->
@@ -2096,11 +2096,11 @@ onUnmounted(() => {
                   :class="[
                     'p-1.5 border-r flex flex-col justify-center items-center text-center font-mono shrink-0 transition-colors',
                     isDarkMode
-                      ? 'border-[#02364A] bg-[#011119] text-slate-300'
-                      : 'border-slate-200 bg-[#F4FBFA] text-[#02364A]'
+                      ? 'border-[#1c2e35] bg-[#091012] text-slate-300'
+                      : 'border-slate-200 bg-slate-50 text-slate-800'
                   ]"
                 >
-                  <span class="text-[10px] font-extrabold uppercase px-1 py-0.2 rounded" :class="isDarkMode ? 'bg-[#02364A] text-[#75E2E0] border border-[#2CACAD]/40' : 'bg-[#D9F5F0] text-[#02364A] border border-[#2CACAD]/50'">
+                  <span class="text-[10px] font-extrabold uppercase px-1 py-0.2 rounded" :class="isDarkMode ? 'bg-[#233E45] text-[#ECD39D] border border-[#3A5D66]/60' : 'bg-[#ECD39D]/30 text-[#233E45] border border-[#808847]/40'">
                     {{ slot.label }}
                   </span>
                   <span class="text-[10px] font-bold mt-0.5 tracking-tight">
@@ -2114,14 +2114,14 @@ onUnmounted(() => {
                   :key="col.id + '-' + slot.slotNumber"
                   :class="[
                     'p-1 transition-all flex flex-col justify-center relative overflow-hidden',
-                    cIdx < 7 ? (isDarkMode ? 'border-r border-[#02364A]' : 'border-r border-slate-200') : '',
+                    cIdx < 7 ? (isDarkMode ? 'border-r border-[#1c2e35]' : 'border-r border-slate-200') : '',
                     col.cells[slot.slotNumber - 1]?.session?.status === 'IN_USE'
                       ? isDarkMode
                         ? 'bg-gradient-to-r from-[#6C271A]/40 to-[#6C271A]/20 border-l-3 border-l-[#C23B2E] shadow-[0_0_10px_rgba(108,39,26,0.35)]'
                         : 'bg-gradient-to-r from-[#6C271A]/10 to-[#6C271A]/5 border-l-3 border-l-[#C23B2E] shadow-xs'
                       : col.cells[slot.slotNumber - 1]?.session
                         ? isDarkMode
-                          ? 'bg-[#042432] border-l-2 ' + col.activeBorderClass
+                          ? 'bg-[#0f1a1e] border-l-2 ' + col.activeBorderClass
                           : 'bg-slate-50/60 border-l-2 ' + col.activeBorderClass
                         : ''
                   ]"
@@ -2135,7 +2135,7 @@ onUnmounted(() => {
                             ? 'bg-[#1a0808] border-[#9A3725]/90 shadow-[0_0_10px_rgba(108,39,26,0.4)]'
                             : 'bg-white border-[#C23B2E] shadow-xs'
                           : isDarkMode
-                            ? 'bg-[#062c3d] border-[#024D60] shadow-2xs hover:border-[#2CACAD]'
+                            ? 'bg-[#132227] border-[#2D4C39]/70 shadow-2xs hover:border-[#3A5D66]'
                             : 'bg-white border-slate-200 shadow-2xs hover:border-slate-400'
                       ]"
                     >
@@ -2167,12 +2167,12 @@ onUnmounted(() => {
                       </div>
 
                       <div class="pt-0.5 border-t mt-0.5 flex items-center justify-between gap-1 text-[9px]"
-                        :class="isDarkMode ? 'border-[#02364A] text-slate-400' : 'border-slate-100 text-slate-600'"
+                        :class="isDarkMode ? 'border-[#1c2e35] text-slate-400' : 'border-slate-100 text-slate-600'"
                       >
                         <span class="truncate font-medium" :title="col.cells[slot.slotNumber - 1]?.session?.lecturer">
                           {{ col.cells[slot.slotNumber - 1]?.session?.lecturer }}
                         </span>
-                        <span v-if="col.cells[slot.slotNumber - 1]?.session?.className" class="font-mono text-[8px] opacity-80 shrink-0 font-bold" :class="isDarkMode ? 'text-[#75E2E0]' : 'text-[#024D60]'">
+                        <span v-if="col.cells[slot.slotNumber - 1]?.session?.className" class="font-mono text-[8px] opacity-80 shrink-0 font-bold text-[#ECD39D]">
                           {{ col.cells[slot.slotNumber - 1]?.session?.className }}
                         </span>
                       </div>
@@ -2185,10 +2185,10 @@ onUnmounted(() => {
                       <span
                         :class="[
                           'text-[9.5px] font-medium tracking-wide flex items-center gap-1',
-                          isDarkMode ? 'text-[#2CACAD]/65' : 'text-[#024D60]/70'
+                          isDarkMode ? 'text-[#808847]/65' : 'text-[#808847]/80'
                         ]"
                       >
-                        <Check :size="10" class="opacity-60 text-[#2CACAD]" />
+                        <Check :size="10" class="opacity-60 text-[#808847]" />
                         <span>Tersedia</span>
                       </span>
                     </div>
@@ -2211,8 +2211,8 @@ onUnmounted(() => {
             :class="[
               'p-2.5 rounded-xl border-2 flex items-center gap-2.5 transition-all shadow-sm',
               isDarkMode
-                ? 'bg-[#031c26] border-[#024D60]/80 shadow-[0_4px_16px_rgba(2,77,96,0.25)]'
-                : 'bg-white border-[#BDE7E1] text-slate-900 shadow-sm'
+                ? 'bg-[#101c21] border-[#2D4C39]/80 shadow-[0_4px_16px_rgba(0,0,0,0.3)]'
+                : 'bg-white border-slate-200/90 text-slate-900 shadow-sm'
             ]"
           >
             <div
@@ -2253,8 +2253,8 @@ onUnmounted(() => {
             :class="[
               'p-2.5 rounded-xl border-2 flex items-center gap-2.5 transition-all shadow-sm cursor-pointer hover:scale-102 active:scale-98 text-left',
               isDarkMode
-                ? 'bg-[#031c26] border-[#024D60]/80 shadow-[0_4px_16px_rgba(2,77,96,0.25)] hover:border-[#2CACAD]'
-                : 'bg-white border-[#BDE7E1] text-slate-900 shadow-sm hover:border-[#2CACAD]'
+                ? 'bg-[#101c21] border-[#2D4C39]/80 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:border-[#3A5D66]'
+                : 'bg-white border-slate-200/90 text-slate-900 shadow-sm hover:border-slate-300'
             ]"
             title="Klik untuk inspeksi inventaris peralatan lab"
           >
@@ -2262,8 +2262,8 @@ onUnmounted(() => {
               :class="[
                 'w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors shadow-2xs',
                 isDarkMode
-                  ? 'bg-[#2CACAD]/20 border-[#2CACAD]/60 text-[#75E2E0]'
-                  : 'bg-[#D9F5F0] border-[#2CACAD]/50 text-[#024D60]'
+                  ? 'bg-[#0C6038]/30 border-[#0C6038]/60 text-[#A3E7C1]'
+                  : 'bg-[#0C6038]/10 border-[#0C6038]/30 text-[#0C6038]'
               ]"
             >
               <Wrench :size="18" />
@@ -2272,7 +2272,7 @@ onUnmounted(() => {
               <span
                 :class="[
                   'text-[9px] font-bold uppercase tracking-wider block truncate',
-                  isDarkMode ? 'text-[#75E2E0]' : 'text-[#024D60]'
+                  isDarkMode ? 'text-[#A3E7C1]/90' : 'text-slate-500'
                 ]"
               >
                 Alat Siap
@@ -2280,7 +2280,7 @@ onUnmounted(() => {
               <span
                 :class="[
                   'text-xl font-black leading-none',
-                  isDarkMode ? 'text-[#D9F5F0] drop-shadow-[0_0_8px_rgba(117,226,224,0.3)]' : 'text-[#02364A]'
+                  isDarkMode ? 'text-[#ECD39D] drop-shadow-[0_0_8px_rgba(236,211,157,0.3)]' : 'text-slate-900'
                 ]"
               >
                 {{ overallEquipmentStats.healthRate }}%
@@ -2294,25 +2294,25 @@ onUnmounted(() => {
           :class="[
             'p-3 rounded-2xl border-2 flex flex-col overflow-hidden relative transition-colors duration-300 shadow-md shrink-0 max-h-[220px]',
             isDarkMode
-              ? 'bg-[#031c26] border-[#024D60]/80 shadow-[0_4px_20px_rgba(2,77,96,0.3)]'
-              : 'bg-white border-[#BDE7E1] shadow-md'
+              ? 'bg-[#101c21] border-[#2D4C39]/80 shadow-[0_4px_20px_rgba(0,0,0,0.4)]'
+              : 'bg-white border-slate-200/90 shadow-md'
           ]"
         >
-          <!-- Accent Strip: Crimson to Light Sea Green to Sky Blue -->
+          <!-- Accent Strip: Casa Chromatica Crimson to Mustard to Meadow Green -->
           <div
             :class="[
               'absolute top-0 left-0 right-0 h-1',
               isDarkMode
-                ? 'bg-gradient-to-r from-[#6C271A] via-[#2CACAD] to-[#75E2E0]'
-                : 'bg-gradient-to-r from-[#6C271A] via-[#2CACAD] to-[#75E2E0]'
+                ? 'bg-gradient-to-r from-[#6C271A] via-[#808847] to-[#0C6038]'
+                : 'bg-gradient-to-r from-[#6C271A] via-[#808847] to-[#0C6038]'
             ]"
           />
 
           <!-- Widget Header -->
-          <div class="flex items-center justify-between pb-2 mb-2 border-b shrink-0" :class="isDarkMode ? 'border-[#02364A]' : 'border-[#EBF7F5]'">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b shrink-0" :class="isDarkMode ? 'border-[#1c2e35]' : 'border-slate-100'">
             <div class="flex items-center gap-1.5">
               <div class="w-2 h-2 rounded-full bg-[#C23B2E] animate-ping"></div>
-              <h3 :class="['text-xs font-black uppercase tracking-wide', isDarkMode ? 'text-[#75E2E0]' : 'text-[#02364A]']">
+              <h3 :class="['text-xs font-black uppercase tracking-wide', isDarkMode ? 'text-[#ECD39D]' : 'text-slate-900']">
                 {{ isViewingToday ? 'Sedang Berlangsung' : 'Jadwal Terdaftar' }}
               </h3>
             </div>
@@ -2326,8 +2326,8 @@ onUnmounted(() => {
                 :class="[
                   'p-0.5 rounded transition-all cursor-pointer border active:scale-90',
                   isDarkMode
-                    ? 'hover:bg-[#02364A] text-[#75E2E0] border-[#024D60]'
-                    : 'hover:bg-[#D9F5F0] text-[#02364A] border-[#BDE7E1]'
+                    ? 'hover:bg-[#233E45] text-[#ECD39D] border-[#2D4C39]'
+                    : 'hover:bg-slate-100 text-slate-800 border-slate-200'
                 ]"
                 title="Gulir ke atas"
                 aria-label="Scroll Up"
@@ -2339,8 +2339,8 @@ onUnmounted(() => {
                 :class="[
                   'p-0.5 rounded transition-all cursor-pointer border active:scale-90',
                   isDarkMode
-                    ? 'hover:bg-[#02364A] text-[#75E2E0] border-[#024D60]'
-                    : 'hover:bg-[#D9F5F0] text-[#02364A] border-[#BDE7E1]'
+                    ? 'hover:bg-[#233E45] text-[#ECD39D] border-[#2D4C39]'
+                    : 'hover:bg-slate-100 text-slate-800 border-slate-200'
                 ]"
                 title="Gulir ke bawah"
                 aria-label="Scroll Down"
@@ -2364,12 +2364,12 @@ onUnmounted(() => {
                 :class="[
                   'p-2.5 rounded-xl border transition-all text-xs space-y-1.5 shadow-xs',
                   isDarkMode
-                    ? 'bg-[#052635] border-[#024D60]/70 hover:border-[#2CACAD]'
-                    : 'bg-[#F4FBFA] border-[#BDE7E1] hover:border-[#2CACAD]'
+                    ? 'bg-[#14242a] border-[#2D4C39]/70 hover:border-[#3A5D66]'
+                    : 'bg-slate-50 border-slate-200 hover:border-slate-300'
                 ]"
               >
                 <div class="flex items-center justify-between gap-1">
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold font-mono" :class="isDarkMode ? 'bg-[#02364A] text-[#75E2E0] border border-[#2CACAD]/50' : 'bg-[#024D60] text-white'">
+                  <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold font-mono" :class="isDarkMode ? 'bg-[#233E45] text-[#ECD39D] border border-[#3A5D66]' : 'bg-[#233E45] text-white'">
                     {{ sess.labCode }}
                   </span>
                   <span class="text-[9.5px] font-mono font-bold" :class="isDarkMode ? 'text-[#FFA999]' : 'text-[#6C271A]'">
@@ -2382,14 +2382,14 @@ onUnmounted(() => {
                 <div class="flex items-center justify-between text-[9.5px] opacity-80 pt-0.5">
                   <span class="truncate max-w-[130px]">{{ sess.instructor }}</span>
                   <span v-if="isViewingToday" class="font-bold text-[#FFA999]">{{ sess.remainingMinutes }} mnt tersisa</span>
-                  <span v-else class="font-bold text-[#75E2E0] font-mono">{{ sess.courseCode }}</span>
+                  <span v-else class="font-bold text-[#ECD39D] font-mono">{{ sess.courseCode }}</span>
                 </div>
               </div>
             </template>
             <template v-else>
               <div class="py-4 text-center space-y-1">
-                <CheckCircle2 :size="24" class="mx-auto text-[#2CACAD] opacity-60" />
-                <p :class="['text-xs font-semibold', isDarkMode ? 'text-[#75E2E0]' : 'text-[#02364A]']">
+                <CheckCircle2 :size="24" class="mx-auto text-[#808847] opacity-60" />
+                <p :class="['text-xs font-semibold', isDarkMode ? 'text-[#ECD39D]' : 'text-slate-900']">
                   {{ isViewingToday ? 'Tidak Ada Sesi Aktif' : 'Tidak Ada Sesi Terjadwal' }}
                 </p>
                 <p class="text-[10px] opacity-70">
@@ -2405,23 +2405,23 @@ onUnmounted(() => {
           :class="[
             'p-3.5 rounded-2xl border-2 flex-1 flex flex-col justify-between overflow-hidden relative transition-colors duration-300 shadow-md',
             isDarkMode
-              ? 'bg-[#031c26] border-[#024D60]/80 shadow-[0_4px_20px_rgba(2,77,96,0.3)]'
-              : 'bg-white border-[#BDE7E1] shadow-md'
+              ? 'bg-[#101c21] border-[#2D4C39]/80 shadow-[0_4px_20px_rgba(0,0,0,0.4)]'
+              : 'bg-white border-slate-200/90 shadow-md'
           ]"
         >
-          <!-- Accent Line: Prussian Blue to Light Sea Green to Sky Blue -->
+          <!-- Accent Line: Meadow Green to Peach to Outerspace -->
           <div
             :class="[
               'absolute top-0 left-0 right-0 h-1',
               isDarkMode
-                ? 'bg-gradient-to-r from-[#02364A] via-[#2CACAD] to-[#75E2E0]'
-                : 'bg-gradient-to-r from-[#02364A] via-[#2CACAD] to-[#75E2E0]'
+                ? 'bg-gradient-to-r from-[#0C6038] via-[#ECD39D] to-[#233E45]'
+                : 'bg-gradient-to-r from-[#0C6038] via-[#ECD39D] to-[#233E45]'
             ]"
           />
 
           <!-- Slide Header with Icon -->
           <div>
-            <div class="flex items-center justify-between gap-1 pb-2 mb-2 border-b" :class="isDarkMode ? 'border-[#02364A]' : 'border-[#EBF7F5]'">
+            <div class="flex items-center justify-between gap-1 pb-2 mb-2 border-b" :class="isDarkMode ? 'border-[#1c2e35]' : 'border-slate-100'">
               <div class="flex items-center gap-1.5 min-w-0">
                 <div
                   :class="[
@@ -2431,7 +2431,7 @@ onUnmounted(() => {
                 >
                   <component :is="currentInfoSlide.icon" :size="13" :class="currentInfoSlide.iconColor" />
                 </div>
-                <span :class="['text-[11px] font-bold uppercase truncate', isDarkMode ? 'text-white' : 'text-[#02364A]']">
+                <span :class="['text-[11px] font-bold uppercase truncate', isDarkMode ? 'text-white' : 'text-slate-900']">
                   {{ currentInfoSlide.tab }}
                 </span>
               </div>
@@ -2458,18 +2458,18 @@ onUnmounted(() => {
                   :class="[
                     'p-2 rounded-xl text-[10px] font-medium border mt-2',
                     isDarkMode
-                      ? 'bg-[#052635] border-[#024D60] text-slate-200'
-                      : 'bg-[#EBF7F5] border-[#BDE7E1] text-[#02364A]'
+                      ? 'bg-[#14242a] border-[#2D4C39]/80 text-slate-200'
+                      : 'bg-[#ECD39D]/15 border-[#808847]/40 text-[#233E45]'
                   ]"
                 >
-                  <strong class="font-bold" :class="isDarkMode ? 'text-[#75E2E0]' : 'text-[#024D60]'">Info:</strong> {{ currentInfoSlide.highlight }}
+                  <strong class="font-bold" :class="isDarkMode ? 'text-[#ECD39D]' : 'text-[#808847]'">Info:</strong> {{ currentInfoSlide.highlight }}
                 </div>
               </div>
             </transition>
           </div>
 
           <!-- Slide Bottom Navigation Controls -->
-          <div class="flex items-center justify-between pt-2 border-t mt-2" :class="isDarkMode ? 'border-[#02364A]' : 'border-[#EBF7F5]'">
+          <div class="flex items-center justify-between pt-2 border-t mt-2" :class="isDarkMode ? 'border-[#1c2e35]' : 'border-slate-100'">
             <!-- Dots -->
             <div class="flex items-center gap-1">
               <button
@@ -2479,8 +2479,8 @@ onUnmounted(() => {
                 :class="[
                   'h-1.5 rounded-full transition-all duration-300 cursor-pointer',
                   activeInfoSlide === idx
-                    ? 'w-4 bg-[#75E2E0]'
-                    : 'w-1.5 bg-[#02364A]'
+                    ? 'w-4 bg-[#ECD39D]'
+                    : 'w-1.5 bg-[#233E45]'
                 ]"
                 :aria-label="'Slide ' + (idx + 1)"
               />
@@ -2488,11 +2488,11 @@ onUnmounted(() => {
 
             <!-- Arrow Buttons -->
             <div class="flex items-center gap-1 text-[9.5px]">
-              <span class="font-mono opacity-70 mr-1 text-[#75E2E0]">{{ activeInfoSlide + 1 }}/{{ infoSlides.length }}</span>
+              <span class="font-mono opacity-70 mr-1 text-[#ECD39D]">{{ activeInfoSlide + 1 }}/{{ infoSlides.length }}</span>
               <button
                 @click="prevInfoSlide"
                 class="p-1 rounded border transition-colors cursor-pointer"
-                :class="isDarkMode ? 'border-[#024D60] text-[#75E2E0] hover:bg-[#02364A]' : 'border-[#BDE7E1] text-[#02364A] hover:bg-[#D9F5F0]'"
+                :class="isDarkMode ? 'border-[#2D4C39] text-[#ECD39D] hover:bg-[#233E45]' : 'border-gray-200 text-gray-700 hover:bg-slate-100'"
                 title="Sebelumnya"
               >
                 <ChevronLeft :size="11" />
@@ -2500,7 +2500,7 @@ onUnmounted(() => {
               <button
                 @click="nextInfoSlide"
                 class="p-1 rounded border transition-colors cursor-pointer"
-                :class="isDarkMode ? 'border-[#024D60] text-[#75E2E0] hover:bg-[#02364A]' : 'border-[#BDE7E1] text-[#02364A] hover:bg-[#D9F5F0]'"
+                :class="isDarkMode ? 'border-[#2D4C39] text-[#ECD39D] hover:bg-[#233E45]' : 'border-gray-200 text-gray-700 hover:bg-slate-100'"
                 title="Berikutnya"
               >
                 <ChevronRight :size="11" />
@@ -2516,8 +2516,8 @@ onUnmounted(() => {
       :class="[
         'backdrop-blur-md px-4.5 py-2.5 rounded-2xl flex items-center gap-3 shrink-0 relative z-10 overflow-hidden border-2 transition-colors duration-300 shadow-xl',
         isDarkMode
-          ? 'bg-[#01141c] border-[#024D60] shadow-[0_0_24px_rgba(2,77,96,0.25)]'
-          : 'bg-gradient-to-r from-[#02364A] via-[#024D60] to-[#02364A] text-white border-[#2CACAD]'
+          ? 'bg-[#0c1417] border-[#2D4C39]/80 shadow-[0_0_24px_rgba(12,96,56,0.15)]'
+          : 'bg-gradient-to-r from-[#0c1417] via-[#16272e] to-[#0c1417] text-white border-[#2D4C39]'
       ]"
     >
       <!-- Top Sheen Gradient -->
@@ -2525,18 +2525,18 @@ onUnmounted(() => {
         :class="[
           'absolute top-0 left-0 right-0 h-1',
           isDarkMode
-            ? 'bg-gradient-to-r from-[#0C6038] via-[#2CACAD] to-[#75E2E0]'
-            : 'bg-gradient-to-r from-[#0C6038] via-[#2CACAD] to-[#75E2E0]'
+            ? 'bg-gradient-to-r from-[#0C6038] via-[#ECD39D] to-[#6C271A]'
+            : 'bg-gradient-to-r from-[#0C6038] via-[#ECD39D] to-[#6C271A]'
         ]"
       />
       <div
-        class="flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-bold shrink-0 border transition-colors duration-300 shadow-md bg-gradient-to-r from-[#02364A] via-[#024D60] to-[#2CACAD] text-[#D9F5F0] border-[#75E2E0]/40 tracking-wide"
+        class="flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-bold shrink-0 border transition-colors duration-300 shadow-md bg-gradient-to-r from-[#0C6038] via-[#233E45] to-[#6C271A] text-[#F7D2A1] border-[#ECD39D]/30 tracking-wide"
       >
-        <Megaphone :size="14" class="text-[#75E2E0] shrink-0 animate-bounce" />
+        <Megaphone :size="14" class="text-[#F7D2A1] shrink-0 animate-bounce" />
         <span class="tracking-wide">PENGUMUMAN RESMI FIK</span>
       </div>
       <div
-        class="overflow-hidden whitespace-nowrap flex-1 text-xs font-semibold tracking-normal ticker-fade-mask text-[#D9F5F0] drop-shadow-sm pl-2"
+        class="overflow-hidden whitespace-nowrap flex-1 text-xs font-semibold tracking-normal ticker-fade-mask text-[#F7D2A1]/95 drop-shadow-sm pl-2"
       >
         <div class="inline-block animate-marquee">
           {{ activeAnnouncementText }}
@@ -2556,17 +2556,17 @@ onUnmounted(() => {
             :class="[
               'w-full max-w-4xl max-h-[90vh] rounded-2xl border-2 flex flex-col shadow-2xl overflow-hidden relative transition-all duration-300',
               isDarkMode
-                ? 'bg-[#01141c] border-[#024D60] text-white shadow-[0_0_50px_rgba(2,77,96,0.35)]'
-                : 'bg-white border-[#BDE7E1] text-gray-900 shadow-2xl'
+                ? 'bg-[#0c1417] border-[#2D4C39] text-white shadow-[0_0_50px_rgba(12,96,56,0.25)]'
+                : 'bg-white border-[#2D4C39] text-gray-900 shadow-2xl'
             ]"
           >
-            <!-- Modal Accent Top Line (Prussian Blue -> Light Sea Green -> Sky Blue) -->
+            <!-- Modal Accent Top Line -->
             <div
               :class="[
                 'h-1.5 w-full shrink-0',
                 isDarkMode
-                  ? 'bg-gradient-to-r from-[#02364A] via-[#2CACAD] to-[#75E2E0]'
-                  : 'bg-gradient-to-r from-[#02364A] via-[#2CACAD] to-[#75E2E0]'
+                  ? 'bg-gradient-to-r from-[#0C6038] via-[#ECD39D] to-[#6C271A]'
+                  : 'bg-gradient-to-r from-[#0C6038] via-[#ECD39D] to-[#6C271A]'
               ]"
             />
 
@@ -2574,7 +2574,7 @@ onUnmounted(() => {
             <div
               :class="[
                 'px-5 py-4 border-b flex items-start justify-between gap-3 shrink-0',
-                isDarkMode ? 'border-[#02364A] bg-[#021720]' : 'border-[#BDE7E1] bg-[#F4FBFA]'
+                isDarkMode ? 'border-[#1c2e35] bg-[#101c21]' : 'border-slate-100 bg-[#ECD39D]/10'
               ]"
             >
               <div class="space-y-1">
@@ -2583,8 +2583,8 @@ onUnmounted(() => {
                     :class="[
                       'px-2.5 py-0.5 rounded-lg font-mono text-xs font-bold border-2',
                       isDarkMode
-                        ? 'bg-[#02364A]/80 border-[#2CACAD]/60 text-[#75E2E0]'
-                        : 'bg-[#02364A] border-[#02364A] text-white'
+                        ? 'bg-[#0C6038]/30 border-[#0C6038]/70 text-[#A3E7C1]'
+                        : 'bg-[#0C6038] border-[#0C6038] text-white'
                     ]"
                   >
                     {{ selectedLabForEquipment.labCode }}
@@ -2599,14 +2599,14 @@ onUnmounted(() => {
                         ? 'bg-[#6C271A]/30 text-[#FFA999] border-[#9A3725]/60'
                         : selectedLabForEquipment.status === 'AVAILABLE'
                           ? 'bg-[#0C6038]/30 text-[#A3E7C1] border-[#0C6038]/60'
-                          : 'bg-[#024D60]/40 text-[#75E2E0] border-[#2CACAD]/60'
+                          : 'bg-[#233E45]/40 text-[#ECD39D] border-[#3A5D66]/60'
                     ]"
                   >
                     <span class="w-2 h-2 rounded-full bg-current"></span>
                     <span>{{ selectedLabForEquipment.status }}</span>
                   </span>
                 </div>
-                <p :class="['text-xs font-medium flex items-center gap-1.5', isDarkMode ? 'text-[#A5DCD5]' : 'text-[#1D606C]']">
+                <p :class="['text-xs font-medium flex items-center gap-1.5', isDarkMode ? 'text-slate-300/80' : 'text-slate-600']">
                   <MapPin :size="13" class="shrink-0" />
                   <span>{{ selectedLabForEquipment.location }} &bull; Kapasitas: {{ selectedLabForEquipment.capacity }} Kursi</span>
                 </p>
@@ -2619,8 +2619,8 @@ onUnmounted(() => {
                 :class="[
                   'p-2 rounded-xl border-2 transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0',
                   isDarkMode
-                    ? 'bg-white/10 hover:bg-white/20 border-[#024D60] text-[#75E2E0]'
-                    : 'bg-[#D9F5F0] hover:bg-[#c4ece3] border-[#2CACAD]/50 text-[#024D60]'
+                    ? 'bg-white/10 hover:bg-white/20 border-[#2D4C39] text-[#ECD39D]'
+                    : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700'
                 ]"
                 title="Tutup Modal"
                 aria-label="Tutup"
@@ -2633,7 +2633,7 @@ onUnmounted(() => {
             <div
               :class="[
                 'px-5 py-2 border-b flex items-center gap-1.5 overflow-x-auto shrink-0 custom-scrollbar',
-                isDarkMode ? 'border-[#02364A] bg-[#010e14]' : 'border-[#BDE7E1] bg-[#F4FBFA]'
+                isDarkMode ? 'border-[#1c2e35] bg-[#091012]' : 'border-gray-200 bg-gray-50'
               ]"
             >
               <span class="text-[11px] font-bold uppercase tracking-wider opacity-70 shrink-0 mr-1">
@@ -2648,10 +2648,10 @@ onUnmounted(() => {
                   'px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer shrink-0 flex items-center gap-1.5 border',
                   selectedLabForEquipment.id === labSession.id
                     ? isDarkMode
-                      ? 'bg-[#024D60] text-[#75E2E0] border-[#2CACAD] shadow-xs'
-                      : 'bg-[#024D60] text-[#D9F5F0] border-[#024D60] shadow-xs'
+                      ? 'bg-[#0C6038]/40 text-[#A3E7C1] border-[#0C6038] shadow-xs'
+                      : 'bg-[#0C6038] text-white border-[#0C6038] shadow-xs'
                     : isDarkMode
-                      ? 'bg-[#031c26] text-slate-300 border-[#024D60]/60 hover:border-[#2CACAD]'
+                      ? 'bg-[#101c21] text-slate-300 border-[#2D4C39]/60 hover:border-[#3A5D66]'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-slate-300'
                 ]"
               >
@@ -2659,7 +2659,7 @@ onUnmounted(() => {
                 <span
                   :class="[
                     'w-1.5 h-1.5 rounded-full',
-                    labSession.equipmentSummary.healthPercentage === 100 ? 'bg-[#2CACAD]' : 'bg-[#75E2E0]'
+                    labSession.equipmentSummary.healthPercentage === 100 ? 'bg-[#0C6038]' : 'bg-[#ECD39D]'
                   ]"
                 />
               </button>
@@ -2671,12 +2671,12 @@ onUnmounted(() => {
               <div
                 :class="[
                   'p-4 rounded-xl border-2 space-y-3',
-                  isDarkMode ? 'bg-[#031c26] border-[#024D60]/80' : 'bg-[#F4FBFA] border-[#BDE7E1]'
+                  isDarkMode ? 'bg-[#101c21] border-[#2D4C39]/80' : 'bg-slate-50 border-slate-200'
                 ]"
               >
                 <div class="flex items-center justify-between gap-3 flex-wrap">
                   <div class="flex items-center gap-2">
-                    <Wrench :size="18" :class="isDarkMode ? 'text-[#75E2E0]' : 'text-[#024D60]'" />
+                    <Wrench :size="18" :class="isDarkMode ? 'text-[#ECD39D]' : 'text-[#0C6038]'" />
                     <h4 class="text-sm font-bold tracking-tight">
                       Indeks Kesiapan & Kelaikan Peralatan Lab
                     </h4>
@@ -2686,8 +2686,8 @@ onUnmounted(() => {
                       'px-3 py-1 rounded-full font-mono text-xs font-bold border-2',
                       selectedLabForEquipment.equipmentSummary.healthPercentage === 100
                         ? isDarkMode
-                          ? 'bg-[#024D60]/60 text-[#75E2E0] border-[#2CACAD]'
-                          : 'bg-[#024D60] text-white border-[#024D60]'
+                          ? 'bg-[#0C6038]/30 text-[#A3E7C1] border-[#0C6038]'
+                          : 'bg-[#0C6038] text-white border-[#0C6038]'
                         : isDarkMode
                           ? 'bg-[#808847]/30 text-[#ECD39D] border-[#808847]'
                           : 'bg-[#808847] text-white border-[#808847]'
@@ -2697,15 +2697,15 @@ onUnmounted(() => {
                   </span>
                 </div>
 
-                <!-- Progress Bar (Prussian Blue -> Midnight Green -> Light Sea Green -> Sky Blue) -->
+                <!-- Progress Bar -->
                 <div
                   :class="[
                     'w-full rounded-full h-3 p-0.5 overflow-hidden border',
-                    isDarkMode ? 'bg-black/40 border-[#024D60]' : 'bg-white border-slate-200'
+                    isDarkMode ? 'bg-black/40 border-[#2D4C39]' : 'bg-white border-slate-200'
                   ]"
                 >
                   <div
-                    class="bg-gradient-to-r from-[#02364A] via-[#024D60] via-[#2CACAD] to-[#75E2E0] h-full rounded-full transition-all duration-500"
+                    class="bg-gradient-to-r from-[#0C6038] via-[#808847] to-[#ECD39D] h-full rounded-full transition-all duration-500"
                     :style="{ width: `${selectedLabForEquipment.equipmentSummary.healthPercentage}%` }"
                   />
                 </div>
@@ -2715,7 +2715,7 @@ onUnmounted(() => {
                   <div
                     :class="[
                       'p-2.5 rounded-lg border text-center font-bold',
-                      isDarkMode ? 'bg-[#01141c] border-[#02364A] text-white' : 'bg-white border-slate-200 text-gray-900'
+                      isDarkMode ? 'bg-[#0c1417] border-[#1c2e35] text-white' : 'bg-white border-slate-200 text-gray-900'
                     ]"
                   >
                     <span class="text-[10.5px] block opacity-75 font-normal">Total Peralatan</span>
@@ -2724,7 +2724,7 @@ onUnmounted(() => {
                   <div
                     :class="[
                       'p-2.5 rounded-lg border text-center font-bold',
-                      isDarkMode ? 'bg-[#2CACAD]/20 border-[#2CACAD]/60 text-[#75E2E0]' : 'bg-[#D9F5F0] border-[#2CACAD]/40 text-[#024D60]'
+                      isDarkMode ? 'bg-[#0C6038]/25 border-[#0C6038]/60 text-[#A3E7C1]' : 'bg-[#0C6038]/10 border-[#0C6038]/30 text-[#0C6038]'
                     ]"
                   >
                     <span class="text-[10.5px] block opacity-75 font-normal">Kondisi Baik</span>
@@ -2763,7 +2763,7 @@ onUnmounted(() => {
                   v-if="selectedLabForEquipment.equipmentSummary.items.length === 0"
                   :class="[
                     'p-6 text-center rounded-xl border-2 border-dashed space-y-2',
-                    isDarkMode ? 'border-[#024D60] text-slate-400' : 'border-gray-200 text-gray-500'
+                    isDarkMode ? 'border-slate-800 text-slate-400' : 'border-gray-200 text-gray-500'
                   ]"
                 >
                   <Wrench :size="28" class="mx-auto opacity-50" />
@@ -2778,8 +2778,8 @@ onUnmounted(() => {
                     :class="[
                       'p-3 rounded-xl border-2 transition-all flex items-start gap-3 shadow-xs',
                       isDarkMode
-                        ? 'bg-[#031c26] border-[#024D60]/60 hover:border-[#2CACAD]'
-                        : 'bg-white border-[#BDE7E1] hover:border-[#2CACAD]'
+                        ? 'bg-[#101c21] border-[#2D4C39]/60 hover:border-[#3A5D66]'
+                        : 'bg-white border-gray-200 hover:border-slate-300'
                     ]"
                   >
                     <!-- Item Icon -->
@@ -2787,8 +2787,8 @@ onUnmounted(() => {
                       :class="[
                         'w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-2xs',
                         isDarkMode
-                          ? 'bg-[#02364A]/60 border-[#2CACAD]/50 text-[#75E2E0]'
-                          : 'bg-[#D9F5F0] border-[#2CACAD]/40 text-[#024D60]'
+                          ? 'bg-[#233E45]/40 border-[#3A5D66]/60 text-[#ECD39D]'
+                          : 'bg-[#233E45]/10 border-[#233E45]/30 text-[#233E45]'
                       ]"
                     >
                       <component :is="getEquipmentIcon(item.name, item.category)" :size="20" />
@@ -2801,7 +2801,7 @@ onUnmounted(() => {
                           {{ item.name }}
                         </h6>
                         <span class="font-mono text-xs font-bold px-2 py-0.5 rounded-md border shrink-0"
-                          :class="isDarkMode ? 'bg-black/30 border-[#024D60] text-[#D9F5F0]' : 'bg-gray-100 border-gray-300 text-gray-800'"
+                          :class="isDarkMode ? 'bg-black/30 border-slate-700 text-slate-200' : 'bg-gray-100 border-gray-300 text-gray-800'"
                         >
                           {{ item.quantity }} Unit
                         </span>
@@ -2811,7 +2811,7 @@ onUnmounted(() => {
                         <span
                           :class="[
                             'font-mono px-1.5 py-0.2 rounded border font-semibold',
-                            isDarkMode ? 'bg-[#01141c] border-[#02364A] text-[#75E2E0]' : 'bg-gray-50 border-gray-200 text-gray-600'
+                            isDarkMode ? 'bg-[#091012] border-[#1c2e35] text-[#ECD39D]' : 'bg-gray-50 border-gray-200 text-gray-600'
                           ]"
                         >
                           {{ item.code }}
@@ -2824,8 +2824,7 @@ onUnmounted(() => {
                       <div class="pt-0.5">
                         <span
                           v-if="item.condition === 'GOOD'"
-                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold"
-                          :class="isDarkMode ? 'bg-[#2CACAD]/20 text-[#75E2E0] border border-[#2CACAD]/60' : 'bg-[#D9F5F0] text-[#024D60] border border-[#2CACAD]/60'"
+                          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0C6038]/25 text-[#A3E7C1] border border-[#0C6038]/60"
                         >
                           <CheckCircle2 :size="11" />
                           <span>Siap Pakai (Kondisi Baik)</span>
@@ -2855,11 +2854,11 @@ onUnmounted(() => {
             <div
               :class="[
                 'px-5 py-3 border-t flex items-center justify-between gap-3 shrink-0',
-                isDarkMode ? 'border-[#02364A] bg-[#021720]' : 'border-[#BDE7E1] bg-[#F4FBFA]'
+                isDarkMode ? 'border-[#1c2e35] bg-[#101c21]' : 'border-gray-200 bg-gray-50'
               ]"
             >
               <div class="flex items-center gap-1.5 text-xs opacity-75">
-                <ShieldCheck :size="14" class="text-[#2CACAD]" />
+                <ShieldCheck :size="14" class="text-[#ECD39D]" />
                 <span>Data tersinkronisasi otomatis via WebSocket Display Center</span>
               </div>
               <button
@@ -2868,8 +2867,8 @@ onUnmounted(() => {
                 :class="[
                   'px-4 py-1.5 rounded-xl font-bold text-xs border-2 transition-all cursor-pointer active:scale-95',
                   isDarkMode
-                    ? 'bg-gradient-to-r from-[#024D60] to-[#02364A] hover:from-[#02364A] hover:to-[#024D60] text-[#D9F5F0] border-[#2CACAD]/60'
-                    : 'bg-[#024D60] text-white border-[#024D60] hover:bg-[#02364A]'
+                    ? 'bg-[#0C6038] text-[#F7D2A1] border-[#0C6038]/80 hover:bg-[#127a48]'
+                    : 'bg-[#0C6038] text-white border-[#0C6038] hover:bg-[#127a48]'
                 ]"
               >
                 Tutup Jendela
@@ -2937,11 +2936,11 @@ onUnmounted(() => {
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(44, 172, 173, 0.45);
+  background: rgba(12, 96, 56, 0.45);
   border-radius: 9999px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(117, 226, 224, 0.8);
+  background: rgba(236, 211, 157, 0.75);
 }
 
 .dark-display {
@@ -2954,10 +2953,10 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.03);
 }
 .dark-display .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(2, 77, 96, 0.65);
+  background: rgba(45, 76, 57, 0.65);
 }
 .dark-display .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(117, 226, 224, 0.85);
+  background: rgba(236, 211, 157, 0.8);
 }
 
 @keyframes spin-slow {
