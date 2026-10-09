@@ -1737,23 +1737,33 @@ onUnmounted(() => {
         <!-- Dark Mode Toggle Button -->
         <button
           @click="toggleDarkMode"
-          class="p-2.5 rounded-xl border-2 transition-all shadow-xs cursor-pointer active:scale-95 flex items-center justify-center bg-white/10 hover:bg-white/20 border-white/30 text-white"
+          :class="[
+            'p-2.5 rounded-xl border-2 transition-all shadow-xs cursor-pointer active:scale-95 flex items-center justify-center',
+            isDarkMode
+              ? 'bg-[#233E45]/80 hover:bg-[#233E45] border-[#3A5D66] text-[#ECD39D]'
+              : 'bg-[#F4EFE6] hover:bg-[#EAE2D5] border-[#D8CFBC] text-[#233E45] hover:border-[#233E45]/40 shadow-xs'
+          ]"
           :title="isDarkMode ? 'Beralih ke Tampilan Terang' : 'Beralih ke Tampilan Gelap (Kontras Tinggi)'"
           aria-label="Toggle Dark Mode"
         >
-          <Sun v-if="isDarkMode" :size="17" class="text-amber-300 animate-spin-slow" />
-          <Moon v-else :size="17" />
+          <Sun v-if="isDarkMode" :size="17" class="text-[#ECD39D] animate-spin-slow" />
+          <Moon v-else :size="17" class="text-[#233E45]" />
         </button>
 
         <!-- Fullscreen Button -->
         <button
           @click="toggleFullscreen"
-          class="p-2.5 rounded-xl border-2 transition-all shadow-xs cursor-pointer active:scale-95 flex items-center justify-center bg-white/10 hover:bg-white/20 border-white/30 text-white"
+          :class="[
+            'p-2.5 rounded-xl border-2 transition-all shadow-xs cursor-pointer active:scale-95 flex items-center justify-center',
+            isDarkMode
+              ? 'bg-[#233E45]/80 hover:bg-[#233E45] border-[#3A5D66] text-[#ECD39D]'
+              : 'bg-[#F4EFE6] hover:bg-[#EAE2D5] border-[#D8CFBC] text-[#233E45] hover:border-[#233E45]/40 shadow-xs'
+          ]"
           title="Beralih ke Layar Penuh (Mode TV)"
           aria-label="Toggle Fullscreen"
         >
-          <Minimize2 v-if="isFullscreen" :size="17" />
-          <Maximize2 v-else :size="17" />
+          <Minimize2 v-if="isFullscreen" :size="17" :class="isDarkMode ? 'text-[#ECD39D]' : 'text-[#233E45]'" />
+          <Maximize2 v-else :size="17" :class="isDarkMode ? 'text-[#ECD39D]' : 'text-[#233E45]'" />
         </button>
       </div>
     </header>
