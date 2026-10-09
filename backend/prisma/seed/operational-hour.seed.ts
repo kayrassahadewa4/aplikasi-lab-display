@@ -11,7 +11,11 @@ function timeOnly(hours: number, minutes: number): Date {
   return new Date(`1970-01-01T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00.000Z`);
 }
 
-const laboratoryCodes = ['LAB-A', 'LAB-B', 'LAB-C'];
+const laboratoryCodes = [
+  'LAB-01', 'LAB-02', 'LAB-03', 'LAB-04',
+  'LAB-05', 'LAB-06', 'LAB-07', 'LAB-08',
+  'LAB-A', 'LAB-B', 'LAB-C'
+];
 
 function buildOperationalHours(): OperationalHourEntry[] {
   const entries: OperationalHourEntry[] = [];

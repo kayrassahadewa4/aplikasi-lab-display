@@ -8,28 +8,71 @@ interface LaboratoryFacilityAssignment {
 }
 
 const assignments: LaboratoryFacilityAssignment[] = [
-  // LAB-A — Laboratorium Pemrograman
+  // LAB-01 — Lab Rekayasa Perangkat Lunak
+  { laboratoryCode: 'LAB-01', facilityCode: 'FAC-PC', quantity: 40, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-01', facilityCode: 'FAC-PRJ', quantity: 2, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-01', facilityCode: 'FAC-AC', quantity: 4, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-01', facilityCode: 'FAC-WB', quantity: 2, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-01', facilityCode: 'FAC-PRT', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-01', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
+
+  // LAB-02 — Lab Jaringan & Cyber Security
+  { laboratoryCode: 'LAB-02', facilityCode: 'FAC-PC', quantity: 35, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-02', facilityCode: 'FAC-PRJ', quantity: 2, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-02', facilityCode: 'FAC-AC', quantity: 3, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-02', facilityCode: 'FAC-WB', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-02', facilityCode: 'FAC-NET', quantity: 2, condition: FacilityCondition.GOOD },
+
+  // LAB-03 — Lab Multimedia & Game Dev
+  { laboratoryCode: 'LAB-03', facilityCode: 'FAC-PC', quantity: 35, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-03', facilityCode: 'FAC-PRJ', quantity: 2, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-03', facilityCode: 'FAC-AC', quantity: 4, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-03', facilityCode: 'FAC-WB', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-03', facilityCode: 'FAC-PRT', quantity: 2, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-03', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
+
+  // LAB-04 — Lab Kecerdasan Buatan & Data
+  { laboratoryCode: 'LAB-04', facilityCode: 'FAC-PC', quantity: 40, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-04', facilityCode: 'FAC-PRJ', quantity: 2, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-04', facilityCode: 'FAC-AC', quantity: 4, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-04', facilityCode: 'FAC-WB', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-04', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
+
+  // LAB-05 — Lab Sistem Informasi & Database
+  { laboratoryCode: 'LAB-05', facilityCode: 'FAC-PC', quantity: 35, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-05', facilityCode: 'FAC-PRJ', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-05', facilityCode: 'FAC-AC', quantity: 3, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-05', facilityCode: 'FAC-WB', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-05', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
+
+  // LAB-06 — Lab Komputasi Awan & IoT
+  { laboratoryCode: 'LAB-06', facilityCode: 'FAC-PC', quantity: 30, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-06', facilityCode: 'FAC-PRJ', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-06', facilityCode: 'FAC-AC', quantity: 3, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-06', facilityCode: 'FAC-WB', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-06', facilityCode: 'FAC-NET', quantity: 2, condition: FacilityCondition.GOOD },
+
+  // LAB-07 — Lab Algoritma & Pemrograman
+  { laboratoryCode: 'LAB-07', facilityCode: 'FAC-PC', quantity: 40, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-07', facilityCode: 'FAC-PRJ', quantity: 2, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-07', facilityCode: 'FAC-AC', quantity: 4, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-07', facilityCode: 'FAC-WB', quantity: 2, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-07', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
+
+  // LAB-08 — Lab Hardware & Robotika
+  { laboratoryCode: 'LAB-08', facilityCode: 'FAC-PC', quantity: 30, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-08', facilityCode: 'FAC-PRJ', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-08', facilityCode: 'FAC-AC', quantity: 3, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-08', facilityCode: 'FAC-WB', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-08', facilityCode: 'FAC-PRT', quantity: 1, condition: FacilityCondition.GOOD },
+  { laboratoryCode: 'LAB-08', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
+
+  // Legacy LAB-A, LAB-B, LAB-C
   { laboratoryCode: 'LAB-A', facilityCode: 'FAC-PC', quantity: 40, condition: FacilityCondition.GOOD },
   { laboratoryCode: 'LAB-A', facilityCode: 'FAC-PRJ', quantity: 1, condition: FacilityCondition.GOOD },
   { laboratoryCode: 'LAB-A', facilityCode: 'FAC-AC', quantity: 4, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-A', facilityCode: 'FAC-WB', quantity: 2, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-A', facilityCode: 'FAC-PRT', quantity: 1, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-A', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
-
-  // LAB-B — Laboratorium Jaringan Komputer
   { laboratoryCode: 'LAB-B', facilityCode: 'FAC-PC', quantity: 30, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-B', facilityCode: 'FAC-PRJ', quantity: 1, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-B', facilityCode: 'FAC-AC', quantity: 3, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-B', facilityCode: 'FAC-WB', quantity: 1, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-B', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
-
-  // LAB-C — Laboratorium Multimedia
   { laboratoryCode: 'LAB-C', facilityCode: 'FAC-PC', quantity: 35, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-C', facilityCode: 'FAC-PRJ', quantity: 2, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-C', facilityCode: 'FAC-AC', quantity: 4, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-C', facilityCode: 'FAC-WB', quantity: 1, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-C', facilityCode: 'FAC-PRT', quantity: 2, condition: FacilityCondition.GOOD },
-  { laboratoryCode: 'LAB-C', facilityCode: 'FAC-NET', quantity: 1, condition: FacilityCondition.GOOD },
 ];
 
 export async function seedLaboratoryFacilities(prisma: PrismaClient): Promise<void> {

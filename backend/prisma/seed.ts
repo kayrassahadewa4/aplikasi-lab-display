@@ -9,6 +9,8 @@ import { seedFacilities } from './seed/facility.seed.js';
 import { seedLaboratoryFacilities } from './seed/laboratory-facility.seed.js';
 import { seedOperationalHours } from './seed/operational-hour.seed.js';
 import { seedAnnouncements } from './seed/announcement.seed.js';
+import { seedSchedules } from './seed/schedule.seed.js';
+import { seedRoomRequests } from './seed/room-request.seed.js';
 
 const connectionString = process.env['DATABASE_URL'];
 
@@ -30,6 +32,8 @@ async function main(): Promise<void> {
   await seedLaboratoryFacilities(prisma);
   await seedOperationalHours(prisma);
   await seedAnnouncements(prisma);
+  await seedSchedules(prisma);
+  await seedRoomRequests(prisma);
 
   console.log('\n✅ Database seeding completed successfully.');
 }
