@@ -33,7 +33,11 @@
 
 ---
 
-### 4. 💻 Bukti Eksekusi Teknis (Technical Execution Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Dasbor Peninjauan & Persetujuan Permohonan Laboran](./screenshot.png)
+
+### 5. 💻 Bukti Eksekusi Teknis (Technical Execution Snippet)
 
 ```json
 // Response API: PATCH /api/room-requests/req_881a2f1c/review

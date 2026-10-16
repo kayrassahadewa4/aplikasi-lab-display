@@ -32,7 +32,11 @@
 
 ---
 
-### 4. 💻 Bukti Eksekusi Teknis (Technical Execution Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Riwayat Permohonan & Validasi Berkas Unggahan](./screenshot.png)
+
+### 5. 💻 Bukti Eksekusi Teknis (Technical Execution Snippet)
 
 ```json
 // Response API: POST /api/room-requests/upload

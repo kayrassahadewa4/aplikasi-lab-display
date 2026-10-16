@@ -33,7 +33,11 @@
 
 ---
 
-### 4. 💻 Bukti Eksekusi Teknis (Technical Execution Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Halaman Login & Autentikasi Pengguna Sah](./screenshot.png)
+
+### 5. 💻 Bukti Eksekusi Teknis (Technical Execution Snippet)
 
 ```json
 // Response API: POST /api/auth/login

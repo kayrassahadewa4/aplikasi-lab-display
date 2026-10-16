@@ -33,7 +33,11 @@
 
 ---
 
-### 4. 💻 Bukti Eksekusi Teknis (Technical Execution Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Detail Modal Inspeksi Kelaikan & Kesiapan Alat](./screenshot.png)
+
+### 5. 💻 Bukti Eksekusi Teknis (Technical Execution Snippet)
 
 ```json
 // Data State Komponen Modal Inspeksi

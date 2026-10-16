@@ -43,7 +43,11 @@ Akun pengguna berstatus ACTIVE telah terdaftar pada database PostgreSQL dengan p
 * **Actual Result**: Sistem berhasil mengautentikasi pengguna, menerbitkan JWT token yang disimpan pada state auth, dan pengguna diarahkan ke dasbor laboran.
 * **Catatan Teknis**: Token JWT terverifikasi memiliki masa berlaku 24 jam dengan algoritma HS256.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Halaman Login & Autentikasi Pengguna Sah](./TC-CL-01/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response API: POST /api/auth/login
 {
@@ -86,7 +90,11 @@ Pengguna telah berhasil login sebagai akun dengan peran Dosen / Mahasiswa.
 * **Actual Result**: RolesGuard NestJS memblokir request dan mengembalikan response error 403 Forbidden.
 * **Catatan Teknis**: Prinsip least-privilege RBAC berjalan dengan aman mencegah eskalasi hak akses ilegal.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Proteksi Pembatasan Hak Akses Peran Pengguna](./TC-CL-02/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response API: POST /api/users (dengan token Dosen)
 {
@@ -122,7 +130,11 @@ Laboratorium Komputasi A telah terjadwal untuk Matakuliah Algoritma Pemrograman 
 * **Actual Result**: Sistem melempar ConflictException (HTTP 409) dan jadwal yang bentrok berhasil dicegah dari database.
 * **Catatan Teknis**: Algoritma pengecekan interval (newStart < existingEnd && newEnd > existingStart) berjalan presisi.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Manajemen Jadwal Perkuliahan & Deteksi Bentrok Ruangan](./TC-CL-03/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response API: POST /api/schedules
 {
@@ -158,7 +170,11 @@ Dosen / Pemohon telah terautentikasi pada portal permohonan ruang.
 * **Actual Result**: Data permohonan berhasil terbit dengan ID unik dan berkas PDF tersimpan.
 * **Catatan Teknis**: MIME-type application/pdf terverifikasi aman.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Formulir Pengajuan Peminjaman Lab & Berkas Proposal](./TC-CL-04/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response API: POST /api/room-requests
 {
@@ -198,7 +214,11 @@ Pengguna berada pada form pengajuan peminjaman laboratorium.
 * **Actual Result**: Sistem menolak request dan mengembalikan respon HTTP 400 Bad Request.
 * **Catatan Teknis**: Batas kuota berkas 5MB dan whitelist ekstensi PDF/JPG/PNG ditegakkan pada layer middleware.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Riwayat Permohonan & Validasi Berkas Unggahan](./TC-CL-05/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response API: POST /api/room-requests/upload
 {
@@ -233,7 +253,11 @@ Terdapat permohonan peminjaman dengan status PENDING pada antrian laboran.
 * **Actual Result**: Status permohonan diperbarui menjadi APPROVED, catatan review tersimpan, dan slot waktu terkunci.
 * **Catatan Teknis**: Slot waktu yang telah APPROVED otomatis memblokir permohonan lain pada jam yang sama.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Dasbor Peninjauan & Persetujuan Permohonan Laboran](./TC-CL-06/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response API: PATCH /api/room-requests/req_881a2f1c/review
 {
@@ -272,7 +296,11 @@ Jadwal praktikum aktif terdaftar untuk jam berjalan.
 * **Actual Result**: Sesi RoomUsage terbuat dengan status IN_USE, dan WebSocket broadcast terkirim ke layar display.
 * **Catatan Teknis**: Sinkronisasi instan tanpa memerlukan refresh halaman.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Log Pemakaian Lab & Pelacakan Sesi Aktif IN_USE](./TC-CL-07/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response API: POST /api/room-usage/check-in
 {
@@ -313,7 +341,11 @@ Pengguna menemukan kendala unit perangkat keras di laboratorium.
 * **Actual Result**: Tiket berhasil dibuat dan notifikasi kendala fasilitas muncul di dasbor laboran.
 * **Catatan Teknis**: Kondisi unit PC Client #14 otomatis ditandai DAMAGED pada inventaris.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Inventaris Fasilitas & Manajemen Tiket Kendala Alat](./TC-CL-08/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response API: POST /api/issue-tickets
 {
@@ -352,7 +384,11 @@ Layar Smart TV Kiosk membuka URL /display, dan portal staf laboran dibuka pada P
 * **Actual Result**: Event WebSocket "display:sync" diterima klien display dalam waktu 184 ms (< 500 ms) dan DOM ter-render seketika.
 * **Catatan Teknis**: Benchmark transmisi WebSocket mencatat rata-rata 140–210 ms pada jaringan lokal kampus.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Layar Publik Kiosk TV Display Lorong 8 Lab (Full HD)](./TC-CL-09/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // WebSocket Event Broadcast: display:sync
 {
@@ -391,7 +427,11 @@ Pengunjung / mahasiswa berada di depan layar Kiosk Display publik.
 * **Actual Result**: Modal inspeksi terbuka mulus, menyajikan data inventaris riil dari database PostgreSQL.
 * **Catatan Teknis**: Kios display mendukung interaksi layar sentuh (touchscreen) maupun navigasi mouse.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Detail Modal Inspeksi Kelaikan & Kesiapan Alat](./TC-CL-10/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Data State Komponen Modal Inspeksi
 {
@@ -431,7 +471,11 @@ Terdapat catatan histori peminjaman dan penggunaan ruang pada semester berjalan.
 * **Actual Result**: File Excel (.xlsx) berhasil di-generate oleh library ExcelJS dan terunduh dalam waktu 1.2 detik.
 * **Catatan Teknis**: Format cell, border, dan formula akumulasi jam terformat rapi.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Rekapitulasi Histori Pemakaian & Ekspor Laporan Excel](./TC-CL-11/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Response Header: GET /api/reports/export/excel
 Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
@@ -464,7 +508,11 @@ Layar Kiosk TV Display aktif dalam mode Fullscreen selama 24 jam.
 * **Actual Result**: Klien berhasil mendeteksi disconnect event dan melakukan auto-reconnect berjenjang (exponential backoff) tanpa reload peramban.
 * **Catatan Teknis**: Profiling memori browser menunjukkan penggunaan RAM stabil (delta < 15MB) setelah 24 jam pengujian daya tahan.
 
-### 4. Bukti Eksekusi Teknis (Snippet)
+
+### 4. 📸 Bukti Tangkapan Layar Nyata Aplikasi (Application Screenshot)
+![Pemantauan Berkelanjutan & Ketahanan Sinkronisasi Display](./TC-CL-12/screenshot.png)
+
+### 5. Bukti Eksekusi Teknis (Snippet)
 ```json
 // Console Diagnostic Log: Kiosk Auto-Reconnect
 [Socket.IO] Connection lost. Entering exponential backoff reconnect...
