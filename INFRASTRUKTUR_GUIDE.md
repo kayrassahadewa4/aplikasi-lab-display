@@ -1,4 +1,5 @@
 # Buku Panduan Paket Infrastruktur & Deployment Sistem Display Laboratorium
+## Laboratorium Komputer Fakultas Ilmu Komputer — UPN "Veteran" Jakarta
 
 Dokumen resmi ini merupakan panduan teknis operasional (*DevOps & Infrastructure Manual*) untuk penggelaran, pemeliharaan, serta manajemen database **PostgreSQL 16**, backend **NestJS**, dan frontend **Vue 3** pada **Sistem Informasi Jadwal & Monitoring Penggunaan Laboratorium**.
 
@@ -6,12 +7,12 @@ Dokumen resmi ini merupakan panduan teknis operasional (*DevOps & Infrastructure
 
 ## 1. Ringkasan Ekosistem Infrastruktur
 
-Paket infrastruktur ini dibangun menggunakan teknologi **Containerization (Docker & Docker Compose)**. Seluruh komponen aplikasi telah diisolasi dan diotomatisasi sehingga dapat langsung dijalankan di server lokal sekolah (*On-Premise*) maupun server komputasi awan (*Cloud VPS*) tanpa perlu instalasi runtime manual yang rumit.
+Paket infrastruktur ini dibangun menggunakan teknologi **Containerization (Docker & Docker Compose)**. Seluruh komponen aplikasi telah diisolasi dan diotomatisasi sehingga dapat langsung dijalankan di server lokal laboratorium FIK UPNVJ (*On-Premise*) maupun server komputasi awan (*Cloud VPS*) tanpa perlu instalasi runtime manual yang rumit.
 
 ```
                                   +---------------------------------------+
                                   |         CLIENT / USER BROWSER         |
-                                  |   (TV Kiosk Display / Admin / Guru)   |
+                                  |   (TV Kiosk Display / Admin / Dosen)  |
                                   +---------------------------------------+
                                                       |
                                            Port 80 (HTTP / WS)
@@ -58,8 +59,8 @@ Paket infrastruktur ini dibangun menggunakan teknologi **Containerization (Docke
 
 Sistem dirancang hemat sumber daya (*lightweight*) dengan *memory footprint* total kontainer di bawah **800 MB RAM**.
 
-### A. Skenario On-Premise (Mini PC / Server Lab / Komputer Sekolah)
-Cocok dipasang pada Mini PC (seperti Intel NUC, ASUS Mini PC, atau PC desktop lama yang difungsikan sebagai server lab):
+### A. Skenario On-Premise (Mini PC / Server Lab Komputer FIK UPNVJ)
+Cocok dipasang pada Mini PC (seperti Intel NUC, ASUS Mini PC, atau PC desktop lama yang difungsikan sebagai server laboratorium FIK UPNVJ):
 - **Prosesor**: Intel Core i3 / Celeron generasi modern (minimal 2 Core, 2.0 GHz)
 - **RAM**: Minimal 4 GB (Rekomendasi 8 GB jika server juga menjalankan browser display TV)
 - **Penyimpanan**: SSD 64 GB (Sisa ruang minimal 15 GB untuk OS dan Docker image)
@@ -67,7 +68,7 @@ Cocok dipasang pada Mini PC (seperti Intel NUC, ASUS Mini PC, atau PC desktop la
 - **Konektivitas**: Gigabit LAN / Wi-Fi stabil (IP statis direkomendasikan)
 
 ### B. Skenario Cloud VPS (Virtual Private Server)
-Cocok jika display TV dan sistem reservasi ingin diakses langsung dari internet / luar sekolah:
+Cocok jika display TV dan sistem reservasi ingin diakses langsung dari internet / luar jaringan kampus UPNVJ:
 - **Paket Minimum**: 1 vCPU, 2 GB RAM, 25 GB SSD (Misal: DigitalOcean \$12/bln, IDCloudHost, Biznet Gio, atau Niagahoster VPS)
 - **Paket Rekomendasi**: 2 vCPU, 4 GB RAM, 50 GB SSD
 
@@ -92,7 +93,7 @@ cp .env.example .env
 *(Opsional)* Buka file `.env` dengan text editor (misal: `nano .env`) jika ingin mengubah password PostgreSQL atau port HTTP:
 ```ini
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=password_rahasia_sekolah
+POSTGRES_PASSWORD=password_rahasia_upnvj
 POSTGRES_DB=lab_display
 FRONTEND_PORT=80
 ```
@@ -116,15 +117,14 @@ Akses sistem di browser:
 
 Saat sistem pertama kali menyala, database PostgreSQL langsung terisi data laboratorium lengkap dan akun pengguna awal:
 
-| Peran (Role) | Username / Email | Password Default | Hak Akses |
+| Peran (Role Code) | Username / Email | Password Default | Hak Akses Utama |
 | :--- | :--- | :--- | :--- |
-| **Administrator** | `admin@sekolah.sch.id` | `Admin#2026!` | Pengaturan sistem, manajemen lab, audit log |
-| **Laboran (Petugas)** | `laboran@sekolah.sch.id` | `Laboran#2026!` | Verifikasi & persetujuan booking, operasional lab |
-| **Guru / Dosen** | `guru@sekolah.sch.id` | `Guru#2026!` | Pengajuan peminjaman ruang & input jadwal mengajar |
-| **Siswa / Mahasiswa** | `siswa@sekolah.sch.id` | `Siswa#2026!` | Melihat ketersediaan lab dan antrean jadwal |
+| **Administrator (`ADMIN`)** | `admin@lab.com` | `password123` | Pengaturan sistem, manajemen lab, audit log |
+| **Laboran (`LABORAN`)** | `laboran@lab.com` | `password123` | Verifikasi & persetujuan booking, operasional lab |
+| **Dosen / Lecturer (`DOSEN`)** | `lecturer@lab.com` | `password123` | Pengajuan peminjaman ruang & cek kalender jadwal |
 
 > [!WARNING]
-> Sangat disarankan untuk segera mengubah password akun administrator dan laboran setelah sistem berhasil diluncurkan ke tahap produksi melalui menu profil aplikasi.
+> Sangat disarankan untuk segera mengubah password akun administrator dan staf setelah sistem berhasil diluncurkan ke tahap produksi melalui menu profil aplikasi.
 
 ---
 
@@ -143,7 +143,7 @@ cat nama_file_backup.sql | docker compose exec -T postgres psql -U postgres -d l
 ```
 
 ### C. Menghubungkan DBeaver / pgAdmin (Remote GUI)
-Admin IT sekolah dapat langsung memeriksa data tabel menggunakan software GUI manajemen database dari komputer lain di jaringan lokal:
+Admin IT / Laboran FIK UPNVJ dapat langsung memeriksa data tabel menggunakan software GUI manajemen database dari komputer lain di jaringan lokal:
 - **Host**: `<IP_ADDRESS_SERVER>`
 - **Port**: `5432`
 - **Database**: `lab_display`
@@ -172,7 +172,7 @@ Berikut ringkasan perintah praktis untuk tim IT:
 
 ## 7. Penanganan Masalah (Troubleshooting)
 
-### Q: Port 80 sudah digunakan oleh web server lain di server sekolah (misal Apache/Nginx bawaan OS)
+### Q: Port 80 sudah digunakan oleh web server lain di server kampus/lab (misal Apache/Nginx bawaan OS)
 **Solusi**:
 Buka file `.env`, ubah nilai `FRONTEND_PORT`:
 ```ini
@@ -182,7 +182,7 @@ Lalu jalankan `docker compose up -d`. Sistem sekarang dapat diakses melalui `htt
 
 ### Q: Tampilan TV Display tidak otomatis berganti saat jadwal diperbarui (WebSocket Disconnect)
 **Solusi**:
-Pastikan port `80` atau reverse proxy sekolah tidak memblokir header WebSocket. Konfigurasi `nginx.conf` di dalam paket ini sudah menyertakan `proxy_set_header Upgrade $http_upgrade;` dan `Connection "upgrade"` secara default.
+Pastikan port `80` atau reverse proxy kampus tidak memblokir header WebSocket. Konfigurasi `nginx.conf` di dalam paket ini sudah menyertakan `proxy_set_header Upgrade $http_upgrade;` dan `Connection "upgrade"` secara default.
 
 ### Q: Bagaimana cara mematikan seeding otomatis setelah pertama kali jalan?
 **Solusi**:
