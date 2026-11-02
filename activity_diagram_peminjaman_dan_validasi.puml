@@ -1,0 +1,91 @@
+@startuml
+skinparam defaultFontName "Segoe UI"
+skinparam roundCorner 8
+skinparam shadow false
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #1E3A8A
+    BorderThickness 1.2
+    FontColor #0F172A
+    FontSize 10
+    ArrowColor #2563EB
+    ArrowThickness 1.2
+}
+
+skinparam activityDiamond {
+    BackgroundColor #EFF6FF
+    BorderColor #1E3A8A
+    BorderThickness 1.2
+    FontColor #0F172A
+    FontSize 10
+    FontStyle bold
+}
+
+skinparam partition {
+    BorderColor #CBD5E1
+    BorderThickness 1.0
+    BackgroundColor #F8FAFC
+    FontColor #0F172A
+    FontSize 11
+    FontStyle bold
+}
+
+|#EFF6FF|Pemohon (Dosen / Mhs)|
+|#F8FAFC|Sistem Backend (Node.js & DB)|
+|#F0FDF4|Laboran (Staff Lab)|
+|#FFFBEB|Display Kiosk TV|
+
+|Pemohon (Dosen / Mhs)|
+start
+:Login ke Sistem (JWT);
+:Pilih Ruang Lab, Tanggal,\nJam Mulai & Selesai;
+:Unggah Dokumen Proposal (PDF);
+:Klik "Ajukan Peminjaman";
+
+|Sistem Backend (Node.js & DB)|
+:Terima Request Payload;
+:Cek Data Jadwal Eksis;
+:Jalankan Algoritma Validasi Overlap:\n<b>(newStart < existEnd) AND (newEnd > existStart)</b>;
+
+if (Bentrok?) then (Ya)
+    :Kirim Error 409 (Bentrok);
+    |Pemohon (Dosen / Mhs)|
+    :Tampil Peringatan Jadwal Bentrok;
+    :Pilih Slot Waktu Lain;
+    detach
+else (Tidak)
+    |Sistem Backend (Node.js & DB)|
+    :Simpan Pengajuan (Status: <b>PENDING</b>);
+    :Kirim Notifikasi ke Laboran;
+endif
+
+|Laboran (Staff Lab)|
+:Buka Dashboard Pengajuan;
+:Review Keperluan & Proposal;
+
+if (Setuju?) then (Tolak)
+    :Input Catatan Penolakan;
+    :Status: <b>REJECTED</b>;
+    |Pemohon (Dosen / Mhs)|
+    :Terima Notifikasi Ditolak;
+    stop
+else (Approve)
+    |Laboran (Staff Lab)|
+    :Klik "Approve Peminjaman";
+    
+    |Sistem Backend (Node.js & DB)|
+    :Ubah Status: <b>APPROVED</b> di DB;
+    :Trigger WebSocket Event:\n<b>io.emit('jadwal:updated')</b>;
+    
+    |Display Kiosk TV|
+    :Terima Event WebSocket (< 500 ms);
+    :Perbarui Tampilan Tanpa Reload;
+    :Tampilkan Jadwal & Okupansi Baru;
+    
+    |Pemohon (Dosen / Mhs)|
+    :Terima Notifikasi Disetujui & QR Check-In;
+    stop
+endif
+
+@enduml

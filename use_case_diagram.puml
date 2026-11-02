@@ -1,0 +1,108 @@
+@startuml
+skinparam defaultFontName "Segoe UI"
+skinparam roundCorner 8
+skinparam shadow false
+
+skinparam actor {
+    BackgroundColor #EFF6FF
+    BorderColor #1E3A8A
+    FontColor #0F172A
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #2563EB
+    BorderThickness 1.2
+    FontColor #1E293B
+    FontSize 10
+    ArrowColor #1E3A8A
+    ArrowThickness 1.1
+}
+
+skinparam package {
+    BackgroundColor #F8FAFC
+    BorderColor #CBD5E1
+    BorderThickness 1.0
+    FontColor #1E3A8A
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #475569
+    BorderThickness 1.5
+    FontColor #0F172A
+    FontSize 12
+    FontStyle bold
+}
+
+left to right direction
+
+actor "Pemohon\n(Dosen / Mhs)" as Pemohon
+actor "Laboran\n(Staff Lab)" as Laboran
+actor "Administrator\n(Admin Sistem)" as Admin
+actor "Display TV Kiosk\n(Layar Koridor)" as TV << Device >>
+
+rectangle "Sistem Informasi Display Jadwal Laboratorium Terintegrasi (UPNVJ)" {
+    
+    usecase "UC-01: Autentikasi Login (JWT)" as UC1
+    
+    package "Peminjaman & Presensi" {
+        usecase "UC-03: Ajukan Peminjaman Lab" as UC3
+        usecase "UC-04: Unggah Proposal / Surat Izin" as UC4
+        usecase "UC-05: Validasi Bentrok Otomatis" as UC5
+        usecase "UC-10: Check-In Presensi Praktikum" as UC10
+        usecase "UC-02: Cek Jadwal & Okupansi Lab" as UC2
+        usecase "UC-11: Pelaporan Kendala PC" as UC11
+    }
+    
+    package "Manajemen & Verifikasi" {
+        usecase "UC-06: Verifikasi & Persetujuan (Approve/Reject)" as UC6
+        usecase "UC-07: Kelola Master Jadwal Kuliah" as UC7
+        usecase "UC-13: Unduh Rekapitulasi (Excel)" as UC13
+    }
+
+    package "Layanan Kiosk & Display" {
+        usecase "UC-12: Push Broadcast Jadwal (WebSocket)" as UC12
+    }
+
+    package "Administrasi Sistem" {
+        usecase "UC-08: Kelola Data Lab & PC" as UC8
+        usecase "UC-09: Manajemen User & Hak Akses" as UC9
+    }
+}
+
+' Relasi Pemohon
+Pemohon --> UC1
+Pemohon --> UC2
+Pemohon --> UC3
+Pemohon --> UC10
+Pemohon --> UC11
+
+' Relasi Laboran
+Laboran --> UC1
+Laboran --> UC2
+Laboran --> UC6
+Laboran --> UC7
+Laboran --> UC11
+Laboran --> UC13
+
+' Relasi Admin
+Admin --> UC1
+Admin --> UC8
+Admin --> UC9
+Admin --> UC13
+
+' Relasi TV
+UC12 <-- TV
+
+' Relasi Include
+UC3 ..> UC4 : <<include>>
+UC3 ..> UC5 : <<include>>
+UC6 ..> UC12 : <<include>>
+UC7 ..> UC12 : <<include>>
+
+@enduml

@@ -38,6 +38,8 @@ coverage/
 tmp/
 temp/
 *.tmp
+~$*
+temp_profile/
 
 # Database
 *.db

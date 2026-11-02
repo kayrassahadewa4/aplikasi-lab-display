@@ -1,0 +1,93 @@
+# ====================================================================
+# Docker Compose - Sistem Display Jadwal Lab & Monitoring Terpadu
+# Multi-Container: PostgreSQL 16 + Backend NestJS + Frontend Vue 3/Nginx
+# ====================================================================
+
+services:
+  # ------------------------------------------------------------------
+  # 1. DATABASE SERVICE (PostgreSQL 16)
+  # ------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: lab_display_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-lab_display}
+      TZ: Asia/Jakarta
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-lab_display}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - lab_network
+
+  # ------------------------------------------------------------------
+  # 2. BACKEND API SERVICE (NestJS + Prisma + Socket.io)
+  # ------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lab_display_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      TZ: Asia/Jakarta
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-lab_display}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-k4yr4_s4h4d3w4_super_secret_jwt_key_2026}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-1d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      RUN_SEED: ${RUN_SEED:-true}
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - backend_uploads:/app/public/uploads
+    networks:
+      - lab_network
+
+  # ------------------------------------------------------------------
+  # 3. FRONTEND SERVICE (Vue 3 + Nginx Reverse Proxy)
+  # ------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_WS_URL: ${VITE_WS_URL:-}
+    container_name: lab_display_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    networks:
+      - lab_network
+
+# --------------------------------------------------------------------
+# VOLUMES & NETWORKS
+# --------------------------------------------------------------------
+volumes:
+  # Penyimpanan data PostgreSQL agar data jadwal & user tetap aman saat restart
+  postgres_data:
+    name: lab_display_postgres_data
+  # Penyimpanan file asset / foto avatar lab yang diunggah
+  backend_uploads:
+    name: lab_display_backend_uploads
+
+networks:
+  lab_network:
+    name: lab_display_network
+    driver: bridge
