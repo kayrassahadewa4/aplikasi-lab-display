@@ -511,5 +511,9 @@ export class AuthService {
       },
     };
   }
+
+  async seedDatabase() {
+    return this.prisma.seedInitialData(true);
+  }
 }
 

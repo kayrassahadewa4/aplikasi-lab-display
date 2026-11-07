@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { ensureSchema, seedAll } from './prisma.seeder.js';
 
 @Injectable()
 export class PrismaService
@@ -19,6 +20,17 @@ export class PrismaService
 
   async onModuleInit() {
     await this.$connect();
+    try {
+      await ensureSchema(this);
+      await seedAll(this, false);
+    } catch (err: any) {
+      console.warn('Postgres startup schema check/seeder warning:', err?.message || err);
+    }
+  }
+
+  async seedInitialData(force = true) {
+    await ensureSchema(this);
+    return await seedAll(this, force);
   }
 
   async onModuleDestroy() {

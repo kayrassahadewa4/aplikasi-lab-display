@@ -5,4 +5,4 @@ nixPkgs = ['openssl']
 cmds = ['npm ci', 'npx prisma generate', 'npm run build']
 
 [start]
-cmd = 'npx prisma migrate deploy && npx prisma db seed && node dist/src/main.js'
+cmd = 'node dist/src/main.js'

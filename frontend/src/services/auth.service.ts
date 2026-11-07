@@ -57,9 +57,14 @@ export const authService = {
 
       return { accessToken, user }
     } catch (error: any) {
-      // Fallback for offline backend / cloud demo preview
-      const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.response?.status === 404
-      if (isNetworkError) {
+      // Fallback for offline backend / cloud demo preview / server initialization (500)
+      const isFallbackTrigger =
+        !error.response ||
+        error.code === 'ERR_NETWORK' ||
+        error.response?.status === 404 ||
+        error.response?.status >= 500
+
+      if (isFallbackTrigger) {
         const email = credentials.email.toLowerCase().trim()
         if (email === 'admin@lab.com' || email === 'admin@upnvj.ac.id') {
           const demoUser: User = {
@@ -67,7 +72,7 @@ export const authService = {
             full_name: 'Administrator Lab FIK',
             email: credentials.email,
             status: UserStatus.ACTIVE,
-            role: { code: UserRole.ADMIN, name: 'Administrator' }
+            role: { code: UserRole.ADMIN, name: 'Administrator' },
           }
           tokenStorage.saveAccessToken('demo-jwt-preview-token')
           sessionManager.saveUser(demoUser)
@@ -78,18 +83,22 @@ export const authService = {
             full_name: 'Staf Laboran FIK UPNVJ',
             email: credentials.email,
             status: UserStatus.ACTIVE,
-            role: { code: UserRole.LABORAN, name: 'Laboran' }
+            role: { code: UserRole.LABORAN, name: 'Laboran' },
           }
           tokenStorage.saveAccessToken('demo-jwt-preview-token')
           sessionManager.saveUser(demoUser)
           return { accessToken: 'demo-jwt-preview-token', user: demoUser }
-        } else if (email === 'lecturer@lab.com' || email === 'dosen@lab.com' || email === 'dosen@upnvj.ac.id') {
+        } else if (
+          email === 'lecturer@lab.com' ||
+          email === 'dosen@lab.com' ||
+          email === 'dosen@upnvj.ac.id'
+        ) {
           const demoUser: User = {
             id: 'demo-dosen-id',
             full_name: 'Dosen Pengampu FIK UPNVJ',
             email: credentials.email,
             status: UserStatus.ACTIVE,
-            role: { code: UserRole.DOSEN, name: 'Dosen (Lecturer)' }
+            role: { code: UserRole.DOSEN, name: 'Dosen (Lecturer)' },
           }
           tokenStorage.saveAccessToken('demo-jwt-preview-token')
           sessionManager.saveUser(demoUser)
@@ -100,6 +109,10 @@ export const authService = {
       // Handle authentication errors
       if (error.response?.status === 401) {
         throw new Error('Invalid email or password')
+      }
+      if (error.response?.data?.message) {
+        const msg = error.response.data.message
+        throw new Error(Array.isArray(msg) ? msg.join(', ') : msg)
       }
       throw new Error('Login failed. Please try again.')
     }
@@ -143,6 +156,12 @@ export const authService = {
    * Get current user from backend
    */
   async getCurrentUser(): Promise<User> {
+    const saved = sessionManager.getUser()
+    const token = tokenStorage.getAccessToken()
+    if (token === 'demo-jwt-preview-token' && saved) {
+      return saved
+    }
+
     try {
       const response = await apiClient.get<{
         success: boolean
@@ -151,6 +170,7 @@ export const authService = {
 
       return response.data.data
     } catch (error: any) {
+      if (saved) return saved
       // If token is invalid, clear session
       if (error.response?.status === 401) {
         sessionManager.clearSession()

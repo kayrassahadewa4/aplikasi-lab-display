@@ -100,4 +100,10 @@ export class AuthController {
   async forgotPasswordRequest(@Body() dto: ForgotPasswordRequestDto) {
     return this.authService.forgotPasswordRequest(dto);
   }
+
+  @Get('seed')
+  @ApiOperation({ summary: 'Auto-seed system initial accounts and laboratories' })
+  async seedDatabase() {
+    return this.authService.seedDatabase();
+  }
 }
