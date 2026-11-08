@@ -35,12 +35,38 @@ async function bootstrap() {
   // Global API prefix (/api)
   app.setGlobalPrefix(API_PREFIX);
 
-  // CORS
+  // Robust Dynamic CORS Configuration
   const configuredCors = configService.get<string>('CORS_ORIGIN');
   app.enableCors({
-    origin: configuredCors
-      ? configuredCors.split(',').map((o) => o.trim())
-      : (requestOrigin, callback) => callback(null, true),
+    origin: (requestOrigin, callback) => {
+      // Allow requests with no origin (curl, mobile, server-to-server)
+      if (!requestOrigin) {
+        return callback(null, true);
+      }
+
+      // If no CORS_ORIGIN or set to wildcard '*', dynamically allow the requesting origin
+      if (!configuredCors || configuredCors === '*' || configuredCors.trim() === '') {
+        return callback(null, true);
+      }
+
+      const allowedOrigins = configuredCors
+        .split(',')
+        .map((o) => o.trim().replace(/^["']|["']$/g, '').replace(/\/$/, ''))
+        .filter(Boolean);
+
+      // Check explicit match, wildcard, vercel.app preview/prod, or localhost
+      const normalizedReqOrigin = requestOrigin.replace(/\/$/, '');
+      if (
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(normalizedReqOrigin) ||
+        normalizedReqOrigin.endsWith('.vercel.app') ||
+        normalizedReqOrigin.startsWith('http://localhost')
+      ) {
+        return callback(null, true);
+      }
+
+      callback(null, false);
+    },
     credentials: true,
   });
 

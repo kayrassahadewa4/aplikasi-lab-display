@@ -54,3 +54,9 @@ prisma/.env
 .agents/
 .claude/
 .windsurf/
+
+# Local documents and user manuals (Strictly excluded from GitHub)
+*.docx
+*.pdf
+*.pptx
+*.xlsx
