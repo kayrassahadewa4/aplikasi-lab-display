@@ -285,17 +285,29 @@ const handleSubmit = async () => {
     <!-- Login Form -->
     <form @submit.prevent="handleSubmit" class="space-y-3.5">
 
-      <!-- Email -->
+      <!-- Email / Nama Pengguna -->
       <div>
-        <label class="block text-xs font-bold text-text-secondary mb-1.5">Alamat Email</label>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-xs font-bold text-text-secondary">Alamat Email / Nama Pengguna</label>
+          <span
+            :class="[
+              'text-[10px] font-mono transition-colors',
+              email.length >= 100 ? 'text-danger font-bold' : email.length >= 80 ? 'text-amber-600 font-semibold' : 'text-text-muted/80'
+            ]"
+            title="Batas karakter: 100 karakter"
+          >
+            {{ email.length }}/100
+          </span>
+        </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
             <Mail :size="16" />
           </div>
           <input
             v-model="email"
-            type="email"
-            placeholder="Masukkan email Anda"
+            type="text"
+            maxlength="100"
+            placeholder="Masukkan email atau nama pengguna Anda"
             required
             :disabled="isSubmitting"
             class="w-full pl-10 pr-4 py-2.5 bg-white/60 border border-white/80 rounded-xl text-xs font-medium transition-all duration-200 hover:bg-white/80 hover:border-white focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white text-text-primary placeholder:text-text-muted/70 backdrop-blur-sm shadow-2xs"
@@ -305,7 +317,18 @@ const handleSubmit = async () => {
 
       <!-- Password -->
       <div>
-        <label class="block text-xs font-bold text-text-secondary mb-1.5">Kata Sandi</label>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-xs font-bold text-text-secondary">Kata Sandi</label>
+          <span
+            :class="[
+              'text-[10px] font-mono transition-colors',
+              password.length >= 250 ? 'text-danger font-bold' : password.length >= 200 ? 'text-amber-600 font-semibold' : 'text-text-muted/80'
+            ]"
+            title="Batas karakter: 250 karakter"
+          >
+            {{ password.length }}/250
+          </span>
+        </div>
         <div class="relative flex items-center">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
             <Lock :size="16" />
@@ -313,6 +336,7 @@ const handleSubmit = async () => {
           <input
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
+            maxlength="250"
             placeholder="Masukkan kata sandi Anda"
             required
             :disabled="isSubmitting"
@@ -457,7 +481,10 @@ const handleSubmit = async () => {
 
               <form @submit.prevent="handleForgotSubmit" class="space-y-3">
                 <div>
-                  <label class="block text-[11px] font-bold text-text-secondary mb-1">Email Akun Terdaftar *</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[11px] font-bold text-text-secondary">Email Akun Terdaftar *</label>
+                    <span class="text-[10px] font-mono text-text-muted">{{ forgotEmail.length }}/100</span>
+                  </div>
                   <div class="relative">
                     <div class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
                       <Mail :size="14" />
@@ -465,6 +492,7 @@ const handleSubmit = async () => {
                     <input
                       v-model="forgotEmail"
                       type="email"
+                      maxlength="100"
                       required
                       placeholder="nama@upnvj.ac.id"
                       class="w-full pl-9 pr-3 py-2 bg-surface/60 border border-gray-200 rounded-xl text-xs text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-all"
@@ -474,9 +502,13 @@ const handleSubmit = async () => {
                 </div>
 
                 <div>
-                  <label class="block text-[11px] font-bold text-text-secondary mb-1">Catatan / Alasan (Opsional)</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-[11px] font-bold text-text-secondary">Catatan / Alasan (Opsional)</label>
+                    <span class="text-[10px] font-mono text-text-muted">{{ forgotNotes.length }}/250</span>
+                  </div>
                   <textarea
                     v-model="forgotNotes"
+                    maxlength="250"
                     rows="2"
                     placeholder="Contoh: Lupa kata sandi sejak pergantian semester."
                     class="w-full px-3 py-2 bg-surface/60 border border-gray-200 rounded-xl text-xs text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-all resize-none"
@@ -672,11 +704,15 @@ const handleSubmit = async () => {
 
             <!-- Custom Account Entry -->
             <div class="pt-3 border-t border-gray-100 space-y-2.5">
-              <p class="text-[10px] font-black text-text-muted uppercase tracking-wider">Atau Masuk dengan Email Google Lainnya</p>
+              <div class="flex items-center justify-between">
+                <p class="text-[10px] font-black text-text-muted uppercase tracking-wider">Atau Masuk dengan Email Google Lainnya</p>
+                <span class="text-[10px] font-mono text-text-muted">{{ customGoogleEmail.length }}/100</span>
+              </div>
               <div class="flex flex-col sm:flex-row gap-2">
                 <input
                   v-model="customGoogleEmail"
                   type="email"
+                  maxlength="100"
                   placeholder="nama@upnvj.ac.id atau @gmail.com"
                   class="flex-1 px-3 py-2 bg-surface border border-gray-200 rounded-xl text-xs font-medium focus:outline-none focus:border-brand-400"
                 />

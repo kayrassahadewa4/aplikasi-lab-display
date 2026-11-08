@@ -272,12 +272,16 @@ const handleCancel = () => {
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div class="space-y-1.5 sm:col-span-2">
-              <label class="block font-bold text-text-primary">
-                Nama Lengkap (beserta Gelar) <span class="text-red-500">*</span>
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">
+                  Nama Lengkap (beserta Gelar) <span class="text-red-500">*</span>
+                </label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (form.fullName || '').length }}/100</span>
+              </div>
               <input
                 v-model="form.fullName"
                 type="text"
+                maxlength="100"
                 placeholder="Contoh: Dr. Hendra Wijaya, M.Kom."
                 required
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
@@ -285,12 +289,16 @@ const handleCancel = () => {
             </div>
 
             <div class="space-y-1.5">
-              <label class="block font-bold text-text-primary">
-                Alamat Email Institusi <span class="text-red-500">*</span>
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">
+                  Alamat Email Institusi <span class="text-red-500">*</span>
+                </label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (form.email || '').length }}/100</span>
+              </div>
               <input
                 v-model="form.email"
                 type="email"
+                maxlength="100"
                 placeholder="Contoh: hendra.wijaya@upnvj.ac.id"
                 required
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
@@ -355,14 +363,18 @@ const handleCancel = () => {
             </div>
 
             <div class="space-y-1.5 sm:col-span-2">
-              <label class="block font-bold text-text-primary">
-                Kata Sandi
-                <span v-if="isEditMode" class="font-normal text-text-muted">(kosongkan jika tidak ingin mengubah kata sandi)</span>
-                <span v-else class="text-red-500">*</span>
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">
+                  Kata Sandi
+                  <span v-if="isEditMode" class="font-normal text-text-muted">(kosongkan jika tidak ingin mengubah kata sandi)</span>
+                  <span v-else class="text-red-500">*</span>
+                </label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (form.password || '').length }}/250</span>
+              </div>
               <input
                 v-model="form.password"
                 type="password"
+                maxlength="250"
                 placeholder="Masukkan kata sandi (minimal 6 karakter)"
                 :required="!isEditMode"
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"

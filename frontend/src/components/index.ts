@@ -30,6 +30,7 @@ export { default as FilterPanel } from './common/FilterPanel.vue'
 
 // Feedback
 export { default as ConfirmDialog } from './common/ConfirmDialog.vue'
+export { default as LogoutConfirmDialog } from './common/LogoutConfirmDialog.vue'
 export { default as ToastNotification } from './common/ToastNotification.vue'
 export { default as ToastContainer } from './common/ToastContainer.vue'
 

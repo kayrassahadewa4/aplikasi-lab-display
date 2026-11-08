@@ -728,10 +728,14 @@ const handleDiscard = () => {
 
           <form @submit.prevent="handleUpdatePassword" class="space-y-4 text-xs">
             <div>
-              <label class="block font-bold text-text-primary mb-1">Kata Sandi Saat Ini</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-text-primary">Kata Sandi Saat Ini</label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.currentPassword || '').length }}/250</span>
+              </div>
               <input
                 v-model="securityForm.currentPassword"
                 type="password"
+                maxlength="250"
                 placeholder="••••••••••••"
                 required
                 @input="markDirty"
@@ -741,10 +745,14 @@ const handleDiscard = () => {
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-bold text-text-primary mb-1">Kata Sandi Baru</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block font-bold text-text-primary">Kata Sandi Baru</label>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.newPassword || '').length }}/250</span>
+                </div>
                 <input
                   v-model="securityForm.newPassword"
                   type="password"
+                  maxlength="250"
                   placeholder="Masukkan kata sandi baru"
                   required
                   @input="markDirty"
@@ -754,10 +762,14 @@ const handleDiscard = () => {
               </div>
 
               <div>
-                <label class="block font-bold text-text-primary mb-1">Konfirmasi Kata Sandi Baru</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block font-bold text-text-primary">Konfirmasi Kata Sandi Baru</label>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.confirmPassword || '').length }}/250</span>
+                </div>
                 <input
                   v-model="securityForm.confirmPassword"
                   type="password"
+                  maxlength="250"
                   placeholder="Konfirmasi kata sandi baru"
                   required
                   @input="markDirty"

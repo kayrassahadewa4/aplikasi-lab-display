@@ -4,11 +4,14 @@ import { useRouter } from 'vue-router'
 import { LogOut, Menu, Monitor } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
 import { useLaboranNavStore } from '@/stores/laboran-nav.store'
-import { BaseAvatar, NotificationDropdown, BaseBreadcrumb } from '@/components'
+import { BaseAvatar, NotificationDropdown, BaseBreadcrumb, LogoutConfirmDialog } from '@/components'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const navStore = useLaboranNavStore()
+
+const showLogoutModal = ref(false)
+const isLoggingOut = ref(false)
 
 // Retain cached name to avoid flickers during logout
 const cachedName = ref(authStore.userName || 'Lab Staff')
@@ -30,9 +33,19 @@ const laboranEmail = computed(() => {
   return cachedEmail.value || 'staff@univ.ac.id'
 })
 
-const handleLogout = async () => {
-  router.push('/login')
-  await authStore.logout()
+const triggerLogout = () => {
+  showLogoutModal.value = true
+}
+
+const confirmLogout = async () => {
+  isLoggingOut.value = true
+  try {
+    await authStore.logout()
+    showLogoutModal.value = false
+    router.push('/login')
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 
 const toggleMobileSidebar = () => {
@@ -106,12 +119,19 @@ const toggleMobileSidebar = () => {
 
       <!-- Logout Action -->
       <button
-        @click="handleLogout"
+        @click="triggerLogout"
         class="flex items-center justify-center w-8 h-8 rounded-full text-text-muted hover:text-danger hover:bg-red-50 transition-all duration-150 cursor-pointer"
         title="Keluar Akun"
       >
         <LogOut :size="16" />
       </button>
     </div>
+
+    <!-- Dialog Konfirmasi Logout -->
+    <LogoutConfirmDialog
+      v-model="showLogoutModal"
+      :loading="isLoggingOut"
+      @confirm="confirmLogout"
+    />
   </header>
 </template>

@@ -13,6 +13,8 @@ interface Props {
   required?: boolean
   prefixIcon?: any
   suffixIcon?: any
+  maxlength?: number
+  showCounter?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -20,6 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   readonly: false,
   required: false,
+  showCounter: false,
 })
 
 const emit = defineEmits<{
@@ -33,14 +36,40 @@ const handleInput = (event: Event) => {
 
 const hasPrefix = computed(() => !!props.prefixIcon)
 const hasSuffix = computed(() => !!props.suffixIcon)
+
+const currentLength = computed(() => {
+  if (props.modelValue === undefined || props.modelValue === null) return 0
+  return String(props.modelValue).length
+})
+
+const isNearLimit = computed(() => {
+  if (!props.maxlength) return false
+  return currentLength.value >= props.maxlength * 0.8
+})
+
+const isAtLimit = computed(() => {
+  if (!props.maxlength) return false
+  return currentLength.value >= props.maxlength
+})
 </script>
 
 <template>
   <div class="w-full">
-    <label v-if="label" class="block text-xs font-bold text-text-secondary mb-1">
-      {{ label }}
-      <span v-if="required" class="text-danger ml-0.5">*</span>
-    </label>
+    <div v-if="label || (maxlength && showCounter)" class="flex items-center justify-between mb-1">
+      <label v-if="label" class="block text-xs font-bold text-text-secondary">
+        {{ label }}
+        <span v-if="required" class="text-danger ml-0.5">*</span>
+      </label>
+      <span
+        v-if="maxlength && showCounter"
+        :class="[
+          'text-[10px] font-mono transition-colors ml-auto',
+          isAtLimit ? 'text-danger font-bold' : isNearLimit ? 'text-amber-600 font-semibold' : 'text-text-muted/80'
+        ]"
+      >
+        {{ currentLength }}/{{ maxlength }}
+      </span>
+    </div>
     <div class="relative">
       <div v-if="hasPrefix" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
         <component :is="prefixIcon" :size="16" />
@@ -48,6 +77,7 @@ const hasSuffix = computed(() => !!props.suffixIcon)
       <input
         :value="modelValue"
         :type="type"
+        :maxlength="maxlength"
         :placeholder="placeholder"
         :disabled="disabled"
         :readonly="readonly"
