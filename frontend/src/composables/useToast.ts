@@ -1,24 +1,37 @@
 import { ref } from 'vue'
 import type { Toast } from '@/components/common/ToastNotification.vue'
 
-// Global toast container reference
-const toastContainer = ref<any>(null)
+// Shared module-level reactive toasts array
+const toasts = ref<Toast[]>([])
 
 export function useToast() {
-  const setContainer = (container: any) => {
-    toastContainer.value = container
+  const add = (toast: Omit<Toast, 'id'>) => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const duration = toast.duration !== undefined ? toast.duration : 4500
+    const newToast: Toast = { id, ...toast, duration }
+    toasts.value.push(newToast)
+
+    if (duration > 0) {
+      setTimeout(() => {
+        remove(id)
+      }, duration)
+    }
+    return id
   }
 
-  const show = (toast: Omit<Toast, 'id'>) => {
-    if (!toastContainer.value) {
-      console.warn('Toast container not initialized')
-      return
+  const remove = (id: string) => {
+    const index = toasts.value.findIndex((t) => t.id === id)
+    if (index > -1) {
+      toasts.value.splice(index, 1)
     }
-    toastContainer.value.add(toast)
+  }
+
+  const clear = () => {
+    toasts.value = []
   }
 
   const success = (message: string, title?: string, duration?: number) => {
-    show({
+    return add({
       type: 'success',
       title,
       message,
@@ -27,7 +40,7 @@ export function useToast() {
   }
 
   const error = (message: string, title?: string, duration?: number) => {
-    show({
+    return add({
       type: 'error',
       title,
       message,
@@ -36,7 +49,7 @@ export function useToast() {
   }
 
   const warning = (message: string, title?: string, duration?: number) => {
-    show({
+    return add({
       type: 'warning',
       title,
       message,
@@ -45,7 +58,7 @@ export function useToast() {
   }
 
   const info = (message: string, title?: string, duration?: number) => {
-    show({
+    return add({
       type: 'info',
       title,
       message,
@@ -54,8 +67,10 @@ export function useToast() {
   }
 
   return {
-    setContainer,
-    show,
+    toasts,
+    add,
+    remove,
+    clear,
     success,
     error,
     warning,

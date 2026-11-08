@@ -1,65 +1,35 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import ToastNotification, { type Toast } from './ToastNotification.vue'
+import { useToast } from '@/composables/useToast'
+import ToastNotification from './ToastNotification.vue'
 
-const toasts = ref<Toast[]>([])
-
-const add = (toast: Omit<Toast, 'id'>) => {
-  const id = `toast-${Date.now()}-${Math.random()}`
-  const newToast: Toast = { id, ...toast }
-  toasts.value.push(newToast)
-
-  // Auto-remove after duration
-  if (toast.duration !== 0) {
-    const duration = toast.duration || 5000
-    setTimeout(() => {
-      remove(id)
-    }, duration)
-  }
-}
-
-const remove = (id: string) => {
-  const index = toasts.value.findIndex(t => t.id === id)
-  if (index > -1) {
-    toasts.value.splice(index, 1)
-  }
-}
-
-defineExpose({ add, remove })
+const { toasts, remove } = useToast()
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="fixed top-4 right-4 z-50 flex flex-col gap-2">
-      <TransitionGroup name="toast">
-        <ToastNotification
+    <div
+      class="fixed top-5 right-5 z-[9999] flex flex-col gap-2.5 max-w-sm sm:max-w-md w-full pointer-events-none px-4 sm:px-0"
+    >
+      <TransitionGroup
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 translate-x-8 scale-95"
+        enter-to-class="opacity-100 translate-x-0 scale-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 translate-x-8 scale-95"
+        move-class="transition-all duration-300 ease-out"
+      >
+        <div
           v-for="toast in toasts"
           :key="toast.id"
-          :toast="toast"
-          @close="remove"
-        />
+          class="pointer-events-auto"
+        >
+          <ToastNotification
+            :toast="toast"
+            @close="remove"
+          />
+        </div>
       </TransitionGroup>
     </div>
   </Teleport>
 </template>
-
-<style scoped>
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
-
-.toast-enter-from {
-  opacity: 0;
-  transform: translateX(100%);
-}
-
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(100%);
-}
-
-.toast-move {
-  transition: transform 0.3s ease;
-}
-</style>

@@ -19,10 +19,12 @@ import {
   Send,
 } from 'lucide-vue-next'
 import { passwordResetService, type ForgotPasswordSubmissionResponse } from '@/services'
+import { useToast } from '@/composables'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toast = useToast()
 
 // Active demo role state
 const activeRole = ref<'ADMIN' | 'LABORAN' | 'LECTURER'>('ADMIN')
@@ -102,14 +104,23 @@ const handleGoogleLogin = async (payload: { credential: string; target_role?: 'D
 
     if (user) {
       showGoogleModal.value = false
+
+      if (user.role.code === 'ADMIN') {
+        errorMessage.value = 'Akun Administrator tidak diizinkan masuk menggunakan Google. Silakan masuk menggunakan kata sandi resmi.'
+        return
+      }
+
+      const roleLabel = user.role.code === 'LABORAN' ? 'Portal Laboran' : 'Portal Dosen'
+      toast.success(
+        `Selamat datang kembali, ${user.full_name || 'Pengguna'}! Anda berhasil masuk ke ${roleLabel}.`,
+        'Login Berhasil'
+      )
+
       const redirect = route.query.redirect as string
       if (redirect) {
         router.push(redirect)
       } else {
         switch (user.role.code) {
-          case 'ADMIN':
-            errorMessage.value = 'Akun Administrator tidak diizinkan masuk menggunakan Google. Silakan masuk menggunakan kata sandi resmi.'
-            break
           case 'LABORAN':
             router.push('/laboran')
             break
@@ -176,6 +187,20 @@ const handleSubmit = async () => {
       password: password.value,
       remember: remember.value,
     })
+
+    const roleLabel =
+      authStore.userRole === 'ADMIN'
+        ? 'Dashboard Administrator'
+        : authStore.userRole === 'LABORAN'
+          ? 'Portal Laboran'
+          : authStore.userRole === 'DOSEN'
+            ? 'Portal Dosen'
+            : 'Dashboard Lab Display'
+
+    toast.success(
+      `Selamat datang kembali, ${authStore.userName || 'Pengguna'}! Anda berhasil masuk ke ${roleLabel}.`,
+      'Login Berhasil'
+    )
 
     const redirect = route.query.redirect as string
     if (redirect) {

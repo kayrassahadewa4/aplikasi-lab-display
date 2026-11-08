@@ -20,9 +20,11 @@ import {
   ShieldCheck,
   Building2,
 } from 'lucide-vue-next'
+import { useToast } from '@/composables'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const toast = useToast()
 
 // Form state
 const selectedRole = ref<'DOSEN' | 'LABORAN'>('DOSEN')
@@ -124,6 +126,12 @@ const handleRegister = async () => {
       role_code: selectedRole.value,
     })
 
+    const roleLabel = selectedRole.value === 'DOSEN' ? 'Portal Dosen' : 'Portal Laboran'
+    toast.success(
+      `Selamat datang, ${fullName.value.trim()}! Akun Anda berhasil didaftarkan ke ${roleLabel}.`,
+      'Pendaftaran Berhasil'
+    )
+
     // Automatic role-based routing
     if (selectedRole.value === 'DOSEN') {
       router.push('/lecturer')
@@ -221,7 +229,10 @@ const handleRegister = async () => {
     <form @submit.prevent="handleRegister" class="space-y-3">
       <!-- Full Name -->
       <div>
-        <label class="block text-xs font-bold text-text-secondary mb-1">Nama Lengkap & Gelar *</label>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-bold text-text-secondary">Nama Lengkap & Gelar *</label>
+          <span class="text-[10px] font-mono text-text-muted">{{ fullName.length }}/100</span>
+        </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
             <User :size="15" />
@@ -229,6 +240,7 @@ const handleRegister = async () => {
           <input
             v-model="fullName"
             type="text"
+            maxlength="100"
             placeholder="Contoh: Dr. Budi Santoso, M.Kom."
             required
             :disabled="isSubmitting"
@@ -239,7 +251,10 @@ const handleRegister = async () => {
 
       <!-- Email Address -->
       <div>
-        <label class="block text-xs font-bold text-text-secondary mb-1">Alamat Email *</label>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-bold text-text-secondary">Alamat Email *</label>
+          <span class="text-[10px] font-mono text-text-muted">{{ email.length }}/100</span>
+        </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
             <Mail :size="15" />
@@ -247,6 +262,7 @@ const handleRegister = async () => {
           <input
             v-model="email"
             type="email"
+            maxlength="100"
             placeholder="Contoh: budi.santoso@upnvj.ac.id"
             required
             :disabled="isSubmitting"
@@ -275,7 +291,10 @@ const handleRegister = async () => {
       <!-- Password & Confirm Password in 2 columns -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div>
-          <label class="block text-xs font-bold text-text-secondary mb-1">Kata Sandi *</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-text-secondary">Kata Sandi *</label>
+            <span class="text-[10px] font-mono text-text-muted">{{ password.length }}/250</span>
+          </div>
           <div class="relative">
             <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
               <Lock :size="15" />
@@ -283,6 +302,7 @@ const handleRegister = async () => {
             <input
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
+              maxlength="250"
               placeholder="Min. 8 karakter"
               required
               :disabled="isSubmitting"
@@ -302,7 +322,10 @@ const handleRegister = async () => {
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-text-secondary mb-1">Konfirmasi Sandi *</label>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-bold text-text-secondary">Konfirmasi Sandi *</label>
+            <span class="text-[10px] font-mono text-text-muted">{{ confirmPassword.length }}/250</span>
+          </div>
           <div class="relative">
             <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
               <Lock :size="15" />
@@ -310,6 +333,7 @@ const handleRegister = async () => {
             <input
               v-model="confirmPassword"
               :type="showConfirmPassword ? 'text' : 'password'"
+              maxlength="250"
               placeholder="Ulangi sandi"
               required
               :disabled="isSubmitting"
