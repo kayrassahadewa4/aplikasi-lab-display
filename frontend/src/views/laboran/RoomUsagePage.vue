@@ -35,6 +35,10 @@ import { scheduleService, type ScheduleData } from '@/services/schedule.service'
 import { laboratoryService, type LaboratoryData } from '@/services/laboratory.service'
 import TimePicker24 from '@/components/common/TimePicker24.vue'
 import { formatDate } from '@/utils/format.utils'
+import {
+  evaluateSessionAttendance,
+  type AttendanceEvaluationResult,
+} from '@/utils/attendance.util'
 
 const router = useRouter()
 const navStore = useLaboranNavStore()
@@ -257,7 +261,7 @@ function extractHHmm(timeValue: string | Date | undefined | null): string {
 
 export interface DiscrepancyResult {
   isDiscrepant: boolean
-  type: 'EARLY' | 'LATE' | 'DIFFERENT_DATE' | 'ON_TIME'
+  type: 'EARLY' | 'LATE' | 'DIFFERENT_DATE' | 'ON_TIME' | 'ABSENT'
   badgeLabel: string
   badgeClass: string
   title: string
@@ -337,7 +341,27 @@ function evaluateCheckInTimeDiscrepancy(req: RoomRequest): DiscrepancyResult {
     endMinutes = 1440 // Midnight normalization (24:00)
   }
 
-  // If current time is earlier than start time:
+  const toleranceCutoffMin = Math.max(startMinutes, endMinutes - 1)
+
+  // A. Cutoff reached: 1 minute before class end time (or past end time)
+  // CORE RULE: 1 menit sebelum jam berakhir -> Dosen dinyatakan Tidak Hadir
+  if (currentMinutes >= toleranceCutoffMin) {
+    return {
+      isDiscrepant: true,
+      type: 'ABSENT',
+      badgeLabel: 'Toleransi Habis (Dosen Tidak Hadir)',
+      badgeClass: 'bg-rose-100 text-rose-800 border-rose-300',
+      title: 'Batas Toleransi Berakhir — Dosen Dinyatakan Tidak Hadir',
+      description: `Waktu perkuliahan saat ini (${currentWibStr}) telah mencapai batas toleransi 1 menit sebelum jam selesai (${schedEnd} WIB) atau telah berakhir. Berdasarkan kebijakan sistem Toleransi Keterlambatan Otomatis, dosen dinyatakan Tidak Hadir (Alpha).`,
+      timeDiffText: 'Toleransi berakhir (Alpha)',
+      scheduledDate: formattedSchedDate,
+      scheduledTime: scheduledTimeStr,
+      currentWibDate: formattedCurrDate,
+      currentWibTime: currentWibStr,
+    }
+  }
+
+  // B. Earlier than start time
   if (currentMinutes < startMinutes) {
     const diff = startMinutes - currentMinutes
     const hours = Math.floor(diff / 60)
@@ -360,9 +384,9 @@ function evaluateCheckInTimeDiscrepancy(req: RoomRequest): DiscrepancyResult {
     }
   }
 
-  // If current time is past end time:
-  if (currentMinutes > endMinutes) {
-    const diff = currentMinutes - endMinutes
+  // C. Started, but late (more than 5 minutes after start)
+  if (currentMinutes > startMinutes + 5) {
+    const diff = currentMinutes - startMinutes
     const hours = Math.floor(diff / 60)
     const minutes = diff % 60
     const diffStr =
@@ -371,11 +395,11 @@ function evaluateCheckInTimeDiscrepancy(req: RoomRequest): DiscrepancyResult {
     return {
       isDiscrepant: true,
       type: 'LATE',
-      badgeLabel: 'Melewati Batas Jadwal',
-      badgeClass: 'bg-rose-100 text-rose-800 border-rose-300',
-      title: 'Konfirmasi Check-In Melewati Batas Waktu',
-      description: `Waktu check-in saat ini (${currentWibStr}) telah melewati jam selesai yang ditetapkan (${schedEnd} WIB, ${diffStr} yang lalu).`,
-      timeDiffText: `${diffStr} terlewat`,
+      badgeLabel: `Dosen Terlambat (${diffStr})`,
+      badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
+      title: 'Konfirmasi Check-In Keterlambatan Dosen',
+      description: `Waktu check-in saat ini (${currentWibStr}) terlambat ${diffStr} dari jam mulai resmi yang ditetapkan (${schedStart} WIB).`,
+      timeDiffText: `${diffStr} terlambat`,
       scheduledDate: formattedSchedDate,
       scheduledTime: scheduledTimeStr,
       currentWibDate: formattedCurrDate,
@@ -383,7 +407,7 @@ function evaluateCheckInTimeDiscrepancy(req: RoomRequest): DiscrepancyResult {
     }
   }
 
-  // On Schedule
+  // D. On Schedule
   return {
     isDiscrepant: false,
     type: 'ON_TIME',
@@ -397,6 +421,14 @@ function evaluateCheckInTimeDiscrepancy(req: RoomRequest): DiscrepancyResult {
     currentWibDate: formattedCurrDate,
     currentWibTime: currentWibStr,
   }
+}
+
+function getRequestAttendance(req: RoomRequest): AttendanceEvaluationResult {
+  return evaluateSessionAttendance({
+    startTime: req.startTime,
+    endTime: req.endTime,
+    sessionDate: req.requestDate,
+  })
 }
 
 // Modal State for Time Discrepancy Confirmation
@@ -882,6 +914,24 @@ const handleCreateAdHocCheckIn = async () => {
                 <span class="px-1.5 py-0.2 rounded bg-emerald-50 text-dark-green text-[10px] font-bold border border-emerald-200">
                   DISETUJUI
                 </span>
+                <span
+                  v-if="getRequestAttendance(req).status === 'ABSENT'"
+                  class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300 shadow-2xs"
+                >
+                  TIDAK HADIR (ALPHA)
+                </span>
+                <span
+                  v-else-if="getRequestAttendance(req).status === 'LATE'"
+                  class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse shadow-2xs"
+                >
+                  {{ getRequestAttendance(req).label }}
+                </span>
+                <span
+                  v-else-if="getRequestAttendance(req).status === 'EARLY'"
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200"
+                >
+                  {{ getRequestAttendance(req).label }}
+                </span>
               </div>
               <p class="text-[11px] font-semibold text-dark-green mt-0.5 truncate">{{ req.activityName }}</p>
               <p class="text-[10px] text-text-muted mt-0.5 font-mono">
@@ -1283,7 +1333,7 @@ const handleCreateAdHocCheckIn = async () => {
             <div
               :class="[
                 'w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs border',
-                discrepancyModal.discrepancy.type === 'LATE'
+                discrepancyModal.discrepancy.type === 'ABSENT'
                   ? 'bg-rose-50 border-rose-200 text-rose-600'
                   : 'bg-amber-50 border-amber-200 text-amber-600'
               ]"
@@ -1313,8 +1363,8 @@ const handleCreateAdHocCheckIn = async () => {
         <div
           :class="[
             'p-4 rounded-2xl border space-y-2',
-            discrepancyModal.discrepancy.type === 'LATE'
-              ? 'bg-rose-50/70 border-rose-200/80 text-rose-950'
+            discrepancyModal.discrepancy.type === 'ABSENT'
+              ? 'bg-rose-50/80 border-rose-200/90 text-rose-950'
               : 'bg-amber-50/70 border-amber-200/80 text-amber-950'
           ]"
         >
@@ -1432,7 +1482,7 @@ const handleCreateAdHocCheckIn = async () => {
             :disabled="isActionLoading"
             :class="[
               'inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-white text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50',
-              discrepancyModal.discrepancy.type === 'LATE'
+              discrepancyModal.discrepancy.type === 'ABSENT'
                 ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20'
                 : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
             ]"

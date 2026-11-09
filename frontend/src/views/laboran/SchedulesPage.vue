@@ -32,7 +32,13 @@ import SummaryCard from '@/components/admin/SummaryCard.vue'
 import { scheduleService, type ScheduleData } from '@/services/schedule.service'
 import { laboratoryService, type LaboratoryData } from '@/services/laboratory.service'
 import { roomRequestService, type RoomRequest } from '@/services/room-request.service'
+import { roomUsageService, type RoomUsage } from '@/services/room-usage.service'
 import { formatDate } from '@/utils/format.utils'
+import {
+  evaluateSessionAttendance,
+  type AttendanceEvaluationResult,
+  type AttendanceStatusType,
+} from '@/utils/attendance.util'
 
 const router = useRouter()
 const navStore = useLaboranNavStore()
@@ -110,6 +116,7 @@ const handleDateInput = (e: Event) => {
 const schedules = ref<ScheduleData[]>([])
 const laboratories = ref<LaboratoryData[]>([])
 const approvedRequests = ref<RoomRequest[]>([])
+const usages = ref<RoomUsage[]>([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 
@@ -145,9 +152,12 @@ export interface UnifiedScheduleItem {
   dayOfWeek: number // 1=Mon..7=Sun
   startTime: string // HH:mm
   endTime: string // HH:mm
-  status: 'ACTIVE' | 'SCHEDULED' | 'FINISHED' | 'CANCELLED'
+  status: 'ACTIVE' | 'SCHEDULED' | 'FINISHED' | 'CANCELLED' | 'ABSENT' | 'LATE'
   typeLabel: string
   typeBadgeClass: string
+  attendanceStatus?: AttendanceStatusType
+  attendanceLabel?: string
+  attendanceBadgeClass?: string
 }
 
 // Time Helper to parse Minutes
@@ -302,17 +312,19 @@ const loadData = async () => {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const [schedRes, labRes, reqRes] = await Promise.all([
+    const [schedRes, labRes, reqRes, usageRes] = await Promise.all([
       scheduleService.getSchedules({ page: 1, limit: 100 }).catch(() => ({ schedules: [], total: 0 })),
       laboratoryService.getLaboratories({ page: 1, limit: 100 }).catch(() => ({ laboratories: [] })),
       roomRequestService.getRoomRequests({ status: 'APPROVED', limit: 100 }).catch(() => ({
         data: [],
         meta: { page: 1, limit: 100, total: 0, totalPages: 0 }
-      }))
+      })),
+      roomUsageService.getRoomUsages({ limit: 100 }).catch(() => ({ data: [] }))
     ])
     schedules.value = schedRes.schedules || []
     laboratories.value = labRes.laboratories || []
     approvedRequests.value = reqRes.data || []
+    usages.value = usageRes.data || []
   } catch (err: any) {
     errorMessage.value = err.message || 'Gagal memuat data jadwal'
   } finally {
@@ -331,9 +343,34 @@ const daySessions = computed<UnifiedScheduleItem[]>(() => {
   // 1. Regular fixed schedules (repeat weekly on matching day of week)
   schedules.value.forEach(sch => {
     if (sch.dayOfWeek === curDayOfWeek) {
+      const activeUsageRecord = usages.value.find(
+        (u) =>
+          u.scheduleId === sch.id &&
+          (u.status === 'CHECKED_IN' || u.status === 'IN_USE')
+      )
+      const hasActiveUsage = !!activeUsageRecord
+
+      const attendance = evaluateSessionAttendance({
+        startTime: sch.startTime,
+        endTime: sch.endTime,
+        sessionDate: curDateStr,
+        isCheckedIn: hasActiveUsage,
+        checkInTime: activeUsageRecord?.checkInTime,
+        now: now.value,
+      })
+
       const status = sch.status === 'CANCELLED'
         ? 'CANCELLED'
-        : evaluateStatus(sch.startTime, sch.endTime, curDateStr)
+        : attendance.status === 'ABSENT'
+          ? 'ABSENT'
+          : attendance.status === 'LATE'
+            ? 'LATE'
+            : attendance.status === 'UPCOMING'
+              ? 'SCHEDULED'
+              : attendance.status === 'COMPLETED'
+                ? 'FINISHED'
+                : 'ACTIVE'
+
       list.push({
         id: `sch-${sch.id}`,
         sourceType: 'SCHEDULE',
@@ -350,7 +387,10 @@ const daySessions = computed<UnifiedScheduleItem[]>(() => {
         endTime: sch.endTime,
         status,
         typeLabel: 'Jadwal Kuliah',
-        typeBadgeClass: 'bg-emerald-50 text-dark-green border-emerald-200'
+        typeBadgeClass: 'bg-emerald-50 text-dark-green border-emerald-200',
+        attendanceStatus: attendance.status,
+        attendanceLabel: attendance.label,
+        attendanceBadgeClass: attendance.badgeClass,
       })
     }
   })
@@ -359,9 +399,34 @@ const daySessions = computed<UnifiedScheduleItem[]>(() => {
   approvedRequests.value.forEach(req => {
     const reqDate = req.requestDate ? req.requestDate.split('T')[0] : ''
     if (reqDate === curDateStr) {
+      const activeUsageRecord = usages.value.find(
+        (u) =>
+          u.requestId === req.id &&
+          (u.status === 'CHECKED_IN' || u.status === 'IN_USE')
+      )
+      const hasActiveUsage = !!activeUsageRecord
+
+      const attendance = evaluateSessionAttendance({
+        startTime: req.startTime,
+        endTime: req.endTime,
+        sessionDate: curDateStr,
+        isCheckedIn: hasActiveUsage,
+        checkInTime: activeUsageRecord?.checkInTime,
+        now: now.value,
+      })
+
       const status = (req as any).status === 'CANCELLED'
         ? 'CANCELLED'
-        : evaluateStatus(req.startTime, req.endTime, curDateStr)
+        : attendance.status === 'ABSENT'
+          ? 'ABSENT'
+          : attendance.status === 'LATE'
+            ? 'LATE'
+            : attendance.status === 'UPCOMING'
+              ? 'SCHEDULED'
+              : attendance.status === 'COMPLETED'
+                ? 'FINISHED'
+                : 'ACTIVE'
+
       list.push({
         id: `req-${req.id}`,
         sourceType: 'ROOM_REQUEST',
@@ -378,7 +443,10 @@ const daySessions = computed<UnifiedScheduleItem[]>(() => {
         endTime: req.endTime,
         status,
         typeLabel: 'Peminjaman Lab',
-        typeBadgeClass: 'bg-amber-50 text-amber-800 border-amber-200'
+        typeBadgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
+        attendanceStatus: attendance.status,
+        attendanceLabel: attendance.label,
+        attendanceBadgeClass: attendance.badgeClass,
       })
     }
   })
@@ -413,14 +481,15 @@ const filteredSchedules = computed<UnifiedScheduleItem[]>(() => {
 
 // Dynamic Metrics
 const todaySessionsCount = computed(() => daySessions.value.length)
-const ongoingCount = computed(() => daySessions.value.filter(s => s.status === 'ACTIVE').length)
+const ongoingCount = computed(() => daySessions.value.filter(s => s.status === 'ACTIVE' || s.status === 'LATE').length)
+const absentCount = computed(() => daySessions.value.filter(s => s.status === 'ABSENT').length)
 const upcomingCount = computed(() => daySessions.value.filter(s => s.status === 'SCHEDULED').length)
 const completedCount = computed(() => daySessions.value.filter(s => s.status === 'FINISHED').length)
 
 // Active Ongoing Session (or next upcoming session)
 const ongoingSession = computed(() => {
   return (
-    daySessions.value.find(s => s.status === 'ACTIVE') ||
+    daySessions.value.find(s => s.status === 'ACTIVE' || s.status === 'LATE') ||
     daySessions.value.find(s => s.status === 'SCHEDULED') ||
     null
   )
@@ -748,12 +817,21 @@ const handleExportCSV = () => {
               'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wide border',
               ongoingSession.status === 'ACTIVE'
                 ? 'bg-emerald-500/30 border-emerald-400/40 text-emerald-200'
-                : 'bg-sky-500/30 border-sky-400/40 text-sky-200'
+                : ongoingSession.status === 'LATE'
+                  ? 'bg-amber-500/30 border-amber-400/40 text-amber-200'
+                  : 'bg-sky-500/30 border-sky-400/40 text-sky-200'
             ]"
           >
             <span v-if="ongoingSession.status === 'ACTIVE'" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span v-else-if="ongoingSession.status === 'LATE'" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
             <Clock v-else :size="12" />
-            <span>{{ ongoingSession.status === 'ACTIVE' ? 'Sedang Berjalan' : 'Sesi Berikutnya' }}</span>
+            <span>{{
+              ongoingSession.status === 'ACTIVE'
+                ? 'Sedang Berjalan'
+                : ongoingSession.status === 'LATE'
+                  ? (ongoingSession.attendanceLabel || 'Dosen Terlambat')
+                  : 'Sesi Berikutnya'
+            }}</span>
           </span>
           <span class="text-[11px] font-mono text-emerald-200 font-bold">
             {{ ongoingSession.startTime }} – {{ ongoingSession.endTime }} WIB
@@ -823,6 +901,8 @@ const handleExportCSV = () => {
             >
               <option value="ALL">Semua Status</option>
               <option value="ACTIVE">Sedang Berjalan</option>
+              <option value="LATE">Terlambat</option>
+              <option value="ABSENT">Tidak Hadir (Alpha)</option>
               <option value="SCHEDULED">Mendatang</option>
               <option value="FINISHED">Selesai</option>
             </select>
@@ -1119,22 +1199,30 @@ const handleExportCSV = () => {
                     @mouseleave="handleSessionMouseLeave"
                     :class="[
                       'p-2.5 rounded-xl border-2 transition-all duration-150 cursor-pointer space-y-1 shadow-2xs group relative overflow-hidden',
-                      getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
-                        ? 'bg-gradient-to-r from-emerald-50 via-emerald-100/50 to-teal-50 border-emerald-500 ring-2 ring-emerald-400/40 text-dark-green shadow-md'
-                        : getSlotOccupancy(room.id, time).session!.sourceType === 'SCHEDULE'
-                          ? 'bg-gradient-to-br from-emerald-50/70 via-white to-emerald-50/30 border-emerald-300/90 text-dark-green hover:border-dark-green hover:shadow-md'
-                          : 'bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 border-amber-300 text-amber-950 hover:border-amber-500 hover:shadow-md'
+                      getSlotOccupancy(room.id, time).session!.status === 'ABSENT'
+                        ? 'bg-rose-50/70 border-rose-300 text-rose-950 hover:border-rose-500 hover:shadow-md'
+                        : getSlotOccupancy(room.id, time).session!.status === 'LATE'
+                          ? 'bg-amber-50/70 border-amber-400 text-amber-950 hover:border-amber-600 hover:shadow-md'
+                          : getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
+                            ? 'bg-gradient-to-r from-emerald-50 via-emerald-100/50 to-teal-50 border-emerald-500 ring-2 ring-emerald-400/40 text-dark-green shadow-md'
+                            : getSlotOccupancy(room.id, time).session!.sourceType === 'SCHEDULE'
+                              ? 'bg-gradient-to-br from-emerald-50/70 via-white to-emerald-50/30 border-emerald-300/90 text-dark-green hover:border-dark-green hover:shadow-md'
+                              : 'bg-gradient-to-br from-amber-50/80 via-white to-amber-50/40 border-amber-300 text-amber-950 hover:border-amber-500 hover:shadow-md'
                     ]"
                   >
                     <!-- Accent Left Border -->
                     <div
                       :class="[
                         'absolute left-0 top-0 bottom-0 w-1',
-                        getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
-                          ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]'
-                          : getSlotOccupancy(room.id, time).session!.sourceType === 'SCHEDULE'
-                            ? 'bg-emerald-600'
-                            : 'bg-amber-500'
+                        getSlotOccupancy(room.id, time).session!.status === 'ABSENT'
+                          ? 'bg-rose-600'
+                          : getSlotOccupancy(room.id, time).session!.status === 'LATE'
+                            ? 'bg-amber-500 animate-pulse'
+                            : getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
+                              ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]'
+                              : getSlotOccupancy(room.id, time).session!.sourceType === 'SCHEDULE'
+                                ? 'bg-emerald-600'
+                                : 'bg-amber-500'
                       ]"
                     />
 
@@ -1154,20 +1242,28 @@ const handleExportCSV = () => {
                         <span
                           :class="[
                             'px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-1',
-                            getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : getSlotOccupancy(room.id, time).session!.status === 'SCHEDULED'
-                                ? 'bg-sky-100 text-sky-800'
-                                : 'bg-gray-200 text-gray-700'
+                            getSlotOccupancy(room.id, time).session!.status === 'ABSENT'
+                              ? 'bg-rose-600 text-white shadow-xs'
+                              : getSlotOccupancy(room.id, time).session!.status === 'LATE'
+                                ? 'bg-amber-500 text-white shadow-xs'
+                                : getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
+                                  ? 'bg-emerald-600 text-white shadow-xs'
+                                  : getSlotOccupancy(room.id, time).session!.status === 'SCHEDULED'
+                                    ? 'bg-sky-100 text-sky-800'
+                                    : 'bg-gray-200 text-gray-700'
                           ]"
                         >
-                          <span v-if="getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'" class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                          <span v-if="getSlotOccupancy(room.id, time).session!.status === 'ACTIVE' || getSlotOccupancy(room.id, time).session!.status === 'LATE'" class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
                           <span>{{
-                            getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
-                              ? 'Sedang Berjalan'
-                              : getSlotOccupancy(room.id, time).session!.status === 'SCHEDULED'
-                                ? 'Mendatang'
-                                : 'Selesai'
+                            getSlotOccupancy(room.id, time).session!.status === 'ABSENT'
+                              ? 'Tidak Hadir'
+                              : getSlotOccupancy(room.id, time).session!.status === 'LATE'
+                                ? 'Terlambat'
+                                : getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
+                                  ? 'Sedang Berjalan'
+                                  : getSlotOccupancy(room.id, time).session!.status === 'SCHEDULED'
+                                    ? 'Mendatang'
+                                    : 'Selesai'
                           }}</span>
                         </span>
                       </div>
@@ -1192,18 +1288,28 @@ const handleExportCSV = () => {
                     @mouseleave="handleSessionMouseLeave"
                     :class="[
                       'h-full rounded-xl border border-dashed p-2 flex items-center justify-between gap-2 cursor-pointer transition-all group',
-                      getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
-                        ? 'border-emerald-400 bg-emerald-50/60 text-dark-green hover:bg-emerald-100/50 shadow-2xs'
-                        : getSlotOccupancy(room.id, time).session!.sourceType === 'SCHEDULE'
-                          ? 'border-emerald-300/80 bg-emerald-50/30 text-dark-green hover:bg-emerald-50/60'
-                          : 'border-amber-300/80 bg-amber-50/30 text-amber-900 hover:bg-amber-50/60'
+                      getSlotOccupancy(room.id, time).session!.status === 'ABSENT'
+                        ? 'border-rose-400 bg-rose-50/40 text-rose-900 hover:bg-rose-100/50 shadow-2xs'
+                        : getSlotOccupancy(room.id, time).session!.status === 'LATE'
+                          ? 'border-amber-400 bg-amber-50/40 text-amber-900 hover:bg-amber-100/50 shadow-2xs'
+                          : getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
+                            ? 'border-emerald-400 bg-emerald-50/60 text-dark-green hover:bg-emerald-100/50 shadow-2xs'
+                            : getSlotOccupancy(room.id, time).session!.sourceType === 'SCHEDULE'
+                              ? 'border-emerald-300/80 bg-emerald-50/30 text-dark-green hover:bg-emerald-50/60'
+                              : 'border-amber-300/80 bg-amber-50/30 text-amber-900 hover:bg-amber-50/60'
                     ]"
                   >
                     <div class="flex items-center gap-1.5 text-[10px] font-bold truncate">
                       <span
                         :class="[
                           'w-1.5 h-1.5 rounded-full shrink-0',
-                          getSlotOccupancy(room.id, time).session!.status === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-dark-green/60'
+                          getSlotOccupancy(room.id, time).session!.status === 'ABSENT'
+                            ? 'bg-rose-500'
+                            : getSlotOccupancy(room.id, time).session!.status === 'LATE'
+                              ? 'bg-amber-500 animate-pulse'
+                              : getSlotOccupancy(room.id, time).session!.status === 'ACTIVE'
+                                ? 'bg-emerald-500 animate-pulse'
+                                : 'bg-dark-green/60'
                         ]"
                       />
                       <span class="truncate font-bold text-text-secondary group-hover:text-dark-green">
@@ -1295,24 +1401,34 @@ const handleExportCSV = () => {
                   <span
                     :class="[
                       'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold border',
-                      item.status === 'ACTIVE'
-                        ? 'bg-emerald-50 text-dark-green border-emerald-200 shadow-2xs'
-                        : item.status === 'SCHEDULED'
-                          ? 'bg-brand-100/80 text-dark-green border-brand-200'
-                          : item.status === 'FINISHED'
-                            ? 'bg-gray-100 text-gray-600 border-gray-200'
-                            : 'bg-red-50 text-red-700 border-red-200'
+                      item.status === 'ABSENT'
+                        ? 'bg-rose-50 text-rose-700 border-rose-200 shadow-2xs'
+                        : item.status === 'LATE'
+                          ? 'bg-amber-50 text-amber-800 border-amber-200 shadow-2xs'
+                          : item.status === 'ACTIVE'
+                            ? 'bg-emerald-50 text-dark-green border-emerald-200 shadow-2xs'
+                            : item.status === 'SCHEDULED'
+                              ? 'bg-brand-100/80 text-dark-green border-brand-200'
+                              : item.status === 'FINISHED'
+                                ? 'bg-gray-100 text-gray-600 border-gray-200'
+                                : 'bg-red-50 text-red-700 border-red-200'
                     ]"
                   >
                     <span v-if="item.status === 'ACTIVE'" class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span v-else-if="item.status === 'LATE'" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span v-else-if="item.status === 'ABSENT'" class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                     <span>{{
-                      item.status === 'ACTIVE'
-                        ? 'Sedang Berjalan'
-                        : item.status === 'SCHEDULED'
-                          ? 'Mendatang'
-                          : item.status === 'FINISHED'
-                            ? 'Selesai'
-                            : 'Dibatalkan'
+                      item.status === 'ABSENT'
+                        ? 'Tidak Hadir (Alpha)'
+                        : item.status === 'LATE'
+                          ? (item.attendanceLabel || 'Terlambat')
+                          : item.status === 'ACTIVE'
+                            ? 'Sedang Berjalan'
+                            : item.status === 'SCHEDULED'
+                              ? 'Mendatang'
+                              : item.status === 'FINISHED'
+                                ? 'Selesai'
+                                : 'Dibatalkan'
                     }}</span>
                   </span>
                 </td>
@@ -1411,20 +1527,28 @@ const handleExportCSV = () => {
           <span
             :class="[
               'px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 border flex items-center gap-1',
-              hoveredSession.status === 'ACTIVE'
-                ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
-                : hoveredSession.status === 'SCHEDULED'
-                  ? 'bg-sky-100 text-sky-800 border-sky-200'
-                  : 'bg-gray-100 text-gray-600 border-gray-200'
+              hoveredSession.status === 'ABSENT'
+                ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
+                : hoveredSession.status === 'LATE'
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                  : hoveredSession.status === 'ACTIVE'
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                    : hoveredSession.status === 'SCHEDULED'
+                      ? 'bg-sky-100 text-sky-800 border-sky-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200'
             ]"
           >
-            <span v-if="hoveredSession.status === 'ACTIVE'" class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+            <span v-if="hoveredSession.status === 'ACTIVE' || hoveredSession.status === 'LATE'" class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
             <span>{{
-              hoveredSession.status === 'ACTIVE'
-                ? 'Sedang Berjalan'
-                : hoveredSession.status === 'SCHEDULED'
-                  ? 'Mendatang'
-                  : 'Selesai'
+              hoveredSession.status === 'ABSENT'
+                ? 'Tidak Hadir'
+                : hoveredSession.status === 'LATE'
+                  ? 'Terlambat'
+                  : hoveredSession.status === 'ACTIVE'
+                    ? 'Sedang Berjalan'
+                    : hoveredSession.status === 'SCHEDULED'
+                      ? 'Mendatang'
+                      : 'Selesai'
             }}</span>
           </span>
         </div>

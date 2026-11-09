@@ -50,6 +50,11 @@ import {
   type DisplayLaboratoryFacilityDto,
 } from '@/services/display.service'
 import { formatTime } from '@/utils/format.utils'
+import {
+  evaluateSessionAttendance,
+  type AttendanceEvaluationResult,
+  type AttendanceStatusType,
+} from '@/utils/attendance.util'
 
 // Reactive state
 const now = ref(new Date())
@@ -536,6 +541,12 @@ export interface FormattedLiveSession {
   capacity: number
   occupancy: number
   equipmentSummary: LabEquipmentSummary
+  attendanceStatus?: AttendanceStatusType
+  attendanceLabel?: string
+  attendanceBadgeClass?: string
+  isLate?: boolean
+  isAbsent?: boolean
+  lateMinutes?: number
 }
 
 // Computed: Build live lab sessions list combining laboratories, usages, schedules, and requests
@@ -708,6 +719,18 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
 
       // If current time is strictly before endMin: Session is live and active
       if (currentMinutes < endMin) {
+        const attendance = evaluateSessionAttendance({
+          startTime: startTimeStr,
+          endTime: endTimeStr,
+          isCheckedIn: activeUsageValid,
+          checkInTime: activeUsage?.check_in_time,
+          now: now.value,
+        })
+
+        const isAbsent = attendance.status === 'ABSENT'
+        const isLate = attendance.status === 'LATE'
+        const lateMinutes = isLate ? attendance.diffMinutes : 0
+
         const courseName =
           ongoingSchedule?.course_name ||
           ongoingRequest?.activity_name ||
@@ -727,9 +750,10 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
           activeUsage?.checkedInBy?.full_name ||
           'Dosen Pengajar'
 
-        const occupancy =
-          ongoingRequest?.participant_count ||
-          Math.min(lab.maximum_capacity, Math.max(1, Math.round(lab.maximum_capacity * 0.85)))
+        const occupancy = isAbsent
+          ? 0
+          : (ongoingRequest?.participant_count ||
+            Math.min(lab.maximum_capacity, Math.max(1, Math.round(lab.maximum_capacity * 0.85))))
 
         return {
           id: lab.id,
@@ -746,10 +770,16 @@ const liveLabSessions = computed<FormattedLiveSession[]>(() => {
           progressPercentage: computeProgress(startTimeStr, endTimeStr),
           remainingMinutes: computeRemainingMinutes(startTimeStr, endTimeStr),
           isExpired: false,
-          status: 'IN_USE',
+          status: isAbsent ? 'AVAILABLE' : 'IN_USE',
           capacity: lab.maximum_capacity,
           occupancy,
           equipmentSummary,
+          attendanceStatus: attendance.status,
+          attendanceLabel: attendance.label,
+          attendanceBadgeClass: attendance.badgeClass,
+          isLate,
+          isAbsent,
+          lateMinutes,
         }
       }
     }
@@ -921,6 +951,11 @@ interface StreamItem {
   isOngoing: boolean
   isUpcoming: boolean
   activeUsage: boolean
+  attendanceStatus?: AttendanceStatusType
+  attendanceLabel?: string
+  attendanceBadgeClass?: string
+  isLate?: boolean
+  isAbsent?: boolean
 }
 
 // Total schedules count for today (to distinguish between empty day vs all finished)
@@ -959,12 +994,23 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
       }
 
       // Check if there is an active check-in/usage for this schedule
-      const hasActiveUsage = usages.some(
+      const activeUsageRecord = usages.find(
         (u) =>
           u.schedule?.course_name === s.course_name &&
           u.schedule?.laboratory.id === s.laboratory?.id &&
           (u.status === 'CHECKED_IN' || u.status === 'IN_USE'),
       )
+      const hasActiveUsage = !!activeUsageRecord
+
+      const attendance = isViewingToday.value
+        ? evaluateSessionAttendance({
+            startTime: s.start_time,
+            endTime: s.end_time,
+            isCheckedIn: hasActiveUsage,
+            checkInTime: activeUsageRecord?.check_in_time,
+            now: now.value,
+          })
+        : null
 
       const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
       const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
@@ -983,6 +1029,11 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
         isOngoing,
         isUpcoming,
         activeUsage: hasActiveUsage,
+        attendanceStatus: attendance?.status,
+        attendanceLabel: attendance?.label,
+        attendanceBadgeClass: attendance?.badgeClass,
+        isLate: attendance?.isLate,
+        isAbsent: attendance?.isAbsent,
       })
     })
   }
@@ -1001,12 +1052,23 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
       }
 
       // Check if there is an active check-in/usage for this request
-      const hasActiveUsage = usages.some(
+      const activeUsageRecord = usages.find(
         (u) =>
           u.request?.activity_name === r.activity_name &&
           u.request?.laboratory.id === r.laboratory?.id &&
           (u.status === 'CHECKED_IN' || u.status === 'IN_USE'),
       )
+      const hasActiveUsage = !!activeUsageRecord
+
+      const attendance = isViewingToday.value
+        ? evaluateSessionAttendance({
+            startTime: r.start_time,
+            endTime: r.end_time,
+            isCheckedIn: hasActiveUsage,
+            checkInTime: activeUsageRecord?.check_in_time,
+            now: now.value,
+          })
+        : null
 
       const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
       const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
@@ -1025,6 +1087,11 @@ const todayTimetableStream = computed<StreamItem[]>(() => {
         isOngoing,
         isUpcoming,
         activeUsage: hasActiveUsage,
+        attendanceStatus: attendance?.status,
+        attendanceLabel: attendance?.label,
+        attendanceBadgeClass: attendance?.badgeClass,
+        isLate: attendance?.isLate,
+        isAbsent: attendance?.isAbsent,
       })
     })
   }
@@ -1072,6 +1139,11 @@ interface MatrixCellSession {
   endMin: number
   status: 'IN_USE' | 'UPCOMING' | 'AVAILABLE'
   type: 'SCHEDULE' | 'REQUEST'
+  attendanceStatus?: AttendanceStatusType
+  attendanceLabel?: string
+  attendanceBadgeClass?: string
+  isLate?: boolean
+  isAbsent?: boolean
 }
 
 interface MatrixCell {
@@ -1251,12 +1323,30 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
         const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
         const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
 
-        const hasActiveUsage = usages.some(
+        const activeUsageRecord = usages.find(
           (u) =>
             u.schedule?.course_name === s.course_name &&
             (u.schedule?.laboratory.id === labId || u.schedule?.laboratory.code === labCode) &&
             (u.status === 'CHECKED_IN' || u.status === 'IN_USE'),
         )
+        const hasActiveUsage = !!activeUsageRecord
+
+        const attendance = isViewingToday.value
+          ? evaluateSessionAttendance({
+              startTime: s.start_time,
+              endTime: s.end_time,
+              isCheckedIn: hasActiveUsage,
+              checkInTime: activeUsageRecord?.check_in_time,
+              now: now.value,
+            })
+          : null
+
+        const sessStatus =
+          isOngoing || hasActiveUsage
+            ? (attendance?.status === 'ABSENT' ? 'AVAILABLE' : 'IN_USE')
+            : isUpcoming
+              ? 'UPCOMING'
+              : 'AVAILABLE'
 
         labSessions.push({
           id: s.id,
@@ -1267,8 +1357,13 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
           timeWindow: extractTimeString(s.start_time) + ' - ' + extractTimeString(s.end_time),
           startMin,
           endMin,
-          status: isOngoing || hasActiveUsage ? 'IN_USE' : isUpcoming ? 'UPCOMING' : 'AVAILABLE',
+          status: sessStatus,
           type: 'SCHEDULE',
+          attendanceStatus: attendance?.status,
+          attendanceLabel: attendance?.label,
+          attendanceBadgeClass: attendance?.badgeClass,
+          isLate: attendance?.isLate,
+          isAbsent: attendance?.isAbsent,
         })
       }
     })
@@ -1280,12 +1375,30 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
         const isOngoing = isViewingToday.value && (currentMinutes >= startMin && currentMinutes < endMin)
         const isUpcoming = !isViewingToday.value || (currentMinutes < startMin)
 
-        const hasActiveUsage = usages.some(
+        const activeUsageRecord = usages.find(
           (u) =>
             u.request?.activity_name === r.activity_name &&
             (u.request?.laboratory.id === labId || u.request?.laboratory.code === labCode) &&
             (u.status === 'CHECKED_IN' || u.status === 'IN_USE'),
         )
+        const hasActiveUsage = !!activeUsageRecord
+
+        const attendance = isViewingToday.value
+          ? evaluateSessionAttendance({
+              startTime: r.start_time,
+              endTime: r.end_time,
+              isCheckedIn: hasActiveUsage,
+              checkInTime: activeUsageRecord?.check_in_time,
+              now: now.value,
+            })
+          : null
+
+        const sessStatus =
+          isOngoing || hasActiveUsage
+            ? (attendance?.status === 'ABSENT' ? 'AVAILABLE' : 'IN_USE')
+            : isUpcoming
+              ? 'UPCOMING'
+              : 'AVAILABLE'
 
         labSessions.push({
           id: r.id,
@@ -1296,8 +1409,13 @@ const matrixLabColumns = computed<MatrixLabColumn[]>(() => {
           timeWindow: extractTimeString(r.start_time) + ' - ' + extractTimeString(r.end_time),
           startMin,
           endMin,
-          status: isOngoing || hasActiveUsage ? 'IN_USE' : isUpcoming ? 'UPCOMING' : 'AVAILABLE',
+          status: sessStatus,
           type: 'REQUEST',
+          attendanceStatus: attendance?.status,
+          attendanceLabel: attendance?.label,
+          attendanceBadgeClass: attendance?.badgeClass,
+          isLate: attendance?.isLate,
+          isAbsent: attendance?.isAbsent,
         })
       }
     })
@@ -2142,6 +2260,19 @@ onUnmounted(() => {
                       <div class="space-y-0.5">
                         <div class="flex items-center justify-between gap-1">
                           <span
+                            v-if="col.cells[slot.slotNumber - 1]?.session?.attendanceStatus === 'ABSENT'"
+                            class="text-[7.5px] font-black uppercase px-1 py-0.2 rounded shrink-0 bg-[#6C271A] text-[#FFA999] border border-[#9A3725] shadow-xs"
+                          >
+                            TIDAK HADIR
+                          </span>
+                          <span
+                            v-else-if="col.cells[slot.slotNumber - 1]?.session?.attendanceStatus === 'LATE'"
+                            class="text-[7.5px] font-black uppercase px-1 py-0.2 rounded shrink-0 bg-[#808847] text-[#ECD39D] border border-[#9CA456] animate-pulse shadow-xs"
+                          >
+                            TERLAMBAT
+                          </span>
+                          <span
+                            v-else
                             :class="[
                               'text-[8px] font-extrabold uppercase px-1 py-0.2 rounded shrink-0',
                               col.cells[slot.slotNumber - 1]?.session?.status === 'IN_USE'
@@ -2369,9 +2500,23 @@ onUnmounted(() => {
                 ]"
               >
                 <div class="flex items-center justify-between gap-1">
-                  <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold font-mono" :class="isDarkMode ? 'bg-[#233E45] text-[#ECD39D] border border-[#3A5D66]' : 'bg-[#233E45] text-white'">
-                    {{ sess.labCode }}
-                  </span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold font-mono" :class="isDarkMode ? 'bg-[#233E45] text-[#ECD39D] border border-[#3A5D66]' : 'bg-[#233E45] text-white'">
+                      {{ sess.labCode }}
+                    </span>
+                    <span
+                      v-if="sess.attendanceStatus === 'ABSENT'"
+                      class="px-1.5 py-0.2 rounded text-[8.5px] font-bold bg-[#6C271A]/80 text-[#FFA999] border border-[#9A3725]/60"
+                    >
+                      TIDAK HADIR
+                    </span>
+                    <span
+                      v-else-if="sess.attendanceStatus === 'LATE'"
+                      class="px-1.5 py-0.2 rounded text-[8.5px] font-bold bg-[#808847]/80 text-[#ECD39D] border border-[#9CA456]/60 animate-pulse"
+                    >
+                      TERLAMBAT ({{ sess.lateMinutes || 0 }}m)
+                    </span>
+                  </div>
                   <span class="text-[9.5px] font-mono font-bold" :class="isDarkMode ? 'text-[#FFA999]' : 'text-[#6C271A]'">
                     {{ sess.timeWindow }}
                   </span>
@@ -2381,7 +2526,8 @@ onUnmounted(() => {
                 </h4>
                 <div class="flex items-center justify-between text-[9.5px] opacity-80 pt-0.5">
                   <span class="truncate max-w-[130px]">{{ sess.instructor }}</span>
-                  <span v-if="isViewingToday" class="font-bold text-[#FFA999]">{{ sess.remainingMinutes }} mnt tersisa</span>
+                  <span v-if="isViewingToday && sess.attendanceStatus !== 'ABSENT'" class="font-bold text-[#FFA999]">{{ sess.remainingMinutes }} mnt tersisa</span>
+                  <span v-else-if="sess.attendanceStatus === 'ABSENT'" class="font-bold text-[#FFA999]">Alpha</span>
                   <span v-else class="font-bold text-[#ECD39D] font-mono">{{ sess.courseCode }}</span>
                 </div>
               </div>
