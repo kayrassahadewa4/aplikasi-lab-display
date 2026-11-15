@@ -144,10 +144,10 @@ const loadLecturerDashboard = async () => {
       id: s.id,
       timeSlot: `${s.startTime} – ${s.endTime}`,
       dateLabel: s.dayName ? formatDayName(s.dayName) : 'Sesi Rutin',
-      roomName: s.laboratoryName || 'Laboratory Room',
+      roomName: s.laboratoryName || 'Ruang Laboratorium',
       roomCode: s.laboratoryCode || `LAB-${idx + 1}`,
       courseName: s.courseName,
-      className: s.className || 'Class 3A',
+      className: s.className || 'Kelas Perkuliahan',
       studentCount: 35,
       status: (idx === 0 && s.status === 'ACTIVE' ? 'IN PROGRESS' : s.status === 'ACTIVE' ? 'SCHEDULED' : 'SCHEDULED') as LecturerScheduleItem['status'],
       laboratoryId: s.laboratoryId
@@ -170,19 +170,19 @@ const loadLecturerDashboard = async () => {
     // 3. Synthesize Recent Activity Timeline
     if (rawRequests.value.length > 0) {
       activities.value = rawRequests.value.slice(0, 4).map(r => {
-        let actionText = `Room application submitted for ${r.laboratoryName} (${r.activityName})`
+        let actionText = `Permohonan pinjam diajukan untuk ${r.laboratoryName} (${r.activityName})`
         let statusType: LecturerActivityItem['statusType'] = 'pending'
         if (r.status === 'APPROVED') {
-          actionText = `Booking approved for ${r.laboratoryName} on ${r.formattedRequestDate || r.requestDate}`
+          actionText = `Peminjaman disetujui untuk ${r.laboratoryName} pada ${r.formattedRequestDate || r.requestDate}`
           statusType = 'approved'
         } else if (r.status === 'REJECTED') {
-          actionText = `Booking rejected for ${r.laboratoryName}: ${r.rejectionReason || 'Schedule conflict'}`
+          actionText = `Peminjaman ditolak untuk ${r.laboratoryName}: ${r.rejectionReason || 'Konflik jadwal'}`
           statusType = 'rejected'
         }
         return {
           id: `act-${r.id}`,
           title: actionText,
-          timestamp: r.createdAt ? formatDateTime(r.createdAt) : 'Recent',
+          timestamp: r.createdAt ? formatDateTime(r.createdAt) : 'Baru saja',
           statusType
         }
       })
@@ -190,8 +190,8 @@ const loadLecturerDashboard = async () => {
       activities.value = [
         {
           id: 'act-default',
-          title: 'Lecturer academic workspace initialized and active',
-          timestamp: 'Today',
+          title: 'Ruang kerja akademik dosen siap dan aktif',
+          timestamp: 'Hari ini',
           statusType: 'approved'
         }
       ]
@@ -204,7 +204,7 @@ const loadLecturerDashboard = async () => {
       name: l.name,
       code: l.code || 'LAB',
       capacity: l.maximumCapacity || 35,
-      location: l.location || 'Faculty Lab Building',
+      location: l.location || 'Gedung Laboratorium FIK',
       status: l.status === 'Active' ? 'Available' : 'Maintenance'
     }))
 
@@ -353,7 +353,7 @@ const navigateTo = (path: string) => {
         </div>
 
         <div class="space-y-0.5">
-          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Permohonan Pending</span>
+          <span class="text-[10px] font-bold text-emerald-200/70 uppercase tracking-wide block">Permohonan Menunggu</span>
           <p class="text-lg font-bold text-amber-300">
             {{ pendingRequestsCount }} Menunggu Review
           </p>
@@ -378,7 +378,7 @@ const navigateTo = (path: string) => {
     <!-- Loading State -->
     <div v-if="isLoading" class="py-20 text-center">
       <Loader2 :size="36" class="mx-auto text-dark-green animate-spin mb-3" />
-      <p class="text-xs text-text-muted font-medium">Loading your academic dashboard...</p>
+      <p class="text-xs text-text-muted font-medium">Memuat dashboard akademik Anda...</p>
     </div>
 
     <template v-else>

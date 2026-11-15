@@ -9,16 +9,16 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: 'Laboran Portal Module',
-  description: 'This feature module is currently under active development for Laboratory Staff.',
+  title: 'Modul Portal Laboran',
+  description: 'Modul fitur ini sedang dalam tahap pengembangan aktif untuk Staf Laboran.',
 })
 
 const route = useRoute()
 const router = useRouter()
 
 const moduleTitle = computed(() => {
-  if (props.title !== 'Laboran Portal Module') return props.title
-  const path = route.path.split('/').pop() || 'Module'
+  if (props.title !== 'Modul Portal Laboran') return props.title
+  const path = route.path.split('/').pop() || 'Modul'
   return path.charAt(0).toUpperCase() + path.slice(1).replace('-', ' ')
 })
 </script>
@@ -32,7 +32,7 @@ const moduleTitle = computed(() => {
           class="inline-flex items-center gap-1.5 text-xs font-bold text-text-muted hover:text-dark-green transition-colors cursor-pointer mb-2"
         >
           <ArrowLeft :size="14" />
-          <span>Back to Laboran Dashboard</span>
+          <span>Kembali ke Dashboard Laboran</span>
         </button>
 
         <div class="flex items-center gap-2">
@@ -40,7 +40,7 @@ const moduleTitle = computed(() => {
             {{ moduleTitle }}
           </h1>
           <span class="px-2.5 py-0.5 rounded-full bg-brand-100 text-dark-green text-[11px] font-bold">
-            Laboran Module
+            Modul Laboran
           </span>
         </div>
       </div>
@@ -52,7 +52,7 @@ const moduleTitle = computed(() => {
       </div>
 
       <div class="space-y-1 max-w-md mx-auto">
-        <h3 class="text-lg font-bold text-text-primary">{{ moduleTitle }} Management</h3>
+        <h3 class="text-lg font-bold text-text-primary">Pengelolaan {{ moduleTitle }}</h3>
         <p class="text-xs text-text-muted leading-relaxed">
           {{ description }}
         </p>
@@ -63,7 +63,7 @@ const moduleTitle = computed(() => {
           @click="router.push('/laboran')"
           class="px-5 py-2.5 rounded-full bg-dark-green hover:bg-[#547a5c] text-white text-xs font-bold shadow-2xs transition-all active:scale-95 cursor-pointer"
         >
-          Return to Laboran Dashboard
+          Kembali ke Dashboard Laboran
         </button>
       </div>
     </div>

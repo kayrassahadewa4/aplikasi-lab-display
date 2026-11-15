@@ -14,8 +14,8 @@ const showLogoutModal = ref(false)
 const isLoggingOut = ref(false)
 
 // Retain cached name to avoid flickers during logout
-const cachedName = ref(authStore.userName || 'Lecturer')
-const cachedEmail = ref(authStore.userEmail || 'lecturer@univ.ac.id')
+const cachedName = ref(authStore.userName || 'Dosen Pengampu')
+const cachedEmail = ref(authStore.userEmail || 'dosen@upnvj.ac.id')
 
 watch(
   () => authStore.userName,
@@ -33,8 +33,8 @@ watch(
   { immediate: true }
 )
 
-const lecturerName = computed(() => authStore.userName || cachedName.value || 'Lecturer')
-const lecturerEmail = computed(() => authStore.userEmail || cachedEmail.value || 'lecturer@univ.ac.id')
+const lecturerName = computed(() => authStore.userName || cachedName.value || 'Dosen Pengampu')
+const lecturerEmail = computed(() => authStore.userEmail || cachedEmail.value || 'dosen@upnvj.ac.id')
 
 const triggerLogout = () => {
   showLogoutModal.value = true
