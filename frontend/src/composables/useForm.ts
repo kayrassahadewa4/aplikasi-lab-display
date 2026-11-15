@@ -104,9 +104,6 @@ export function useForm<T extends Record<string, any>>(initialValues: T) {
     isSubmitting.value = true
     try {
       await onSubmit(formData.value)
-    } catch (error) {
-      // Error handling is done by the caller
-      throw error
     } finally {
       isSubmitting.value = false
     }

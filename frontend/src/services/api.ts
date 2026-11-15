@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import type { AxiosInstance } from 'axios'
 import { appConfig } from '@/config/app.config'
 import { tokenStorage, sessionManager } from '@/utils'
 

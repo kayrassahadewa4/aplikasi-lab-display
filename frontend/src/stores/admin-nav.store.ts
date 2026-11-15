@@ -15,7 +15,6 @@ import {
   DoorOpen,
   BarChart3,
   SlidersHorizontal,
-  Hammer,
 } from 'lucide-vue-next'
 
 export interface MenuItem {

@@ -111,8 +111,8 @@ export function mapBackendOperationalHourToUi(backendOp: BackendOperationalHourD
   // Determine status: if duration is 0 or very small, consider it closed
   const status: OperationalHourData['status'] = duration > 0 ? 'Open' : 'Closed'
 
-  const createdAt = new Date(backendOp.created_at)
-  const updatedAt = new Date(backendOp.updated_at)
+  const _createdAt = new Date(backendOp.created_at)
+  const _updatedAt = new Date(backendOp.updated_at)
 
   return {
     id: backendOp.id,

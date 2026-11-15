@@ -97,7 +97,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const restoreSession = async () => {
-    const { user: savedUser, hasToken } = sessionManager.restoreSession()
+    const { hasToken } = sessionManager.restoreSession()
 
     // If we have a token, verify it with the backend
     if (hasToken) {
@@ -105,7 +105,7 @@ export const useAuthStore = defineStore('auth', () => {
         const currentUser = await authService.getCurrentUser()
         user.value = currentUser
         return true
-      } catch (error) {
+      } catch {
         // Token is invalid, clear session
         sessionManager.clearSession()
         user.value = null

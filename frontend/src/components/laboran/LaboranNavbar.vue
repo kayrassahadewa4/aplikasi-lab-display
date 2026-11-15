@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { LogOut, Menu, Monitor } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores'
@@ -17,21 +17,24 @@ const isLoggingOut = ref(false)
 const cachedName = ref(authStore.userName || 'Lab Staff')
 const cachedEmail = ref(authStore.userEmail || 'staff@univ.ac.id')
 
-const laboranName = computed(() => {
-  if (authStore.userName) {
-    cachedName.value = authStore.userName
-    return authStore.userName
-  }
-  return cachedName.value || 'Lab Staff'
-})
+watch(
+  () => authStore.userName,
+  (newVal) => {
+    if (newVal) cachedName.value = newVal
+  },
+  { immediate: true }
+)
 
-const laboranEmail = computed(() => {
-  if (authStore.userEmail) {
-    cachedEmail.value = authStore.userEmail
-    return authStore.userEmail
-  }
-  return cachedEmail.value || 'staff@univ.ac.id'
-})
+watch(
+  () => authStore.userEmail,
+  (newVal) => {
+    if (newVal) cachedEmail.value = newVal
+  },
+  { immediate: true }
+)
+
+const laboranName = computed(() => authStore.userName || cachedName.value || 'Lab Staff')
+const laboranEmail = computed(() => authStore.userEmail || cachedEmail.value || 'staff@univ.ac.id')
 
 const triggerLogout = () => {
   showLogoutModal.value = true

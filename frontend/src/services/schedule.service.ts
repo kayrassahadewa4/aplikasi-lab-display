@@ -64,7 +64,7 @@ function backendDayToFrontendDay(backendDay: number): number {
 /**
  * Convert frontend day (1-7) to backend day (0-6)
  */
-function frontendDayToBackendDay(frontendDay: number): number {
+export function frontendDayToBackendDay(frontendDay: number): number {
   // Frontend: 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 7=Sun
   // Backend: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
   return frontendDay === 7 ? 0 : frontendDay
@@ -130,8 +130,8 @@ export function mapBackendScheduleToUi(backendSch: BackendScheduleDto): Schedule
   const frontendDayOfWeek = backendDayToFrontendDay(backendSch.day_of_week)
   const dayName = mapDayOfWeekToName(backendSch.day_of_week)
 
-  const createdAt = new Date(backendSch.created_at)
-  const updatedAt = new Date(backendSch.updated_at)
+  const _createdAt = new Date(backendSch.created_at)
+  const _updatedAt = new Date(backendSch.updated_at)
 
   return {
     id: backendSch.id,

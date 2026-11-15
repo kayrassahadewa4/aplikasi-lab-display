@@ -1,5 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
-import { requireAuth, adminOnly, laboranOnly, lecturerOnly, guestOnly } from './guards'
+import { adminOnly, laboranOnly, lecturerOnly, guestOnly } from './guards'
 
 export const routes: RouteRecordRaw[] = [
   // Root redirect - will redirect based on auth status

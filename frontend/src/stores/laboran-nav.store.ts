@@ -11,7 +11,6 @@ import {
   BarChart3,
   SlidersHorizontal,
   Wrench,
-  Hammer,
 } from 'lucide-vue-next'
 
 export interface MenuItem {
