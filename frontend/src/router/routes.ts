@@ -491,6 +491,10 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/lecturer/NewRoomRequestPage.vue'),
       },
       {
+        path: 'room-requests/create',
+        redirect: '/lecturer/room-requests/new',
+      },
+      {
         path: 'room-requests/:id',
         name: 'LecturerRoomRequestDetail',
         component: () => import('@/views/lecturer/RoomRequestDetailPage.vue'),
@@ -534,6 +538,10 @@ export const routes: RouteRecordRaw[] = [
         path: 'settings/preferences',
         name: 'LecturerSettingsPreferences',
         component: () => import('@/views/lecturer/SettingsPage.vue'),
+      },
+      {
+        path: 'profile',
+        redirect: '/lecturer/settings/profile',
       },
     ],
   },

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -9,6 +10,7 @@ describe('AuthService - Register & Login', () => {
   let authService: AuthService;
   let prismaService: any;
   let jwtService: any;
+  let configService: any;
 
   beforeEach(async () => {
     prismaService = {
@@ -25,11 +27,16 @@ describe('AuthService - Register & Login', () => {
       sign: jest.fn().mockReturnValue('mock-jwt-token'),
     };
 
+    configService = {
+      get: jest.fn().mockReturnValue('mock-client-id'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: PrismaService, useValue: prismaService },
         { provide: JwtService, useValue: jwtService },
+        { provide: ConfigService, useValue: configService },
       ],
     }).compile();
 
