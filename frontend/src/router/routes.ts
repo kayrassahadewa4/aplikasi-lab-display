@@ -355,6 +355,11 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/laboran/RoomRequestDetailPage.vue'),
       },
       {
+        path: 'room-requests/:id/review',
+        name: 'LaboranRoomRequestReview',
+        component: () => import('@/views/laboran/RoomRequestReviewPage.vue'),
+      },
+      {
         path: 'schedules',
         name: 'LaboranSchedules',
         component: () => import('@/views/laboran/SchedulesPage.vue'),

@@ -1192,7 +1192,7 @@ const navigateTo = (path: string) => {
                   <p class="text-[10px] text-text-muted truncate">{{ req.laboratoryName }} · {{ req.formattedRequestDate }}</p>
                 </div>
                 <button
-                  @click="navigateTo(`/laboran/room-requests/${req.id}`)"
+                  @click="navigateTo(`/laboran/room-requests/${req.id}/review`)"
                   class="text-[11px] font-bold text-dark-green hover:underline shrink-0"
                 >
                   Tinjau →

@@ -141,6 +141,11 @@ const handleViewDetail = (id: string) => {
   router.push(`/laboran/room-requests/${id}`)
 }
 
+// Navigation to Review Page
+const handleReview = (id: string) => {
+  router.push(`/laboran/room-requests/${id}/review`)
+}
+
 // Export Action
 const handleExport = () => {
   triggerToast('Log permohonan pinjam berhasil diekspor ke CSV.')
@@ -406,14 +411,27 @@ const handleExport = () => {
               </td>
 
               <!-- Action Button -->
-              <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                <button
-                  @click="handleViewDetail(req.id)"
-                  class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-100/70 hover:bg-dark-green text-dark-green hover:text-white font-bold text-xs transition-colors cursor-pointer"
-                >
-                  <Eye :size="13" />
-                  <span>Lihat</span>
-                </button>
+              <td class="py-3.5 px-4 text-right whitespace-nowrap" @click.stop>
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    @click="handleViewDetail(req.id)"
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-100/70 hover:bg-dark-green text-dark-green hover:text-white font-bold text-xs transition-colors cursor-pointer"
+                    title="Lihat Detail Permohonan"
+                  >
+                    <Eye :size="13" />
+                    <span>Lihat</span>
+                  </button>
+
+                  <button
+                    v-if="req.status === 'PENDING'"
+                    @click="handleReview(req.id)"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-dark-green hover:bg-[#547a5c] text-white text-[11px] font-bold transition-colors shadow-2xs cursor-pointer"
+                    title="Tinjau Permohonan Pinjam"
+                  >
+                    <CheckCircle2 :size="12" />
+                    <span>Tinjau</span>
+                  </button>
+                </div>
               </td>
             </tr>
 

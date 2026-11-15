@@ -60,6 +60,10 @@ const handleBack = () => {
   router.push('/laboran/room-requests')
 }
 
+const handleReview = () => {
+  router.push(`/laboran/room-requests/${requestId.value}/review`)
+}
+
 const navigateToRoomUsage = () => {
   router.push('/laboran/room-usage')
 }
@@ -306,6 +310,17 @@ const navigateToRoomUsage = () => {
         <!-- Quick Operational Actions Card -->
         <div class="bg-white rounded-2xl border border-gray-200/80 shadow-2xs p-5 sm:p-6 space-y-3">
           <h4 class="text-xs font-black uppercase tracking-wider text-text-primary">Aksi Operasional</h4>
+
+          <!-- Review CTA for PENDING requests -->
+          <button
+            v-if="requestItem.status === 'PENDING'"
+            @click="handleReview"
+            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#3B694A] to-[#2D5A3F] hover:from-[#31573E] hover:to-[#244430] text-white font-extrabold text-xs shadow-xs shadow-[#2D5A3F]/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <CheckCircle2 :size="14" />
+            <span>Tinjau & Setujui Permohonan</span>
+          </button>
+
           <button
             v-if="requestItem.status === 'APPROVED'"
             @click="navigateToRoomUsage"
