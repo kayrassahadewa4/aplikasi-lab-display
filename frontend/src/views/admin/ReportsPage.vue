@@ -488,10 +488,10 @@ const nextPage = () => {
       <p class="text-sm font-bold text-red-700">{{ errorMessage }}</p>
       <button
         @click="loadReports"
-        class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold hover:bg-red-700"
+        class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold hover:bg-red-700 cursor-pointer"
       >
         <RotateCcw :size="14" />
-        Retry
+        Coba Lagi
       </button>
     </div>
     <div v-else class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
@@ -522,13 +522,13 @@ const nextPage = () => {
     <div class="p-5 sm:p-6 rounded-2xl bg-white border border-gray-200/70 shadow-2xs space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-100 pb-3">
         <div>
-          <h3 class="text-base font-bold text-text-primary tracking-tight">Laboratory Usage Trend</h3>
-          <p class="text-xs text-text-muted">Hourly lab usage volume over the selected time period.</p>
+          <h3 class="text-base font-bold text-text-primary tracking-tight">Tren Pemakaian Laboratorium</h3>
+          <p class="text-xs text-text-muted">Volume jam pemakaian lab selama rentang waktu yang dipilih.</p>
         </div>
       </div>
       <div class="text-center py-8 text-text-muted text-xs">
         <Info :size="20" class="mx-auto mb-2" />
-        <p>Daily trend chart requires additional backend aggregation</p>
+        <p>Grafik tren harian memerlukan agregasi backend tambahan</p>
       </div>
     </div>
     -->
@@ -663,11 +663,11 @@ const nextPage = () => {
         <div>
           <div class="flex items-center gap-2 border-b border-brand-200/60 pb-3">
             <Sparkles :size="16" class="text-dark-green" />
-            <h3 class="text-base font-bold text-text-primary tracking-tight">Operational Insights</h3>
+            <h3 class="text-base font-bold text-text-primary tracking-tight">Wawasan Operasional</h3>
           </div>
           <div class="mt-4 text-xs text-text-muted text-center py-8">
             <Info :size="20" class="mx-auto mb-2" />
-            <p>AI-generated insights feature coming soon</p>
+            <p>Fitur wawasan analitik otomatis akan segera hadir</p>
           </div>
         </div>
       </div>

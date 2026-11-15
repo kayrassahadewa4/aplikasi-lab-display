@@ -52,9 +52,9 @@ const composeForm = ref({
 })
 
 const mapMessageDtoToUi = (dto: MessageDto): MessageItem => {
-  const senderName = dto.sender?.full_name || 'System / Administrator'
-  const senderRole = dto.sender?.role?.name || 'User'
-  const email = dto.sender?.email || 'user@lab.com'
+  const senderName = dto.sender?.full_name || 'Sistem / Administrator'
+  const senderRole = dto.sender?.role?.name || 'Pengguna'
+  const email = dto.sender?.email || 'pengguna@lab.com'
   const initial = senderName.charAt(0).toUpperCase() || 'U'
 
   const formattedTime = dto.created_at ? formatDateTime(dto.created_at) : 'Baru Saja'

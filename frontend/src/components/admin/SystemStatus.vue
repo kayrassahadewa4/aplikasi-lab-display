@@ -44,7 +44,7 @@ defineProps<Props>()
             ]"
           >
             <span :class="['w-1.5 h-1.5 rounded-full', service.status === 'online' ? 'bg-primary-dark animate-pulse' : 'bg-danger']"></span>
-            <span>{{ service.status === 'online' ? 'Online' : 'Offline' }}</span>
+            <span>{{ service.status === 'online' ? 'Aktif' : 'Terputus' }}</span>
           </span>
         </div>
       </div>

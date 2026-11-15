@@ -59,10 +59,10 @@ const actions = computed<QuickAction[]>(() => [
   {
     id: 'create-announcement',
     title: 'Buat Pengumuman',
-    description: 'Kirim informasi broadcast ke pengguna',
+    description: 'Kirim informasi siaran ke pengguna',
     icon: Plus,
     path: '/admin/announcements',
-    badge: 'Broadcast',
+    badge: 'Siaran',
     badgeClass: 'bg-surface border border-gray-200 text-text-muted font-medium',
   },
 ])

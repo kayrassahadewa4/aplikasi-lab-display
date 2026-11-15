@@ -163,7 +163,7 @@ const confirmDeleteLab = async () => {
     selectedLabForDelete.value = null
     await loadLaboratories() // Reload list after delete
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Failed to delete laboratory'
+    error.value = err.response?.data?.message || 'Gagal menghapus data laboratorium'
     console.error('Failed to delete laboratory:', err)
     showDeleteModal.value = false
   } finally {

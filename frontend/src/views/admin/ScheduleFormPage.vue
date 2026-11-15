@@ -503,10 +503,10 @@ const handleCancel = () => {
                 required
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
               >
-                <option value="SCHEDULED">SCHEDULED (Terjadwal)</option>
-                <option value="ACTIVE">ACTIVE (Sedang Berjalan)</option>
-                <option value="FINISHED">FINISHED (Selesai)</option>
-                <option value="CANCELLED">CANCELLED (Dibatalkan)</option>
+                <option value="SCHEDULED">Terjadwal</option>
+                <option value="ACTIVE">Aktif (Sedang Berjalan)</option>
+                <option value="FINISHED">Selesai</option>
+                <option value="CANCELLED">Dibatalkan</option>
               </select>
             </div>
 

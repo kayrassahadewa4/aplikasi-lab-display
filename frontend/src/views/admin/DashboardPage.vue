@@ -106,10 +106,10 @@ const dynamicActivities = computed<Activity[]>(() => {
   pendingRoomRequests.value.forEach(r => {
     acts.push({
       id: `req-${r.id}`,
-      user: r.applicantName || 'Lecturer',
-      action: r.status === 'APPROVED' ? 'reservation approved for' : r.status === 'REJECTED' ? 'reservation rejected for' : 'requested booking for',
-      target: r.laboratoryName || 'Laboratory Room',
-      timestamp: r.createdAt || 'Recent',
+      user: r.applicantName || 'Dosen Pengampu',
+      action: r.status === 'APPROVED' ? 'menyetujui permohonan untuk' : r.status === 'REJECTED' ? 'menolak permohonan untuk' : 'mengajukan peminjaman untuk',
+      target: r.laboratoryName || 'Ruang Laboratorium',
+      timestamp: r.createdAt ? formatDisplayDate(r.createdAt) : 'Baru saja',
       type: r.status === 'APPROVED' ? 'approve' : r.status === 'REJECTED' ? 'reject' : 'create'
     })
   })
@@ -118,10 +118,10 @@ const dynamicActivities = computed<Activity[]>(() => {
   recentRoomUsages.value.forEach(u => {
     acts.push({
       id: `usage-${u.id}`,
-      user: u.checkedInByName || 'Laboratory Staff',
-      action: u.status === 'CHECKED_OUT' ? 'completed session in' : 'logged check-in to',
-      target: u.laboratoryName || 'Laboratory Room',
-      timestamp: u.checkInTime || 'Recent',
+      user: u.checkedInByName || 'Staf Laboran',
+      action: u.status === 'CHECKED_OUT' ? 'menyelesaikan sesi di' : 'melakukan check-in di',
+      target: u.laboratoryName || 'Ruang Laboratorium',
+      timestamp: u.checkInTime ? formatDisplayDate(u.checkInTime) : 'Baru saja',
       type: 'approve'
     })
   })
@@ -131,9 +131,9 @@ const dynamicActivities = computed<Activity[]>(() => {
     acts.push({
       id: `ann-${a.id}`,
       user: 'Administrator',
-      action: 'broadcasted announcement',
+      action: 'mempublikasikan pengumuman',
       target: a.title,
-      timestamp: a.start_at || 'Recent',
+      timestamp: a.start_at ? formatDisplayDate(a.start_at) : 'Baru saja',
       type: 'create'
     })
   })
@@ -147,25 +147,25 @@ const systemServices = computed<ServiceStatus[]>(() => [
     name: 'API Gateway & Core Service',
     status: !hasError.value ? 'online' : 'offline',
     icon: Server,
-    lastCheck: 'HTTP 200 OK · Latency 10ms'
+    lastCheck: 'HTTP 200 OK · Latensi 10ms'
   },
   {
     name: 'PostgreSQL Database',
     status: dashboardSummary.value ? 'online' : 'offline',
     icon: Database,
-    lastCheck: dashboardSummary.value ? `${dashboardSummary.value.total_schedules} records active` : 'Connection Pending'
+    lastCheck: dashboardSummary.value ? `${dashboardSummary.value.total_schedules} jadwal aktif` : 'Menunggu Koneksi'
   },
   {
-    name: 'Academic Calendar Schedule',
+    name: 'Kalender Akademik & Penjadwalan',
     status: 'online',
     icon: ShieldCheck,
-    lastCheck: 'Semester 2025/2026 Ganjil'
+    lastCheck: 'Semester Ganjil 2025/2026'
   },
   {
-    name: 'Public Display Screen Broadcast',
+    name: 'Penyiaran Layar Display Kiosk',
     status: 'online',
     icon: Monitor,
-    lastCheck: 'Live 1080p Kiosk Sync'
+    lastCheck: 'Sinkronisasi Siaran Kiosk'
   }
 ])
 
@@ -203,7 +203,7 @@ const loadDashboardData = async () => {
 
   } catch (error: any) {
     hasError.value = true
-    errorMessage.value = error.message || 'Failed to load dashboard data'
+    errorMessage.value = error.message || 'Gagal memuat data dashboard'
   } finally {
     isLoading.value = false
   }
@@ -427,7 +427,7 @@ const formatDisplayTime = (timeStr?: string) => {
         @click="loadDashboardData"
         class="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold hover:bg-red-700 cursor-pointer"
       >
-        Retry
+        Coba Lagi
       </button>
     </div>
 
@@ -471,10 +471,10 @@ const formatDisplayTime = (timeStr?: string) => {
     <!-- 5. Bottom Grid: Room Requests & Announcements -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
       <!-- Upcoming Room Requests -->
-      <BaseCard title="Upcoming Room Requests" subtitle="Facility reservations requiring review">
+      <BaseCard title="Permohonan Pinjam Terkini" subtitle="Reservasi pemakaian laboratorium yang memerlukan tinjauan">
         <template #action>
           <router-link to="/admin/room-requests" class="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1 transition-colors">
-            <span>View All</span>
+            <span>Lihat Semua</span>
             <ChevronRight :size="14" />
           </router-link>
         </template>
@@ -484,7 +484,7 @@ const formatDisplayTime = (timeStr?: string) => {
         </div>
 
         <div v-else-if="pendingRoomRequests.length === 0" class="text-center py-8 text-text-muted text-xs">
-          No pending requests
+          Tidak ada permohonan menunggu
         </div>
 
         <ul v-else class="space-y-2.5">
@@ -501,7 +501,7 @@ const formatDisplayTime = (timeStr?: string) => {
                   <User :size="12" />
                 </div>
                 <p class="font-bold text-xs text-text-primary group-hover:text-dark-green transition-colors truncate">
-                  {{ request.applicantName || 'Applicant' }}
+                  {{ request.applicantName || 'Pemohon' }}
                 </p>
               </div>
               
@@ -509,13 +509,13 @@ const formatDisplayTime = (timeStr?: string) => {
                 class="px-2 py-0.5 text-[10px] font-bold rounded-full border shrink-0 uppercase tracking-wide"
                 :class="request.status === 'APPROVED' ? 'bg-emerald-50 text-dark-green border-brand-200' : request.status === 'REJECTED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-accent/70 text-dark-green border-dark-green/10'"
               >
-                {{ request.status || 'PENDING' }}
+                {{ request.status === 'APPROVED' ? 'DISETUJUI' : request.status === 'REJECTED' ? 'DITOLAK' : 'MENUNGGU' }}
               </span>
             </div>
 
             <!-- Middle Row: Laboratory Name & Schedule Date/Time -->
             <div class="flex items-center justify-between text-xs text-text-secondary pl-8">
-              <span class="font-medium text-text-primary truncate">{{ request.laboratoryName || 'Laboratory' }}</span>
+              <span class="font-medium text-text-primary truncate">{{ request.laboratoryName || 'Laboratorium' }}</span>
               <span class="text-[11px] text-text-muted flex items-center gap-1 font-mono shrink-0">
                 <Clock :size="11" />
                 {{ formatDisplayDate(request.requestDate) }} · {{ formatDisplayTime(request.startTime) }}
@@ -524,7 +524,7 @@ const formatDisplayTime = (timeStr?: string) => {
 
             <!-- Bottom Hover Reveal: "Tap to see more" Action Hint -->
             <div class="opacity-0 group-hover:opacity-100 max-h-0 group-hover:max-h-6 overflow-hidden transition-all duration-200 ease-out flex items-center justify-end gap-1 text-[11px] font-bold text-dark-green pl-8 border-t border-brand-200/50 pt-1 mt-0.5">
-              <span>Tap to see more</span>
+              <span>Klik untuk rincian</span>
               <ChevronRight :size="13" class="group-hover:translate-x-0.5 transition-transform" />
             </div>
           </li>
@@ -532,10 +532,10 @@ const formatDisplayTime = (timeStr?: string) => {
       </BaseCard>
 
       <!-- Latest Announcements -->
-      <BaseCard title="Latest Announcements" subtitle="Institutional broadcasts and updates">
+      <BaseCard title="Pengumuman Terkini" subtitle="Informasi siaran dan pembaruan institusional">
         <template #action>
           <router-link to="/admin/announcements" class="text-xs font-semibold text-primary hover:text-primary-hover flex items-center gap-1 transition-colors">
-            <span>View All</span>
+            <span>Lihat Semua</span>
             <ChevronRight :size="14" />
           </router-link>
         </template>
@@ -545,7 +545,7 @@ const formatDisplayTime = (timeStr?: string) => {
         </div>
 
         <div v-else-if="latestAnnouncements.length === 0" class="text-center py-8 text-text-muted text-xs">
-          No announcements
+          Tidak ada pengumuman
         </div>
 
         <ul v-else class="space-y-2.5">
@@ -560,14 +560,14 @@ const formatDisplayTime = (timeStr?: string) => {
                 {{ announcement.title }}
               </h4>
               <span v-if="announcement.is_active" class="px-2 py-0.5 bg-emerald-50 text-dark-green text-[10px] font-bold border border-brand-200 rounded-full shrink-0">
-                Active
+                Aktif
               </span>
             </div>
             <p class="text-xs text-text-secondary line-clamp-2 leading-relaxed mb-1">{{ announcement.content }}</p>
             <div class="flex items-center justify-between text-[11px] text-text-muted border-t border-gray-100 pt-2">
               <span class="flex items-center gap-1">
                 <Megaphone :size="11" class="text-primary" />
-                {{ announcement.is_active ? 'Active Broadcast' : 'Inactive' }}
+                {{ announcement.is_active ? 'Siaran Aktif' : 'Nonaktif' }}
               </span>
               <span class="font-mono">{{ formatDisplayDate(announcement.start_at) }}</span>
             </div>

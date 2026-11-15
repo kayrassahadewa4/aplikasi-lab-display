@@ -459,8 +459,8 @@ const handleCancel = () => {
                 v-model="form.status"
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
               >
-                <option value="CHECKED_IN">CHECKED_IN (Ruangan Dibuka)</option>
-                <option value="IN_USE">IN_USE (Sedang Digunakan & Aktif)</option>
+                <option value="CHECKED_IN">Masuk / Check-in (Ruangan Dibuka)</option>
+                <option value="IN_USE">Sedang Digunakan & Aktif</option>
               </select>
             </div>
 

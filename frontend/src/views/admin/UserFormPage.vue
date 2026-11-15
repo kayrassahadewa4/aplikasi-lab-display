@@ -62,7 +62,7 @@ onMounted(async () => {
     availableRoles.value = await roleService.getRoles(1, 100)
   } catch (error) {
     console.error('Failed to load roles', error)
-    errorMessage.value = 'Failed to load roles. Please refresh the page.'
+    errorMessage.value = 'Gagal memuat peran pengguna. Silakan segarkan halaman.'
     showErrorToast.value = true
   } finally {
     isLoadingRoles.value = false
@@ -90,7 +90,7 @@ onMounted(async () => {
         { label: 'Dashboard', path: '/admin' },
         { label: 'Pengguna', path: '/admin/users' },
         { label: existing.fullName, path: `/admin/users/${existing.id}` },
-        { label: 'Edit Pengguna' },
+        { label: 'Ubah Pengguna' },
       ])
     } catch (error) {
       console.error('Failed to load user', error)
@@ -169,7 +169,7 @@ const handleSave = async () => {
     }, 1000)
   } catch (error: any) {
     console.error('Failed to save user', error)
-    const apiError = error?.response?.data?.message || error?.message || 'Failed to save user. Please try again.'
+    const apiError = error?.response?.data?.message || error?.message || 'Gagal menyimpan data pengguna. Silakan coba lagi.'
     errorMessage.value = apiError
     showErrorToast.value = true
   } finally {
