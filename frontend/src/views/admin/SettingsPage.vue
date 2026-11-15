@@ -198,6 +198,16 @@ const handleSaveAccount = async () => {
     return
   }
 
+  if (accountSettings.value.fullName.trim().length > 50) {
+    triggerErrorToast('Nama lengkap maksimal 50 karakter.')
+    return
+  }
+
+  if (accountSettings.value.phone && accountSettings.value.phone.trim().length > 11) {
+    triggerErrorToast('Nomor telepon maksimal 11 karakter.')
+    return
+  }
+
   isSavingAccount.value = true
   try {
     const updated = await userService.updateUser(authStore.user.id, {
@@ -239,10 +249,15 @@ const handleUpdatePassword = async () => {
     return
   }
 
-  // Password complexity validation: min 8 chars, uppercase, lowercase, number
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+  if (securityForm.value.newPassword.length < 8 || securityForm.value.newPassword.length > 15) {
+    triggerErrorToast('Kata sandi baru harus terdiri dari 8 hingga 15 karakter.')
+    return
+  }
+
+  // Password complexity validation: min 8, max 15 chars, uppercase, lowercase, number
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,15}$/
   if (!passwordRegex.test(securityForm.value.newPassword)) {
-    triggerErrorToast('Kata sandi baru harus memiliki minimal 8 karakter dan mengandung huruf besar, huruf kecil, serta angka.')
+    triggerErrorToast('Kata sandi baru harus memiliki 8-15 karakter dan mengandung huruf besar, huruf kecil, serta angka.')
     return
   }
 
@@ -667,10 +682,14 @@ const handleDiscard = () => {
 
           <form @submit.prevent="handleSaveAccount" class="space-y-4 text-xs">
             <div>
-              <label class="block font-bold text-text-primary mb-1">Nama Lengkap Administrator</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-text-primary">Nama Lengkap Administrator</label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (accountSettings.fullName || '').length }}/50</span>
+              </div>
               <input
                 v-model="accountSettings.fullName"
                 type="text"
+                maxlength="50"
                 required
                 @input="markDirty"
                 class="w-full px-3 py-2 bg-surface border border-gray-200 rounded-xl font-semibold text-text-primary focus:outline-none focus:border-brand-400 focus:bg-white"
@@ -678,10 +697,14 @@ const handleDiscard = () => {
             </div>
 
             <div>
-              <label class="block font-bold text-text-primary mb-1">Alamat Email (Hanya Baca)</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-text-primary">Alamat Email (Hanya Baca)</label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (accountSettings.email || '').length }}/16</span>
+              </div>
               <input
                 v-model="accountSettings.email"
                 type="email"
+                maxlength="16"
                 disabled
                 class="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl font-semibold text-text-muted cursor-not-allowed"
               />
@@ -689,11 +712,15 @@ const handleDiscard = () => {
             </div>
 
             <div>
-              <label class="block font-bold text-text-primary mb-1">Nomor Telepon / WhatsApp</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block font-bold text-text-primary">Nomor Telepon / WhatsApp</label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (accountSettings.phone || '').length }}/11</span>
+              </div>
               <input
                 v-model="accountSettings.phone"
                 type="text"
-                placeholder="contoh: +62 812-3456-7890"
+                maxlength="11"
+                placeholder="contoh: 08123456789"
                 @input="markDirty"
                 class="w-full px-3 py-2 bg-surface border border-gray-200 rounded-xl font-medium text-text-primary focus:outline-none focus:border-brand-400 focus:bg-white"
               />
@@ -730,12 +757,12 @@ const handleDiscard = () => {
             <div>
               <div class="flex items-center justify-between mb-1">
                 <label class="block font-bold text-text-primary">Kata Sandi Saat Ini</label>
-                <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.currentPassword || '').length }}/250</span>
+                <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.currentPassword || '').length }}/15</span>
               </div>
               <input
                 v-model="securityForm.currentPassword"
                 type="password"
-                maxlength="250"
+                maxlength="15"
                 placeholder="••••••••••••"
                 required
                 @input="markDirty"
@@ -747,29 +774,29 @@ const handleDiscard = () => {
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <label class="block font-bold text-text-primary">Kata Sandi Baru</label>
-                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.newPassword || '').length }}/250</span>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.newPassword || '').length }}/15</span>
                 </div>
                 <input
                   v-model="securityForm.newPassword"
                   type="password"
-                  maxlength="250"
+                  maxlength="15"
                   placeholder="Masukkan kata sandi baru"
                   required
                   @input="markDirty"
                   class="w-full px-3 py-2 bg-surface border border-gray-200 rounded-xl font-mono text-text-primary focus:outline-none focus:border-brand-400 focus:bg-white"
                 />
-                <p class="text-[10px] text-text-muted mt-1">Min 8 karakter, 1 huruf besar, 1 huruf kecil, 1 angka.</p>
+                <p class="text-[10px] text-text-muted mt-1">Min 8, maks 15 karakter, 1 huruf besar, 1 huruf kecil, 1 angka.</p>
               </div>
 
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <label class="block font-bold text-text-primary">Konfirmasi Kata Sandi Baru</label>
-                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.confirmPassword || '').length }}/250</span>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.confirmPassword || '').length }}/15</span>
                 </div>
                 <input
                   v-model="securityForm.confirmPassword"
                   type="password"
-                  maxlength="250"
+                  maxlength="15"
                   placeholder="Konfirmasi kata sandi baru"
                   required
                   @input="markDirty"

@@ -21,44 +21,44 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: 'Full name of the user',
-    example: 'John Doe',
-    maxLength: 100,
+    example: 'Budi Santoso',
+    maxLength: 50,
   })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
+  @MaxLength(50)
   full_name: string;
 
   @ApiProperty({
     description: 'Email address',
-    example: 'john.doe@example.com',
-    maxLength: 100,
+    example: 'budi@lab.com',
+    maxLength: 16,
   })
   @IsEmail()
   @IsNotEmpty()
-  @MaxLength(100)
+  @MaxLength(16)
   email: string;
 
   @ApiProperty({
     description: 'Password',
     example: 'password123',
     minLength: 6,
-    maxLength: 100,
+    maxLength: 15,
   })
   @IsString()
   @IsNotEmpty()
   @MinLength(6)
-  @MaxLength(100)
+  @MaxLength(15)
   password: string;
 
   @ApiPropertyOptional({
     description: 'Phone number',
-    example: '+62812345678',
-    maxLength: 20,
+    example: '+6281234567',
+    maxLength: 11,
   })
   @IsOptional()
   @IsString()
-  @MaxLength(20)
+  @MaxLength(11)
   phone?: string;
 
   @ApiProperty({

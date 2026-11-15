@@ -4,10 +4,12 @@ import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-vali
 export class ForgotPasswordRequestDto {
   @ApiProperty({
     description: 'Email resmi akun terdaftar pengguna (Dosen/Laboran)',
-    example: 'dosen@upnvj.ac.id',
+    example: 'dosen@upn.ac.id',
+    maxLength: 16,
   })
   @IsEmail({}, { message: 'Format email tidak valid' })
   @IsNotEmpty({ message: 'Email tidak boleh kosong' })
+  @MaxLength(16, { message: 'Email maksimal 16 karakter' })
   email: string;
 
   @ApiPropertyOptional({

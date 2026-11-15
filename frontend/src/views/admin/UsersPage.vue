@@ -112,6 +112,11 @@ const handleResolveRequest = async (id: string, action: 'APPROVE' | 'REJECT') =>
   errorMessage.value = ''
   try {
     const tempPass = action === 'APPROVE' ? tempPasswordInputs.value[id] : undefined
+    if (action === 'APPROVE' && tempPass && (tempPass.length < 6 || tempPass.length > 15)) {
+      errorMessage.value = 'Kata sandi sementara harus antara 6 hingga 15 karakter.'
+      processingRequestId.value = null
+      return
+    }
     const res = await passwordResetService.resolveResetRequest(id, action, tempPass)
     successMessage.value = res.message
     await loadResetRequests()
@@ -745,6 +750,7 @@ const confirmDeleteUser = async () => {
                 <input
                   v-model="tempPasswordInputs[req.id]"
                   type="text"
+                  maxlength="15"
                   placeholder="Kata sandi sementara"
                   class="w-full px-2.5 py-1.5 bg-surface border border-gray-200 rounded-lg text-xs font-mono font-bold text-dark-green focus:outline-none focus:ring-1 focus:ring-dark-green focus:bg-white"
                 />

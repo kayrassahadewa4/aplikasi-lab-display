@@ -49,7 +49,7 @@ const toastMessage = ref('')
 const errorMessage = ref('')
 
 // Requirements validation logic
-const reqLength = computed(() => newPassword.value.length >= 8)
+const reqLength = computed(() => newPassword.value.length >= 8 && newPassword.value.length <= 15)
 const reqUppercase = computed(() => /[A-Z]/.test(newPassword.value))
 const reqLowercase = computed(() => /[a-z]/.test(newPassword.value))
 const reqNumber = computed(() => /[0-9]/.test(newPassword.value))
@@ -71,6 +71,11 @@ const handleSubmit = async () => {
 
   if (!currentPassword.value) {
     errorMessage.value = 'Silakan masukkan kata sandi saat ini.'
+    return
+  }
+
+  if (newPassword.value.length < 8 || newPassword.value.length > 15) {
+    errorMessage.value = 'Kata sandi baru harus terdiri dari 8 hingga 15 karakter.'
     return
   }
 
@@ -200,11 +205,15 @@ const handleCancel = () => {
           <div class="space-y-4 text-xs">
             <!-- Current Password -->
             <div class="space-y-1.5">
-              <label class="block font-bold text-text-primary">Kata Sandi Saat Ini <span class="text-red-500">*</span></label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">Kata Sandi Saat Ini <span class="text-red-500">*</span></label>
+                <span class="text-[10px] font-mono text-text-muted">{{ currentPassword.length }}/15</span>
+              </div>
               <div class="relative">
                 <input
                   v-model="currentPassword"
                   :type="showCurrentPassword ? 'text' : 'password'"
+                  maxlength="15"
                   required
                   placeholder="Masukkan kata sandi saat ini"
                   class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white pr-10 transition-colors"
@@ -222,11 +231,15 @@ const handleCancel = () => {
 
             <!-- New Password -->
             <div class="space-y-1.5">
-              <label class="block font-bold text-text-primary">Kata Sandi Baru <span class="text-red-500">*</span></label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">Kata Sandi Baru <span class="text-red-500">*</span></label>
+                <span class="text-[10px] font-mono text-text-muted">{{ newPassword.length }}/15</span>
+              </div>
               <div class="relative">
                 <input
                   v-model="newPassword"
                   :type="showNewPassword ? 'text' : 'password'"
+                  maxlength="15"
                   required
                   placeholder="Masukkan kata sandi baru"
                   class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white pr-10 transition-colors"
@@ -244,11 +257,15 @@ const handleCancel = () => {
 
             <!-- Confirm New Password -->
             <div class="space-y-1.5">
-              <label class="block font-bold text-text-primary">Konfirmasi Kata Sandi Baru <span class="text-red-500">*</span></label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">Konfirmasi Kata Sandi Baru <span class="text-red-500">*</span></label>
+                <span class="text-[10px] font-mono text-text-muted">{{ confirmPassword.length }}/15</span>
+              </div>
               <div class="relative">
                 <input
                   v-model="confirmPassword"
                   :type="showConfirmPassword ? 'text' : 'password'"
+                  maxlength="15"
                   required
                   placeholder="Masukkan ulang kata sandi baru"
                   class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white pr-10 transition-colors"
@@ -306,7 +323,7 @@ const handleCancel = () => {
                 <Check v-if="reqLength" :size="10" stroke-width="3" />
                 <span v-else>•</span>
               </div>
-              <span>Minimal 8 karakter</span>
+              <span>Minimal 8, maksimal 15 karakter</span>
             </div>
 
             <div

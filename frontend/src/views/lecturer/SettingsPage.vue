@@ -81,7 +81,7 @@ const passwordErrors = reactive({
 })
 
 // Password Complexity Checkers
-const hasMinLength = computed(() => passwordForm.newPassword.length >= 8)
+const hasMinLength = computed(() => passwordForm.newPassword.length >= 8 && passwordForm.newPassword.length <= 15)
 const hasUppercase = computed(() => /[A-Z]/.test(passwordForm.newPassword))
 const hasLowercase = computed(() => /[a-z]/.test(passwordForm.newPassword))
 const hasNumber = computed(() => /\d/.test(passwordForm.newPassword))
@@ -195,6 +195,14 @@ const saveEditProfile = async () => {
   if (!editForm.fullName.trim()) {
     editErrors.fullName = 'Nama lengkap wajib diisi'
     valid = false
+  } else if (editForm.fullName.trim().length > 50) {
+    editErrors.fullName = 'Nama lengkap maksimal 50 karakter'
+    valid = false
+  }
+
+  if (editForm.phone && editForm.phone.trim().length > 11) {
+    editErrors.phone = 'Nomor telepon maksimal 11 karakter'
+    valid = false
   }
 
   if (!valid) return
@@ -242,9 +250,12 @@ const saveChangePassword = async () => {
     valid = false
   }
 
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,15}$/
   if (!passwordForm.newPassword) {
     passwordErrors.newPassword = 'Kata sandi baru wajib diisi'
+    valid = false
+  } else if (passwordForm.newPassword.length < 8 || passwordForm.newPassword.length > 15) {
+    passwordErrors.newPassword = 'Kata sandi harus terdiri dari 8 hingga 15 karakter'
     valid = false
   } else if (!passwordRegex.test(passwordForm.newPassword)) {
     passwordErrors.newPassword = 'Kata sandi harus memenuhi semua kriteria keamanan'
@@ -492,12 +503,16 @@ const navigateTo = (path: string) => {
       <form @submit.prevent="saveEditProfile" class="bg-white p-6 sm:p-7 rounded-2xl border border-gray-200/70 shadow-2xs space-y-5 max-w-3xl min-w-0">
         <!-- Full Name -->
         <div class="space-y-1.5">
-          <label class="text-xs font-bold text-text-primary block">
-            Nama Lengkap <span class="text-danger">*</span>
-          </label>
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-text-primary block">
+              Nama Lengkap <span class="text-danger">*</span>
+            </label>
+            <span class="text-[10px] font-mono text-text-muted">{{ (editForm.fullName || '').length }}/50</span>
+          </div>
           <input
             v-model="editForm.fullName"
             type="text"
+            maxlength="50"
             required
             :class="[
               'w-full px-3.5 py-2.5 bg-surface/60 border rounded-xl text-xs text-text-primary font-medium transition-all focus:outline-none focus:ring-2 focus:ring-dark-green/25 focus:border-dark-green focus:bg-white',
@@ -512,12 +527,16 @@ const navigateTo = (path: string) => {
 
         <!-- Read-Only Email -->
         <div class="space-y-1.5">
-          <label class="text-xs font-bold text-text-primary block">
-            Alamat Email (Hanya Baca)
-          </label>
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-text-primary block">
+              Alamat Email (Hanya Baca)
+            </label>
+            <span class="text-[10px] font-mono text-text-muted">{{ (editForm.email || '').length }}/16</span>
+          </div>
           <input
             v-model="editForm.email"
             type="email"
+            maxlength="16"
             disabled
             class="w-full px-3.5 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-xs text-text-muted font-medium cursor-not-allowed"
           />
@@ -526,13 +545,17 @@ const navigateTo = (path: string) => {
 
         <!-- Phone Number -->
         <div class="space-y-1.5">
-          <label class="text-xs font-bold text-text-primary block">
-            Nomor Telepon / Kontak
-          </label>
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-text-primary block">
+              Nomor Telepon / Kontak
+            </label>
+            <span class="text-[10px] font-mono text-text-muted">{{ (editForm.phone || '').length }}/11</span>
+          </div>
           <input
             v-model="editForm.phone"
             type="text"
-            placeholder="+62 812-3456-7890"
+            maxlength="11"
+            placeholder="contoh: 08123456789"
             class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-xs text-text-primary font-medium transition-all focus:outline-none focus:ring-2 focus:ring-dark-green/25 focus:border-dark-green focus:bg-white"
           />
         </div>
@@ -595,13 +618,17 @@ const navigateTo = (path: string) => {
           
           <!-- Current Password -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-text-primary block">
-              Kata Sandi Saat Ini <span class="text-danger">*</span>
-            </label>
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-text-primary block">
+                Kata Sandi Saat Ini <span class="text-danger">*</span>
+              </label>
+              <span class="text-[10px] font-mono text-text-muted">{{ (passwordForm.currentPassword || '').length }}/15</span>
+            </div>
             <div class="relative">
               <input
                 v-model="passwordForm.currentPassword"
                 :type="showCurrentPassword ? 'text' : 'password'"
+                maxlength="15"
                 placeholder="Masukkan kata sandi saat ini"
                 required
                 :class="[
@@ -626,13 +653,17 @@ const navigateTo = (path: string) => {
 
           <!-- New Password -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-text-primary block">
-              Kata Sandi Baru <span class="text-danger">*</span>
-            </label>
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-text-primary block">
+                Kata Sandi Baru <span class="text-danger">*</span>
+              </label>
+              <span class="text-[10px] font-mono text-text-muted">{{ (passwordForm.newPassword || '').length }}/15</span>
+            </div>
             <div class="relative">
               <input
                 v-model="passwordForm.newPassword"
                 :type="showNewPassword ? 'text' : 'password'"
+                maxlength="15"
                 placeholder="Masukkan kata sandi baru yang kuat"
                 required
                 :class="[
@@ -659,7 +690,7 @@ const navigateTo = (path: string) => {
                 ]"
               >
                 <Check v-if="hasMinLength" :size="11" stroke-width="3" />
-                <span>8+ karakter</span>
+                <span>8-15 karakter</span>
               </span>
 
               <span
@@ -701,13 +732,17 @@ const navigateTo = (path: string) => {
 
           <!-- Confirm Password -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-text-primary block">
-              Konfirmasi Kata Sandi Baru <span class="text-danger">*</span>
-            </label>
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-text-primary block">
+                Konfirmasi Kata Sandi Baru <span class="text-danger">*</span>
+              </label>
+              <span class="text-[10px] font-mono text-text-muted">{{ (passwordForm.confirmPassword || '').length }}/15</span>
+            </div>
             <div class="relative">
               <input
                 v-model="passwordForm.confirmPassword"
                 :type="showConfirmPassword ? 'text' : 'password'"
+                maxlength="15"
                 placeholder="Masukkan ulang kata sandi baru"
                 required
                 :class="[

@@ -115,14 +115,38 @@ onMounted(async () => {
 const handleSave = async () => {
   if (!form.value.fullName || !form.value.email || !form.value.roleId) return
 
+  if (form.value.fullName.trim().length > 50) {
+    errorMessage.value = 'Nama lengkap maksimal 50 karakter.'
+    showErrorToast.value = true
+    return
+  }
+
+  if (form.value.email.trim().length > 16) {
+    errorMessage.value = 'Email maksimal 16 karakter.'
+    showErrorToast.value = true
+    return
+  }
+
   if (!isEditMode.value && !form.value.password) {
     errorMessage.value = 'Kata sandi wajib diisi saat membuat pengguna baru.'
     showErrorToast.value = true
     return
   }
 
-  if (!isEditMode.value && form.value.password.length < 6) {
-    errorMessage.value = 'Kata sandi minimal harus terdiri dari 6 karakter.'
+  if (!isEditMode.value && (form.value.password.length < 6 || form.value.password.length > 15)) {
+    errorMessage.value = 'Kata sandi harus terdiri dari 6 hingga 15 karakter.'
+    showErrorToast.value = true
+    return
+  }
+
+  if (isEditMode.value && form.value.password && form.value.password.length > 15) {
+    errorMessage.value = 'Kata sandi maksimal 15 karakter.'
+    showErrorToast.value = true
+    return
+  }
+
+  if (form.value.phone && form.value.phone.trim().length > 11) {
+    errorMessage.value = 'Nomor telepon maksimal 11 karakter.'
     showErrorToast.value = true
     return
   }
@@ -276,13 +300,13 @@ const handleCancel = () => {
                 <label class="block font-bold text-text-primary">
                   Nama Lengkap (beserta Gelar) <span class="text-red-500">*</span>
                 </label>
-                <span class="text-[10px] font-mono text-text-muted">{{ (form.fullName || '').length }}/100</span>
+                <span class="text-[10px] font-mono text-text-muted">{{ (form.fullName || '').length }}/50</span>
               </div>
               <input
                 v-model="form.fullName"
                 type="text"
-                maxlength="100"
-                placeholder="Contoh: Dr. Hendra Wijaya, M.Kom."
+                maxlength="50"
+                placeholder="Contoh: Dr. Budi Santoso"
                 required
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
               />
@@ -293,26 +317,30 @@ const handleCancel = () => {
                 <label class="block font-bold text-text-primary">
                   Alamat Email Institusi <span class="text-red-500">*</span>
                 </label>
-                <span class="text-[10px] font-mono text-text-muted">{{ (form.email || '').length }}/100</span>
+                <span class="text-[10px] font-mono text-text-muted">{{ (form.email || '').length }}/16</span>
               </div>
               <input
                 v-model="form.email"
                 type="email"
-                maxlength="100"
-                placeholder="Contoh: hendra.wijaya@upnvj.ac.id"
+                maxlength="16"
+                placeholder="Contoh: budi@lab.com"
                 required
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
               />
             </div>
 
             <div class="space-y-1.5">
-              <label class="block font-bold text-text-primary">
-                Nomor Telepon / WhatsApp
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">
+                  Nomor Telepon / WhatsApp
+                </label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (form.phone || '').length }}/11</span>
+              </div>
               <input
                 v-model="form.phone"
                 type="text"
-                placeholder="Contoh: +62 812-3456-7890"
+                maxlength="11"
+                placeholder="Contoh: 08123456789"
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
               />
             </div>
@@ -369,13 +397,13 @@ const handleCancel = () => {
                   <span v-if="isEditMode" class="font-normal text-text-muted">(kosongkan jika tidak ingin mengubah kata sandi)</span>
                   <span v-else class="text-red-500">*</span>
                 </label>
-                <span class="text-[10px] font-mono text-text-muted">{{ (form.password || '').length }}/250</span>
+                <span class="text-[10px] font-mono text-text-muted">{{ (form.password || '').length }}/15</span>
               </div>
               <input
                 v-model="form.password"
                 type="password"
-                maxlength="250"
-                placeholder="Masukkan kata sandi (minimal 6 karakter)"
+                maxlength="15"
+                placeholder="Masukkan kata sandi (6-15 karakter)"
                 :required="!isEditMode"
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
               />

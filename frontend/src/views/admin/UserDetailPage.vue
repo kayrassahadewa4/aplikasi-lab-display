@@ -67,7 +67,7 @@ const generateRandomPassword = () => {
 }
 
 const handleDirectReset = async () => {
-  if (!newPasswordInput.value || newPasswordInput.value.length < 6) return
+  if (!newPasswordInput.value || newPasswordInput.value.length < 6 || newPasswordInput.value.length > 15) return
   isResetting.value = true
   try {
     const res = await passwordResetService.directResetPassword(userId, newPasswordInput.value)
@@ -507,25 +507,29 @@ const handleDelete = async () => {
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="block font-bold text-text-secondary">Kata Sandi Baru / Sementara *</label>
-              <button
-                type="button"
-                @click="generateRandomPassword"
-                class="inline-flex items-center gap-1 text-[11px] font-bold text-dark-green hover:underline cursor-pointer"
-              >
-                <RefreshCw :size="11" />
-                <span>Acak Sandi Baru</span>
-              </button>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-mono text-text-muted">{{ newPasswordInput.length }}/15</span>
+                <button
+                  type="button"
+                  @click="generateRandomPassword"
+                  class="inline-flex items-center gap-1 text-[11px] font-bold text-dark-green hover:underline cursor-pointer"
+                >
+                  <RefreshCw :size="11" />
+                  <span>Acak Sandi Baru</span>
+                </button>
+              </div>
             </div>
             <input
               v-model="newPasswordInput"
               type="text"
               required
               minlength="6"
+              maxlength="15"
               placeholder="Masukkan kata sandi baru"
               class="w-full px-3.5 py-2.5 bg-surface border border-gray-200 rounded-xl font-mono font-bold text-dark-green focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-all text-xs"
               :disabled="isResetting"
             />
-            <p class="text-[10.5px] text-text-muted mt-1">Minimal 6 karakter. Anda dapat mengacak kombinasi otomatis.</p>
+            <p class="text-[10.5px] text-text-muted mt-1">Minimal 6, maksimal 15 karakter. Anda dapat mengacak kombinasi otomatis.</p>
           </div>
 
           <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">

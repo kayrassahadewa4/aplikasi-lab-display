@@ -84,6 +84,14 @@ const handleSave = async () => {
     errorMessage.value = 'Nama lengkap wajib diisi.'
     return
   }
+  if (editForm.value.fullName.trim().length > 50) {
+    errorMessage.value = 'Nama lengkap maksimal 50 karakter.'
+    return
+  }
+  if (editForm.value.phone && editForm.value.phone.trim().length > 11) {
+    errorMessage.value = 'Nomor telepon maksimal 11 karakter.'
+    return
+  }
 
   isSaving.value = true
   errorMessage.value = ''
@@ -203,12 +211,16 @@ const handleCancel = () => {
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div class="space-y-1.5 sm:col-span-2">
-              <label class="block font-bold text-text-primary">
-                Nama Lengkap (beserta Gelar Akademik) <span class="text-red-500">*</span>
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">
+                  Nama Lengkap (beserta Gelar Akademik) <span class="text-red-500">*</span>
+                </label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (editForm.fullName || '').length }}/50</span>
+              </div>
               <input
                 v-model="editForm.fullName"
                 type="text"
+                maxlength="50"
                 required
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
               />
@@ -221,6 +233,7 @@ const handleCancel = () => {
               <input
                 :value="editForm.email"
                 type="email"
+                maxlength="16"
                 disabled
                 class="w-full px-3.5 py-2.5 bg-gray-100 border border-gray-200/80 rounded-xl font-medium text-text-muted cursor-not-allowed"
               />
@@ -228,13 +241,17 @@ const handleCancel = () => {
             </div>
 
             <div class="space-y-1.5">
-              <label class="block font-bold text-text-primary">
-                Nomor Telepon
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="block font-bold text-text-primary">
+                  Nomor Telepon
+                </label>
+                <span class="text-[10px] font-mono text-text-muted">{{ (editForm.phone || '').length }}/11</span>
+              </div>
               <input
                 v-model="editForm.phone"
                 type="text"
-                placeholder="mis. +62 812-3456-7890"
+                maxlength="11"
+                placeholder="mis. 08123456789"
                 class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/90 rounded-xl font-medium text-text-primary focus:outline-none focus:ring-2 focus:ring-dark-green/20 focus:border-dark-green focus:bg-white transition-colors"
               />
             </div>

@@ -105,8 +105,23 @@ const handleRegister = async () => {
     return
   }
 
-  if (password.value.length < 8) {
-    errorMessage.value = 'Kata sandi harus terdiri dari minimal 8 karakter.'
+  if (fullName.value.trim().length > 50) {
+    errorMessage.value = 'Nama lengkap maksimal 50 karakter.'
+    return
+  }
+
+  if (email.value.trim().length > 16) {
+    errorMessage.value = 'Email maksimal 16 karakter.'
+    return
+  }
+
+  if (password.value.length < 8 || password.value.length > 15) {
+    errorMessage.value = 'Kata sandi harus terdiri dari 8 hingga 15 karakter.'
+    return
+  }
+
+  if (phone.value && phone.value.trim().length > 11) {
+    errorMessage.value = 'Nomor telepon maksimal 11 karakter.'
     return
   }
 
@@ -231,7 +246,7 @@ const handleRegister = async () => {
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="block text-xs font-bold text-text-secondary">Nama Lengkap & Gelar *</label>
-          <span class="text-[10px] font-mono text-text-muted">{{ fullName.length }}/100</span>
+          <span class="text-[10px] font-mono text-text-muted">{{ fullName.length }}/50</span>
         </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -240,8 +255,8 @@ const handleRegister = async () => {
           <input
             v-model="fullName"
             type="text"
-            maxlength="100"
-            placeholder="Contoh: Dr. Budi Santoso, M.Kom."
+            maxlength="50"
+            placeholder="Contoh: Dr. Budi Santoso"
             required
             :disabled="isSubmitting"
             class="w-full pl-10 pr-3.5 py-2.5 bg-white/70 hover:bg-white/90 focus:bg-white border border-gray-200/90 focus:border-dark-green focus:ring-2 focus:ring-dark-green/20 rounded-xl text-text-primary text-xs sm:text-[13px] font-medium transition-all placeholder:text-text-muted/60"
@@ -253,7 +268,7 @@ const handleRegister = async () => {
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="block text-xs font-bold text-text-secondary">Alamat Email *</label>
-          <span class="text-[10px] font-mono text-text-muted">{{ email.length }}/100</span>
+          <span class="text-[10px] font-mono text-text-muted">{{ email.length }}/16</span>
         </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -262,8 +277,8 @@ const handleRegister = async () => {
           <input
             v-model="email"
             type="email"
-            maxlength="100"
-            placeholder="Contoh: budi.santoso@upnvj.ac.id"
+            maxlength="16"
+            placeholder="Contoh: budi@lab.com"
             required
             :disabled="isSubmitting"
             class="w-full pl-10 pr-3.5 py-2.5 bg-white/70 hover:bg-white/90 focus:bg-white border border-gray-200/90 focus:border-dark-green focus:ring-2 focus:ring-dark-green/20 rounded-xl text-text-primary text-xs sm:text-[13px] font-medium transition-all placeholder:text-text-muted/60"
@@ -273,7 +288,10 @@ const handleRegister = async () => {
 
       <!-- WhatsApp / Phone -->
       <div>
-        <label class="block text-xs font-bold text-text-secondary mb-1">Nomor WhatsApp / HP (Opsional)</label>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-bold text-text-secondary">Nomor WhatsApp / HP (Opsional)</label>
+          <span class="text-[10px] font-mono text-text-muted">{{ phone.length }}/11</span>
+        </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
             <Phone :size="15" />
@@ -281,7 +299,8 @@ const handleRegister = async () => {
           <input
             v-model="phone"
             type="tel"
-            placeholder="Contoh: +62 812-3456-7890"
+            maxlength="11"
+            placeholder="Contoh: 08123456789"
             :disabled="isSubmitting"
             class="w-full pl-10 pr-3.5 py-2.5 bg-white/70 hover:bg-white/90 focus:bg-white border border-gray-200/90 focus:border-dark-green focus:ring-2 focus:ring-dark-green/20 rounded-xl text-text-primary text-xs sm:text-[13px] font-medium transition-all placeholder:text-text-muted/60"
           />
@@ -293,7 +312,7 @@ const handleRegister = async () => {
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-xs font-bold text-text-secondary">Kata Sandi *</label>
-            <span class="text-[10px] font-mono text-text-muted">{{ password.length }}/250</span>
+            <span class="text-[10px] font-mono text-text-muted">{{ password.length }}/15</span>
           </div>
           <div class="relative">
             <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -302,8 +321,8 @@ const handleRegister = async () => {
             <input
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
-              maxlength="250"
-              placeholder="Min. 8 karakter"
+              maxlength="15"
+              placeholder="Min. 8, maks. 15 karakter"
               required
               :disabled="isSubmitting"
               class="w-full pl-10 pr-9 py-2.5 bg-white/70 hover:bg-white/90 focus:bg-white border border-gray-200/90 focus:border-dark-green focus:ring-2 focus:ring-dark-green/20 rounded-xl text-text-primary text-xs sm:text-[13px] font-medium transition-all placeholder:text-text-muted/60"
@@ -324,7 +343,7 @@ const handleRegister = async () => {
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-xs font-bold text-text-secondary">Konfirmasi Sandi *</label>
-            <span class="text-[10px] font-mono text-text-muted">{{ confirmPassword.length }}/250</span>
+            <span class="text-[10px] font-mono text-text-muted">{{ confirmPassword.length }}/15</span>
           </div>
           <div class="relative">
             <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -333,7 +352,7 @@ const handleRegister = async () => {
             <input
               v-model="confirmPassword"
               :type="showConfirmPassword ? 'text' : 'password'"
-              maxlength="250"
+              maxlength="15"
               placeholder="Ulangi sandi"
               required
               :disabled="isSubmitting"

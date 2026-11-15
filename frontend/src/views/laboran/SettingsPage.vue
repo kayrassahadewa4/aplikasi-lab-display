@@ -99,7 +99,7 @@ const securityErrors = ref({
 })
 
 // Password Complexity Checkers
-const hasMinLength = computed(() => securityForm.value.newPassword.length >= 8)
+const hasMinLength = computed(() => securityForm.value.newPassword.length >= 8 && securityForm.value.newPassword.length <= 15)
 const hasUppercase = computed(() => /[A-Z]/.test(securityForm.value.newPassword))
 const hasLowercase = computed(() => /[a-z]/.test(securityForm.value.newPassword))
 const hasNumber = computed(() => /\d/.test(securityForm.value.newPassword))
@@ -273,6 +273,16 @@ const handleSaveProfile = async () => {
     return
   }
 
+  if (profileForm.value.fullName.trim().length > 50) {
+    triggerToast('Nama lengkap maksimal 50 karakter.', 'error')
+    return
+  }
+
+  if (profileForm.value.phone && profileForm.value.phone.trim().length > 11) {
+    triggerToast('Nomor telepon maksimal 11 karakter.', 'error')
+    return
+  }
+
   isSavingProfile.value = true
   try {
     const updated = await userService.updateUser(authStore.user.id, {
@@ -316,6 +326,9 @@ const handleSaveSecurity = async () => {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
   if (!securityForm.value.newPassword) {
     securityErrors.value.newPassword = 'Kata sandi baru harus diisi'
+    return
+  } else if (securityForm.value.newPassword.length < 8 || securityForm.value.newPassword.length > 15) {
+    securityErrors.value.newPassword = 'Kata sandi harus terdiri dari 8 hingga 15 karakter'
     return
   } else if (!passwordRegex.test(securityForm.value.newPassword)) {
     securityErrors.value.newPassword = 'Kata sandi harus memenuhi seluruh kriteria kerumitan'
@@ -552,31 +565,43 @@ const handleSavePreferences = () => {
 
             <form @submit.prevent="handleSaveProfile" class="space-y-4 text-xs">
               <div>
-                <label class="block font-bold text-text-primary mb-1">Nama Lengkap <span class="text-danger">*</span></label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block font-bold text-text-primary">Nama Lengkap <span class="text-danger">*</span></label>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (profileForm.fullName || '').length }}/50</span>
+                </div>
                 <input
                   v-model="profileForm.fullName"
                   type="text"
+                  maxlength="50"
                   required
                   class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-semibold focus:outline-none focus:ring-2 focus:ring-dark-green/25 focus:border-dark-green focus:bg-white"
                 />
               </div>
 
               <div>
-                <label class="block font-bold text-text-primary mb-1">Alamat Email (Hanya-Baca)</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block font-bold text-text-primary">Alamat Email (Hanya-Baca)</label>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (profileForm.email || '').length }}/16</span>
+                </div>
                 <input
                   v-model="profileForm.email"
                   type="email"
+                  maxlength="16"
                   disabled
                   class="w-full px-3.5 py-2.5 bg-gray-100 border border-gray-200 rounded-xl text-text-muted font-semibold cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <label class="block font-bold text-text-primary mb-1">Nomor Telepon</label>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block font-bold text-text-primary">Nomor Telepon</label>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (profileForm.phone || '').length }}/11</span>
+                </div>
                 <input
                   v-model="profileForm.phone"
                   type="text"
-                  placeholder="+62 812-3456-7890"
+                  maxlength="11"
+                  placeholder="contoh: 08123456789"
                   class="w-full px-3.5 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-semibold focus:outline-none focus:ring-2 focus:ring-dark-green/25 focus:border-dark-green focus:bg-white"
                 />
               </div>
@@ -623,11 +648,15 @@ const handleSavePreferences = () => {
             <form @submit.prevent="handleSaveSecurity" class="space-y-4 text-xs">
               <!-- Current Password -->
               <div class="space-y-1.5">
-                <label class="block font-bold text-text-primary">Kata Sandi Saat Ini <span class="text-danger">*</span></label>
+                <div class="flex items-center justify-between">
+                  <label class="block font-bold text-text-primary">Kata Sandi Saat Ini <span class="text-danger">*</span></label>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.currentPassword || '').length }}/15</span>
+                </div>
                 <div class="relative">
                   <input
                     v-model="securityForm.currentPassword"
                     :type="showCurrentPassword ? 'text' : 'password'"
+                    maxlength="15"
                     placeholder="Masukkan kata sandi saat ini"
                     required
                     class="w-full pl-3.5 pr-10 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-dark-green/25 focus:border-dark-green focus:bg-white"
@@ -648,11 +677,15 @@ const handleSavePreferences = () => {
 
               <!-- New Password -->
               <div class="space-y-1.5">
-                <label class="block font-bold text-text-primary">Kata Sandi Baru <span class="text-danger">*</span></label>
+                <div class="flex items-center justify-between">
+                  <label class="block font-bold text-text-primary">Kata Sandi Baru <span class="text-danger">*</span></label>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.newPassword || '').length }}/15</span>
+                </div>
                 <div class="relative">
                   <input
                     v-model="securityForm.newPassword"
                     :type="showNewPassword ? 'text' : 'password'"
+                    maxlength="15"
                     placeholder="Masukkan kata sandi baru"
                     required
                     class="w-full pl-3.5 pr-10 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-dark-green/25 focus:border-dark-green focus:bg-white"
@@ -676,7 +709,7 @@ const handleSavePreferences = () => {
                     ]"
                   >
                     <Check v-if="hasMinLength" :size="11" stroke-width="3" />
-                    <span>8+ karakter</span>
+                    <span>8-15 karakter</span>
                   </span>
 
                   <span
@@ -717,11 +750,15 @@ const handleSavePreferences = () => {
 
               <!-- Confirm Password -->
               <div class="space-y-1.5">
-                <label class="block font-bold text-text-primary">Konfirmasi Kata Sandi Baru <span class="text-danger">*</span></label>
+                <div class="flex items-center justify-between">
+                  <label class="block font-bold text-text-primary">Konfirmasi Kata Sandi Baru <span class="text-danger">*</span></label>
+                  <span class="text-[10px] font-mono text-text-muted">{{ (securityForm.confirmPassword || '').length }}/15</span>
+                </div>
                 <div class="relative">
                   <input
                     v-model="securityForm.confirmPassword"
                     :type="showConfirmPassword ? 'text' : 'password'"
+                    maxlength="15"
                     placeholder="Konfirmasi kata sandi baru"
                     required
                     class="w-full pl-3.5 pr-10 py-2.5 bg-surface/60 border border-gray-200/80 rounded-xl text-text-primary font-medium focus:outline-none focus:ring-2 focus:ring-dark-green/25 focus:border-dark-green focus:bg-white"
