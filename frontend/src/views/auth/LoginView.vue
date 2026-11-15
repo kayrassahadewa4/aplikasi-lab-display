@@ -315,10 +315,7 @@ const handleSubmit = async () => {
         <div class="flex items-center justify-between mb-1.5">
           <label class="block text-xs font-bold text-text-secondary">Alamat Email / Nama Pengguna</label>
           <span
-            :class="[
-              'text-[10px] font-mono transition-colors',
-              email.length >= 16 ? 'text-danger font-bold' : email.length >= 13 ? 'text-amber-600 font-semibold' : 'text-text-muted/80'
-            ]"
+            class="text-[10px] font-mono text-text-secondary"
             title="Batas karakter: 16 karakter"
           >
             {{ email.length }}/16
@@ -345,10 +342,7 @@ const handleSubmit = async () => {
         <div class="flex items-center justify-between mb-1.5">
           <label class="block text-xs font-bold text-text-secondary">Kata Sandi</label>
           <span
-            :class="[
-              'text-[10px] font-mono transition-colors',
-              password.length >= 15 ? 'text-danger font-bold' : password.length >= 12 ? 'text-amber-600 font-semibold' : 'text-text-muted/80'
-            ]"
+            class="text-[10px] font-mono text-text-secondary"
             title="Batas karakter: 15 karakter"
           >
             {{ password.length }}/15
@@ -508,7 +502,7 @@ const handleSubmit = async () => {
                 <div>
                   <div class="flex items-center justify-between mb-1">
                     <label class="block text-[11px] font-bold text-text-secondary">Email Akun Terdaftar *</label>
-                    <span class="text-[10px] font-mono text-text-muted">{{ forgotEmail.length }}/16</span>
+                    <span class="text-[10px] font-mono text-text-secondary">{{ forgotEmail.length }}/16</span>
                   </div>
                   <div class="relative">
                     <div class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -731,7 +725,7 @@ const handleSubmit = async () => {
             <div class="pt-3 border-t border-gray-100 space-y-2.5">
               <div class="flex items-center justify-between">
                 <p class="text-[10px] font-black text-text-muted uppercase tracking-wider">Atau Masuk dengan Email Google Lainnya</p>
-                <span class="text-[10px] font-mono text-text-muted">{{ customGoogleEmail.length }}/16</span>
+                <span class="text-[10px] font-mono text-text-secondary">{{ customGoogleEmail.length }}/16</span>
               </div>
               <div class="flex flex-col sm:flex-row gap-2">
                 <input

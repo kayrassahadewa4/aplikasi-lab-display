@@ -246,7 +246,7 @@ const handleRegister = async () => {
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="block text-xs font-bold text-text-secondary">Nama Lengkap & Gelar *</label>
-          <span class="text-[10px] font-mono text-text-muted">{{ fullName.length }}/50</span>
+          <span class="text-[10px] font-mono text-text-secondary">{{ fullName.length }}/50</span>
         </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -268,7 +268,7 @@ const handleRegister = async () => {
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="block text-xs font-bold text-text-secondary">Alamat Email *</label>
-          <span class="text-[10px] font-mono text-text-muted">{{ email.length }}/16</span>
+          <span class="text-[10px] font-mono text-text-secondary">{{ email.length }}/16</span>
         </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -290,7 +290,7 @@ const handleRegister = async () => {
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="block text-xs font-bold text-text-secondary">Nomor WhatsApp / HP (Opsional)</label>
-          <span class="text-[10px] font-mono text-text-muted">{{ phone.length }}/11</span>
+          <span class="text-[10px] font-mono text-text-secondary">{{ phone.length }}/11</span>
         </div>
         <div class="relative">
           <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -312,7 +312,7 @@ const handleRegister = async () => {
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-xs font-bold text-text-secondary">Kata Sandi *</label>
-            <span class="text-[10px] font-mono text-text-muted">{{ password.length }}/15</span>
+            <span class="text-[10px] font-mono text-text-secondary">{{ password.length }}/15</span>
           </div>
           <div class="relative">
             <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
@@ -343,7 +343,7 @@ const handleRegister = async () => {
         <div>
           <div class="flex items-center justify-between mb-1">
             <label class="block text-xs font-bold text-text-secondary">Konfirmasi Sandi *</label>
-            <span class="text-[10px] font-mono text-text-muted">{{ confirmPassword.length }}/15</span>
+            <span class="text-[10px] font-mono text-text-secondary">{{ confirmPassword.length }}/15</span>
           </div>
           <div class="relative">
             <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">

@@ -41,16 +41,6 @@ const currentLength = computed(() => {
   if (props.modelValue === undefined || props.modelValue === null) return 0
   return String(props.modelValue).length
 })
-
-const isNearLimit = computed(() => {
-  if (!props.maxlength) return false
-  return currentLength.value >= props.maxlength * 0.8
-})
-
-const isAtLimit = computed(() => {
-  if (!props.maxlength) return false
-  return currentLength.value >= props.maxlength
-})
 </script>
 
 <template>
@@ -62,10 +52,7 @@ const isAtLimit = computed(() => {
       </label>
       <span
         v-if="maxlength && showCounter"
-        :class="[
-          'text-[10px] font-mono transition-colors ml-auto',
-          isAtLimit ? 'text-danger font-bold' : isNearLimit ? 'text-amber-600 font-semibold' : 'text-text-muted/80'
-        ]"
+        class="text-[10px] font-mono text-text-secondary ml-auto"
       >
         {{ currentLength }}/{{ maxlength }}
       </span>
