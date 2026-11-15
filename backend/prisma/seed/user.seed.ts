@@ -29,7 +29,7 @@ export async function seedUsers(prisma: PrismaClient): Promise<void> {
     {
       email: 'laboran@lab.com',
       password: hashedPassword,
-      full_name: 'Laboratory Staff',
+      full_name: 'Staf Laboran FIK',
       role_id: laboranRole.id,
       status: 'ACTIVE' as const,
       phone: '+628123456790',
@@ -38,7 +38,7 @@ export async function seedUsers(prisma: PrismaClient): Promise<void> {
     {
       email: 'lecturer@lab.com',
       password: hashedPassword,
-      full_name: 'Lecturer',
+      full_name: 'Dosen Pengampu FIK',
       role_id: dosenRole.id,
       status: 'ACTIVE' as const,
       phone: '+628123456791',

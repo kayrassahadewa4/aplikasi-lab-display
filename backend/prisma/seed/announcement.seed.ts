@@ -15,15 +15,15 @@ export async function seedAnnouncements(prisma: PrismaClient): Promise<void> {
 
   const sampleAnnouncements = [
     {
-      title: 'Mid-Term Lab Practical Examinations Scheduled',
-      content: 'Laboratories A and B will be dedicated to Computer Science practicum exams from 08:00 to 17:00. Please ensure all preparation is completed.',
+      title: 'Jadwal Ujian Praktikum Laboratorium FIK',
+      content: 'Laboratorium Rekayasa Perangkat Lunak dan Jaringan dialokasikan untuk pelaksanaan ujian praktikum mulai pukul 08:00 hingga 17:00 WIB. Seluruh mahasiswa diimbau mematuhi tata tertib laboratorium.',
       start_at: now,
       end_at: future1,
       is_active: true,
     },
     {
-      title: 'Network Lab Server Maintenance Notice',
-      content: 'Scheduled maintenance on core switch infrastructure this Saturday. Temporary connectivity disruptions may occur in LAB-JAR.',
+      title: 'Pemberitahuan Pemeliharaan Jaringan Laboratorium',
+      content: 'Pemeliharaan berkala infrastruktur switch dan server laboratorium dilaksanakan pada akhir pekan ini. Penggunaan ruang laboratorium dapat dikoordinasikan terlebih dahulu dengan staf laboran.',
       start_at: now,
       end_at: future2,
       is_active: true,
