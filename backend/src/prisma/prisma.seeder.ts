@@ -1,4 +1,4 @@
-import { PrismaClient, LaboratoryStatus, CalendarStatus, ScheduleStatus } from '@prisma/client';
+import { PrismaClient, LaboratoryStatus, CalendarStatus, ScheduleStatus, RequestStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 export async function ensureSchema(prisma: PrismaClient): Promise<void> {
@@ -123,12 +123,7 @@ export async function ensureSchema(prisma: PrismaClient): Promise<void> {
 export async function seedAll(prisma: PrismaClient, force = false): Promise<{ success: boolean; message: string }> {
   try {
     const existingUsers = await prisma.user.count();
-    if (existingUsers > 0 && !force) {
-      console.log(`Database already has ${existingUsers} users. Skipping auto-seed.`);
-      return { success: true, message: `Database already seeded (${existingUsers} users).` };
-    }
-
-    console.log('🌱 Starting full automated database seed...');
+    console.log(`🌱 Checking database seeds (existing users: ${existingUsers})...`);
 
     // 1. Roles
     const roles = [
@@ -363,12 +358,12 @@ export async function seedAll(prisma: PrismaClient, force = false): Promise<{ su
     const existingSchedules = await prisma.schedule.count();
     if (existingSchedules === 0 && calendar) {
       const scheduleEntries = [
-        { lab: lab1, course: 'Pemrograman Web Lanjut', lecturer: 'Dr. Bambang Triatmaja, M.Kom.', className: 'IF-5A', day: 1, start: '08:00:00', end: '10:30:00' },
-        { lab: lab1, course: 'Rekayasa Perangkat Lunak', lecturer: 'Ahmad Fauzi, S.Kom., M.T.', className: 'IF-5B', day: 1, start: '10:45:00', end: '13:15:00' },
+        { lab: lab1, course: 'Pemrograman Web Lanjut', lecturer: 'Dosen Pengampu FIK UPNVJ', className: 'IF-5A', day: 1, start: '08:00:00', end: '10:30:00' },
+        { lab: lab1, course: 'Rekayasa Perangkat Lunak', lecturer: 'Dosen Pengampu FIK UPNVJ', className: 'IF-5B', day: 1, start: '10:45:00', end: '13:15:00' },
         { lab: lab2, course: 'Keamanan Jaringan & Cyber Security', lecturer: 'Ir. Hendra Gunawan, M.Sc.', className: 'TI-5A', day: 1, start: '08:30:00', end: '11:00:00' },
-        { lab: lab3, course: 'Desain Grafis & Pemodelan 3D', lecturer: 'Feriega Pratama, M.Ds.', className: 'DKV-3A', day: 1, start: '13:00:00', end: '15:30:00' },
+        { lab: lab3, course: 'Desain Grafis & Pemodelan 3D', lecturer: 'Dosen Pengampu FIK UPNVJ', className: 'DKV-3A', day: 1, start: '13:00:00', end: '15:30:00' },
         { lab: lab4, course: 'Machine Learning & Big Data', lecturer: 'Prof. Siti Rahmah, Ph.D.', className: 'DS-4A', day: 2, start: '09:00:00', end: '11:30:00' },
-        { lab: lab1, course: 'Pengembangan Aplikasi Mobile', lecturer: 'Nurul Hidayah, M.Kom.', className: 'IF-5C', day: 2, start: '13:30:00', end: '16:00:00' },
+        { lab: lab1, course: 'Pengembangan Aplikasi Mobile', lecturer: 'Dosen Pengampu FIK UPNVJ', className: 'IF-5C', day: 2, start: '13:30:00', end: '16:00:00' },
         { lab: lab2, course: 'Routing & Switching Enterprise', lecturer: 'Dimas Prasetyo, M.Kom.', className: 'TI-3B', day: 3, start: '08:00:00', end: '10:30:00' },
         { lab: lab4, course: 'Pengantar Artificial Intelligence', lecturer: 'Prof. Siti Rahmah, Ph.D.', className: 'DS-2A', day: 4, start: '10:00:00', end: '12:30:00' },
         { lab: lab1, course: 'Struktur Data & Algoritma', lecturer: 'Haryanto, S.Kom., M.Cs.', className: 'IF-2B', day: 5, start: '08:00:00', end: '10:30:00' },
@@ -392,10 +387,90 @@ export async function seedAll(prisma: PrismaClient, force = false): Promise<{ su
       }
     }
 
+    // 8. Sample Room Requests for Dosen
+    const existingRoomRequests = await prisma.roomRequest.count();
+    if (existingRoomRequests === 0 || force) {
+      const dosenUsers = await prisma.user.findMany({
+        where: {
+          OR: [
+            { email: { in: ['lecturer@lab.com', 'dosen@lab.com', 'dosen@upnvj.ac.id'] } },
+            { role: { code: 'DOSEN' } },
+          ],
+        },
+      });
+
+      const laboranUser = await prisma.user.findFirst({
+        where: { role: { code: 'LABORAN' } },
+      });
+
+      if (dosenUsers.length > 0 && lab1 && lab2 && lab4) {
+        const makeDate = (daysAhead: number) => {
+          const d = new Date();
+          d.setDate(d.getDate() + daysAhead);
+          return d;
+        };
+
+        for (const dosen of dosenUsers) {
+          const sampleRequests = [
+            {
+              applicant_id: dosen.id,
+              laboratory_id: lab1.id,
+              activity_name: 'Praktikum Pengganti Pemrograman Mobile',
+              course_name: 'Pengembangan Aplikasi Mobile',
+              class_name: 'IF-5C',
+              description: 'Praktikum pengganti sesi hari libur nasional untuk materi Flutter & State Management.',
+              request_date: makeDate(2),
+              start_time: timeOnly(13, 30),
+              end_time: timeOnly(16, 0),
+              participant_count: 35,
+              status: RequestStatus.PENDING,
+            },
+            {
+              applicant_id: dosen.id,
+              laboratory_id: lab4.id,
+              approved_by: laboranUser?.id || null,
+              activity_name: 'Workshop Deep Learning & Computer Vision',
+              course_name: 'Machine Learning & Big Data',
+              class_name: 'DS-4A',
+              description: 'Sesi workshop intensif pemanfaatan GPU workstation untuk pelatihan model CNN.',
+              request_date: makeDate(5),
+              start_time: timeOnly(9, 0),
+              end_time: timeOnly(12, 0),
+              participant_count: 30,
+              status: RequestStatus.APPROVED,
+              approved_at: new Date(),
+            },
+            {
+              applicant_id: dosen.id,
+              laboratory_id: lab2.id,
+              approved_by: laboranUser?.id || null,
+              activity_name: 'Simulasi Ujian Sertifikasi Cyber Security',
+              course_name: 'Keamanan Jaringan & Cyber Security',
+              class_name: 'TI-5A',
+              description: 'Persiapan uji kompetensi konfigurasi firewall dan pengujian keamanan jaringan.',
+              request_date: makeDate(7),
+              start_time: timeOnly(8, 30),
+              end_time: timeOnly(11, 30),
+              participant_count: 35,
+              status: RequestStatus.APPROVED,
+              approved_at: new Date(),
+            },
+          ];
+
+          for (const req of sampleRequests) {
+            await prisma.roomRequest.create({
+              data: req,
+            });
+          }
+        }
+        console.log(`✔ Sample Room Requests seeded for ${dosenUsers.length} Dosen account(s).`);
+      }
+    }
+
     console.log('✅ Automated seeding finished successfully!');
     return {
       success: true,
-      message: 'Database seeded successfully with default roles, users, laboratories, and schedules.',
+      message: 'Database seeded successfully with default roles, users, laboratories, schedules, and room requests.',
     };
   } catch (error: any) {
     console.error('❌ Database automated seeding error:', error);

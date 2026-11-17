@@ -50,7 +50,7 @@ const handleMenuClick = (path?: string) => {
         v-if="!navStore.sidebarCollapsed"
         @click="navStore.toggleSidebar"
         class="p-1.5 rounded-lg text-emerald-200/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-        aria-label="Collapse sidebar"
+        aria-label="Ciutkan bilah samping"
       >
         <ChevronLeft :size="16" />
       </button>
@@ -146,7 +146,7 @@ const handleMenuClick = (path?: string) => {
       <button
         @click="navStore.toggleSidebar"
         class="p-2 rounded-xl text-emerald-200/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-        aria-label="Expand sidebar"
+        aria-label="Perluas bilah samping"
       >
         <ChevronRight :size="18" />
       </button>
@@ -156,7 +156,7 @@ const handleMenuClick = (path?: string) => {
     <div v-if="!navStore.sidebarCollapsed" class="p-4 border-t border-emerald-800/40 shrink-0 bg-black/15">
       <div class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <p class="text-[11px] text-emerald-200/80 font-bold tracking-wide">Lecturer Mode</p>
+        <p class="text-[11px] text-emerald-200/80 font-bold tracking-wide">Mode Dosen</p>
       </div>
     </div>
   </aside>

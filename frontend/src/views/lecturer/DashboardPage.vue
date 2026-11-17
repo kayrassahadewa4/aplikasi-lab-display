@@ -82,7 +82,7 @@ const lecturerDisplayName = computed(() => {
   if (authStore.userName && !authStore.userName.toLowerCase().includes('admin')) {
     return authStore.userName
   }
-  return 'Lecturer'
+  return 'Dosen Pengampu'
 })
 
 // Current Academic Term Label
@@ -134,13 +134,20 @@ const loadLecturerDashboard = async () => {
 
     // 1. Process Schedules
     const allSchedules: ScheduleData[] = schedRes?.schedules || []
-    const currentLecturerName = authStore.userName?.toLowerCase() || ''
+    const currentLecturerName = authStore.userName?.toLowerCase().trim() || ''
     
-    const filteredSchedules = currentLecturerName
-      ? allSchedules.filter(s => s.lecturerName.toLowerCase().includes(currentLecturerName) || allSchedules.length <= 5)
-      : allSchedules
+    // Match schedules assigned to this lecturer
+    const matchedSchedules = currentLecturerName
+      ? allSchedules.filter(s => {
+          const sName = (s.lecturerName || '').toLowerCase().trim()
+          return sName && (sName.includes(currentLecturerName) || currentLecturerName.includes(sName))
+        })
+      : []
 
-    schedules.value = filteredSchedules.slice(0, 5).map((s, idx) => ({
+    // Display lecturer's assigned schedules if available, or fall back to scheduled practicum classes
+    const targetSchedules = matchedSchedules.length > 0 ? matchedSchedules : allSchedules
+
+    schedules.value = targetSchedules.slice(0, 5).map((s, idx) => ({
       id: s.id,
       timeSlot: `${s.startTime} – ${s.endTime}`,
       dateLabel: s.dayName ? formatDayName(s.dayName) : 'Sesi Rutin',
@@ -149,7 +156,7 @@ const loadLecturerDashboard = async () => {
       courseName: s.courseName,
       className: s.className || 'Kelas Perkuliahan',
       studentCount: 35,
-      status: (idx === 0 && s.status === 'ACTIVE' ? 'IN PROGRESS' : s.status === 'ACTIVE' ? 'SCHEDULED' : 'SCHEDULED') as LecturerScheduleItem['status'],
+      status: (idx === 0 && s.status === 'ACTIVE' ? 'IN PROGRESS' : 'SCHEDULED') as LecturerScheduleItem['status'],
       laboratoryId: s.laboratoryId
     }))
 
@@ -235,7 +242,7 @@ const formattedCurrentDate = computed(() => {
 
 onMounted(() => {
   navStore.setBreadcrumbs([
-    { label: 'Lecturer Portal', path: '/lecturer' },
+    { label: 'Portal Dosen', path: '/lecturer' },
     { label: 'Dashboard' }
   ])
   updateLiveClock()
